@@ -5,14 +5,14 @@ pub mod bishop;
 pub mod queen;
 pub mod king;
 
+use std::hash::{Hash, Hasher};
 use pawn::*;
 use rook::*;
 use knight::*;
 use bishop::*;
 use queen::*;
 use king::*;
-use crate::board::{Board, BoardDimension};
-use crate::cell::Cell;
+use crate::board::{Board};
 use crate::color::Color;
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
@@ -25,30 +25,24 @@ pub trait PieceInit: Sized {
     type Buff;
     type Debuff;
 
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>) -> Self;
+    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>, initial_position: Point) -> Self;
 
     fn new(
         color: Color,
         buffs: Option<Vec<Self::Buff>>,
         debuffs: Option<Vec<Self::Debuff>>,
+        initial_position: Point,
     ) -> Self {
         Self::from_parts(
             color,
             buffs.unwrap_or_default(),
             debuffs.unwrap_or_default(),
+            initial_position
         )
     }
 
-    fn with(
-        color: Color,
-        buffs: impl IntoIterator<Item = Self::Buff>,
-        debuffs: impl IntoIterator<Item = Self::Debuff>,
-    ) -> Self {
-        Self::from_parts(color, buffs.into_iter().collect(), debuffs.into_iter().collect())
-    }
-
-    fn empty(color: Color) -> Self {
-        Self::from_parts(color, Vec::new(), Vec::new())
+    fn empty(color: Color, initial_position: Point) -> Self {
+        Self::from_parts(color, Vec::new(), Vec::new(), initial_position)
     }
 }
 
@@ -56,12 +50,12 @@ pub trait PieceColor {
     fn get_color(&self) -> Color;
 }
 
-trait PieceConstraints {
-    fn constraints(&self, current_position: Point, board_dimension: BoardDimension) -> Vec<Point>;
-}
-
-trait AttackedCell {
-    fn attack_cell(&self, current_cell: &Cell, cell: &Cell);
+trait AttackPoints {
+    fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point>;
+    fn is_attackable(point: &Point, board: &Board, color: &Color) -> bool {
+        board.is_in_boundaries(&point)
+          && (board.is_empty_cell(&point) || board.is_enemy_cell(&point, &color))
+    }
 }
 
 
@@ -79,11 +73,11 @@ impl Piece {
     pub fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
         match self {
             Piece::Pawn(p) => p.attack_points(board, current_point),
-            Piece::Rook(p) => vec![],
-            Piece::Knight(p) => vec![],
-            Piece::Bishop(p) => vec![],
-            Piece::Queen(p) => vec![],
-            Piece::King(p) => vec![],
+            Piece::Rook(p) => p.attack_points(board, current_point),
+            Piece::Knight(p) => p.attack_points(board, current_point),
+            Piece::Bishop(p) => p.attack_points(board, current_point),
+            Piece::Queen(p) => p.attack_points(board, current_point),
+            Piece::King(p) => p.attack_points(board, current_point),
         }
     }
 
@@ -95,6 +89,17 @@ impl Piece {
             Piece::Bishop(p) => p.get_color(),
             Piece::Queen(p) => p.get_color(),
             Piece::King(p) => p.get_color(),
+        }
+    }
+
+    pub fn get_initial_position(&self) -> &Point {
+        match self {
+            Piece::Pawn(p) => p.get_initial_position(),
+            Piece::Rook(p) => p.get_initial_position(),
+            Piece::Knight(p) => p.get_initial_position(),
+            Piece::Bishop(p) => p.get_initial_position(),
+            Piece::Queen(p) => p.get_initial_position(),
+            Piece::King(p) => p.get_initial_position(),
         }
     }
 }
@@ -111,3 +116,63 @@ impl PrettyPrint for Piece {
         }
     }
 }
+
+impl std::hash::Hash for Piece {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        match self {
+            Piece::Pawn(p) => p.get_initial_position().hash(hasher),
+            Piece::Rook(p) => p.get_initial_position().hash(hasher),
+            Piece::Knight(p) => p.get_initial_position().hash(hasher),
+            Piece::Bishop(p) => p.get_initial_position().hash(hasher),
+            Piece::Queen(p) => p.get_initial_position().hash(hasher),
+            Piece::King(p) => p.get_initial_position().hash(hasher),
+        }
+    }
+}
+
+impl PartialEq for Piece {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Piece::Pawn(p) => {
+                match other {
+                    Piece::Pawn(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+            Piece::Rook(p) => {
+                match other {
+                    Piece::Rook(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+            Piece::Knight(p) => {
+                match other {
+                    Piece::Knight(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+            Piece::Bishop(p) => {
+                match other {
+                    Piece::Bishop(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+            Piece::Queen(p) => {
+                match other {
+                    Piece::Queen(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+            Piece::King(p) => {
+                match other {
+                    Piece::King(other_p) => other_p.get_initial_position() == p.get_initial_position(),
+                    _ => false,
+                }
+            }
+        }
+    }
+}
+
+impl Eq for Piece {}
+
+impl nohash_hasher::IsEnabled for Piece {}

@@ -1,7 +1,6 @@
-use crate::board::{Board, BoardDimension, INVERT_COLORS};
-use crate::cell::Cell;
+use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::pieces::{MovePiece, Piece, PieceColor, PieceConstraints, PieceInit};
+use crate::pieces::{AttackPoints, Piece, PieceColor, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
@@ -10,6 +9,7 @@ pub struct Pawn {
     color: Color,
     buffs: Vec<Buff>,
     debuffs: Vec<Debuff>,
+    initial_position: Point,
 }
 
 #[derive(Debug)]
@@ -27,37 +27,48 @@ impl PieceInit for Pawn {
     type Buff = Buff;
     type Debuff = Debuff;
 
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>) -> Self {
-        Self {
-            color,
-            buffs,
-            debuffs,
+    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>, initial_position: Point) -> Self {
+        Self { color, buffs, debuffs, initial_position }
+    }
+}
+
+impl AttackPoints for Pawn {
+    fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+        let current_x = current_point.get_x().get_value();
+        let current_y = current_point.get_y().get_value();
+        let mut points: Vec<Point> = vec![];
+
+        match self.color {
+            Color::White => {
+                // White pawn can only attack (x - 1, y + 1) and (x + 1, y + 1) points
+                let point = Point::new(current_x - 1, current_y + 1);
+                if Self::is_attackable(&point, &board, &self.color) {
+                    points.push(point)
+                }
+                let point = Point::new(current_x + 1, current_y + 1);
+                if Self::is_attackable(&point, &board, &self.color) {
+                    points.push(point)
+                }
+            },
+            Color::Black => {
+                // Black pawn can only attack (x - 1, y - 1) and (x + 1, y - 1) points
+                let point = Point::new(current_x - 1, current_y - 1);
+                if Self::is_attackable(&point, &board, &self.color) {
+                    points.push(point)
+                }
+                let point = Point::new(current_x + 1, current_y - 1);
+                if Self::is_attackable(&point, &board, &self.color) {
+                    points.push(point)
+                }
+            },
         }
+        points
     }
 }
 
 impl Pawn {
-    pub fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
-        let points = self.possible_attack_points(
-            current_point.get_x().get_value(),
-            current_point.get_y().get_value(),
-        );
-
-        points
-            .into_iter()
-            .filter(|point| {
-                board.is_in_boundaries(point)
-                    && (board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color))
-            })
-            .collect()
-    }
-
-    // Pawn can only attack (x - 1, y + 1) and (x + 1, y + 1) points
-    pub fn possible_attack_points(&self, x: i16, y: i16) -> Vec<Point> {
-        match self.color {
-            Color::White => vec![Point::new(x - 1, y + 1), Point::new(x + 1, y + 1)],
-            Color::Black => vec![Point::new(x - 1, y - 1), Point::new(x + 1, y - 1)],
-        }
+    pub fn get_initial_position(&self) -> &Point {
+        &self.initial_position
     }
 }
 

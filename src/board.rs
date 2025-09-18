@@ -17,9 +17,15 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
 use crate::cell::{Cell};
 use indexmap::{IndexMap};
-use crate::shadow_board::{AttacksMap, MovesMap};
+use crate::moves_map::MovesMap;
 
+// Invert colors of chess symbols so they look more meaningful in the terminal window with black
+// background. Debugging purpose only.
 pub const INVERT_COLORS: bool = true;
+
+// Determines whether to render the board turned to white side. Setting it to false will render the
+// board turned to black side. Debugging purpose only.
+pub const WHITE_SIDE: bool = true;
 
 // https://docs.rs/indexmap/latest/indexmap/
 type BoardMap = IndexMap<Point, Cell, BuildHasherDefault<NoHashHasher<Point>>>;
@@ -47,10 +53,12 @@ impl BoardDimension {
 pub struct Board {
     board: BoardMap,
     dimension: BoardDimension,
-    white_attacks: AttacksMap,
-    black_attacks: AttacksMap,
+    white_attack_moves: MovesMap,
+    black_attack_moves: MovesMap,
     white_moves: MovesMap,
     black_moves: MovesMap,
+    white_defensive_moves: MovesMap,
+    black_defensive_moves: MovesMap,
     pub white_king: Option<Rc<Piece>>,
     pub black_king: Option<Rc<Piece>>,
 }
@@ -69,28 +77,28 @@ impl Board {
                     }
                 };
                 let piece: Option<Rc<Piece>>;
+                let point = Point::new(x as i16, y as i16);
                 piece = match (y, x) {
                     // White pieces
                     (0, 0) | (0, 7) => Some(
-                        Rc::new(Piece::Rook(Rook::new(Color::White, Some(vec![rook::Buff::Castle]), None)))
+                        Rc::new(Piece::Rook(Rook::new(Color::White, Some(vec![rook::Buff::Castle]), None, point)))
                     ),
-                    (0, 1) | (0, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::White, None, None)))),
-                    (0, 2) | (0, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::White, None, None)))),
-                    (0, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::White, None, None)))),
-                    (0, 4) => Some(Rc::new(Piece::King(King::new(Color::White, Some(vec![king::Buff::Castle]), None)))),
-                    (1, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::White, None, None)))),
+                    (0, 1) | (0, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::White, None, None, point)))),
+                    (0, 2) | (0, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::White, None, None, point)))),
+                    (0, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::White, None, None, point)))),
+                    (0, 4) => Some(Rc::new(Piece::King(King::new(Color::White, Some(vec![king::Buff::Castle]), None, point)))),
+                    (1, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::White, None, None, point)))),
                     // Black pieces
                     (7, 0) | (7, 7) => Some(
-                        Rc::new(Piece::Rook(Rook::new(Color::Black, Some(vec![rook::Buff::Castle]), None)))
+                        Rc::new(Piece::Rook(Rook::new(Color::Black, Some(vec![rook::Buff::Castle]), None, point)))
                     ),
-                    (7, 1) | (7, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::Black, None, None)))),
-                    (7, 2) | (7, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::Black, None, None)))),
-                    (7, 4) => Some(Rc::new(Piece::King(King::new(Color::Black, Some(vec![king::Buff::Castle]), None)))),
-                    (7, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::Black, None, None)))),
-                    (6, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::Black, None, None)))),
+                    (7, 1) | (7, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::Black, None, None, point)))),
+                    (7, 2) | (7, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::Black, None, None, point)))),
+                    (7, 4) => Some(Rc::new(Piece::King(King::new(Color::Black, Some(vec![king::Buff::Castle]), None, point)))),
+                    (7, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::Black, None, None, point)))),
+                    (6, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::Black, None, None, point)))),
                     _ => None
                 };
-                let point = Point::new(x as i16, y as i16);
                 board.get_board_mut().insert(point, Cell::new(color, piece));
             }
         }
@@ -98,10 +106,6 @@ impl Board {
         board.white_king = board.get_board().get(&Point::new(0, 4)).unwrap().get_piece_rc();
         board.black_king = board.get_board().get(&Point::new(7, 4)).unwrap().get_piece_rc();
         board.calculate_attacks();
-
-        println!("{:?}", board.white_attacks.pp());
-        println!("");
-        println!("{:?}", board.black_attacks.pp());
         board
     }
 
@@ -120,6 +124,14 @@ impl Board {
     pub fn get_dimension(&self) -> &BoardDimension {
         &self.dimension
     }
+    
+    pub fn get_white_attack_moves(&self) -> &MovesMap {
+        &self.white_attack_moves
+    }
+
+    pub fn get_black_attack_moves(&self) -> &MovesMap {
+        &self.black_attack_moves
+    }
 
     pub fn empty(columns: u8, rows: u8) -> Self {
         Self {
@@ -127,10 +139,12 @@ impl Board {
             white_king: None,
             black_king: None,
             dimension: BoardDimension::new(columns, rows),
-            white_attacks: AttacksMap::empty(Color::White),
-            black_attacks: AttacksMap::empty(Color::Black),
+            white_attack_moves: MovesMap::empty(Color::White),
+            black_attack_moves: MovesMap::empty(Color::Black),
             white_moves: MovesMap::empty(Color::White),
             black_moves: MovesMap::empty(Color::Black),
+            white_defensive_moves: MovesMap::empty(Color::Black),
+            black_defensive_moves: MovesMap::empty(Color::Black),
         }
     }
 
@@ -138,9 +152,11 @@ impl Board {
         for (point, cell) in &self.board {
             if let Some(piece) = cell.get_piece() {
                 let attacks = piece.attack_points(self, point);
-                match piece.get_color() {
-                    Color::White => self.white_attacks.add_attacks(attacks, piece),
-                    Color::Black => self.black_attacks.add_attacks(attacks, piece),
+                for attack_point in attacks.into_iter() {
+                    match piece.get_color() {
+                        Color::White => self.white_attack_moves.add_move(attack_point, piece),
+                        Color::Black => self.black_attack_moves.add_move(attack_point, piece),
+                    };
                 }
             }
         }
@@ -170,6 +186,7 @@ impl Board {
 impl PrettyPrint for Board {
     fn pp(&self) -> String {
         let mut output = String::new();
+        let mut buf: Vec<String> = vec![];
         for (point, cell) in &self.board {
             if point.get_x() == 0i16 {
                 output.push_str(point.get_y().pp().as_str());
@@ -179,6 +196,8 @@ impl PrettyPrint for Board {
             output.push(' ');
             if point.get_x() + 1i16 == self.dimension.get_columns_num() as i16 {
                 output.push_str("\n");
+                buf.push(output.clone());
+                output = String::new();
             }
         }
         output.push_str("  ");
@@ -193,6 +212,10 @@ impl PrettyPrint for Board {
                 output.push_str("  ");
             }
         }
-        output
+        if(WHITE_SIDE){
+            buf = buf.into_iter().rev().collect();
+        }
+        buf.push(output);
+        buf.join("")
     }
 }
