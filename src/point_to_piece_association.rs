@@ -22,13 +22,13 @@ type PieceToPointMapT = HashMap<
 >;
 
 #[derive(Debug)]
-pub struct MovesMap {
+pub struct PointToPieceAssociation {
     point_to_pieces: PointToPieceMapT,
     piece_to_points: PieceToPointMapT,
     color: Color
 }
 
-impl MovesMap {
+impl PointToPieceAssociation {
     pub fn empty(color: Color) -> Self {
         let point_to_pieces: PointToPieceMapT = HashMap::with_hasher(BuildHasherDefault::default());
         let piece_to_points: PieceToPointMapT = HashMap::with_hasher(BuildHasherDefault::default());

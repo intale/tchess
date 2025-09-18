@@ -17,7 +17,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
 use crate::cell::{Cell};
 use indexmap::{IndexMap};
-use crate::moves_map::MovesMap;
+use crate::point_to_piece_association::{PointToPieceAssociation};
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -53,12 +53,12 @@ impl BoardDimension {
 pub struct Board {
     board: BoardMap,
     dimension: BoardDimension,
-    white_attack_moves: MovesMap,
-    black_attack_moves: MovesMap,
-    white_moves: MovesMap,
-    black_moves: MovesMap,
-    white_defensive_moves: MovesMap,
-    black_defensive_moves: MovesMap,
+    white_attack_points: PointToPieceAssociation,
+    black_attack_points: PointToPieceAssociation,
+    white_moves: PointToPieceAssociation,
+    black_moves: PointToPieceAssociation,
+    white_defensive_points: PointToPieceAssociation,
+    black_defensive_points: PointToPieceAssociation,
     pub white_king: Option<Rc<Piece>>,
     pub black_king: Option<Rc<Piece>>,
 }
@@ -125,12 +125,12 @@ impl Board {
         &self.dimension
     }
     
-    pub fn get_white_attack_moves(&self) -> &MovesMap {
-        &self.white_attack_moves
+    pub fn get_white_attack_points(&self) -> &PointToPieceAssociation {
+        &self.white_attack_points
     }
 
-    pub fn get_black_attack_moves(&self) -> &MovesMap {
-        &self.black_attack_moves
+    pub fn get_black_attack_points(&self) -> &PointToPieceAssociation {
+        &self.black_attack_points
     }
 
     pub fn empty(columns: u8, rows: u8) -> Self {
@@ -139,12 +139,12 @@ impl Board {
             white_king: None,
             black_king: None,
             dimension: BoardDimension::new(columns, rows),
-            white_attack_moves: MovesMap::empty(Color::White),
-            black_attack_moves: MovesMap::empty(Color::Black),
-            white_moves: MovesMap::empty(Color::White),
-            black_moves: MovesMap::empty(Color::Black),
-            white_defensive_moves: MovesMap::empty(Color::Black),
-            black_defensive_moves: MovesMap::empty(Color::Black),
+            white_attack_points: PointToPieceAssociation::empty(Color::White),
+            black_attack_points: PointToPieceAssociation::empty(Color::Black),
+            white_moves: PointToPieceAssociation::empty(Color::White),
+            black_moves: PointToPieceAssociation::empty(Color::Black),
+            white_defensive_points: PointToPieceAssociation::empty(Color::Black),
+            black_defensive_points: PointToPieceAssociation::empty(Color::Black),
         }
     }
 
@@ -154,8 +154,8 @@ impl Board {
                 let attacks = piece.attack_points(self, point);
                 for attack_point in attacks.into_iter() {
                     match piece.get_color() {
-                        Color::White => self.white_attack_moves.add_move(attack_point, piece),
-                        Color::Black => self.black_attack_moves.add_move(attack_point, piece),
+                        Color::White => self.white_attack_points.add_move(attack_point, piece),
+                        Color::Black => self.black_attack_points.add_move(attack_point, piece),
                     };
                 }
             }

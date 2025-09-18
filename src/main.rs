@@ -4,7 +4,7 @@ mod board;
 mod utils;
 mod point;
 mod cell;
-mod moves_map;
+mod point_to_piece_association;
 
 use pieces::*;
 use color::*;
@@ -13,9 +13,9 @@ use crate::utils::pretty_print::PrettyPrint;
 
 fn main() {
     let board = Board::classic_chess_board();
-    println!("White attack moves");
-    println!("{}", board.get_white_attack_moves().pp_pieces());
-    println!("\nBlack attack moves");
-    println!("{}", board.get_black_attack_moves().pp_pieces());
+    println!("White attack points");
+    println!("{}", board.get_white_attack_points().pp_pieces());
+    println!("\nBlack attack points");
+    println!("{}", board.get_black_attack_points().pp_pieces());
     println!("{}", board.pp());
 }
