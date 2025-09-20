@@ -60,6 +60,8 @@ pub struct Board {
     black_attack_points: PointToPieceAssociation,
     white_moves: PointToPieceAssociation,
     black_moves: PointToPieceAssociation,
+    white_xray_points: PointToPieceAssociation,
+    black_xray_points: PointToPieceAssociation,
     white_defensive_points: PointToPieceAssociation,
     black_defensive_points: PointToPieceAssociation,
     pub white_king: Option<Rc<Piece>>,
@@ -155,6 +157,8 @@ impl Board {
             black_attack_points: PointToPieceAssociation::empty(Color::Black),
             white_moves: PointToPieceAssociation::empty(Color::White),
             black_moves: PointToPieceAssociation::empty(Color::Black),
+            white_xray_points: PointToPieceAssociation::empty(Color::White),
+            black_xray_points: PointToPieceAssociation::empty(Color::Black),
             white_defensive_points: PointToPieceAssociation::empty(Color::Black),
             black_defensive_points: PointToPieceAssociation::empty(Color::Black),
         }
