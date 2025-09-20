@@ -1,6 +1,8 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::pieces::{AttackPoints, PieceColor, PieceInit};
+use crate::diagonal_vector::{DiagonalDirection, DiagonalVector};
+use crate::line_vector::{LineDirection, LineVector};
+use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
@@ -46,110 +48,56 @@ impl PrettyPrint for Queen {
 
 impl AttackPoints for Queen {
     fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
-        let current_x = current_point.get_x().get_value();
-        let current_y = current_point.get_y().get_value();
+        let x = current_point.get_x().get_value();
+        let y = current_point.get_y().get_value();
+        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
 
         let mut points: Vec<Point> = vec![];
-        let add_point_and_or_stop = |x, y, points: &mut Vec<Point>| {
-            let point = Point::new(x, y);
-            if Self::is_attackable(&point, board, &self.color) {
-                points.push(Point::new(x, y));
-                if board.is_enemy_cell(&point, &self.color) {
-                    true
-                } else {
-                    false
-                }
-            } else {
-                true
-            }
+
+        let validator = |point: &Point| {
+            board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
+        };
+        let terminator = |point: &Point| {
+            !board.is_empty_cell(&point)
         };
 
-        // from current point to top right point
-        {
-            let mut x = current_x;
-            let mut y = current_y;
+        let diagonal_vector = DiagonalVector { x, y, max_x, max_y };
+        let line_vector = LineVector { x, y, max_x, max_y };
 
-            loop {
-                x += 1;
-                y += 1;
-                if add_point_and_or_stop(x, y, &mut points) { break }
-            }
+        for direction in DiagonalDirection::all_variants() {
+            points.append(&mut diagonal_vector.calc_points(direction, validator, terminator));
+        }
+        for direction in LineDirection::all_variants() {
+            points.append(&mut line_vector.calc_points(direction, validator, terminator));
         }
 
-        // from current point to bottom left point
-        {
-            let mut x = current_x;
-            let mut y = current_y;
+        points
+    }
+}
 
-            loop {
-                x -= 1;
-                y -= 1;
-                if add_point_and_or_stop(x, y, &mut points) { break }
-            }
+impl DefensivePoints for Queen {
+    fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+        let x = current_point.get_x().get_value();
+        let y = current_point.get_y().get_value();
+        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
+
+        let mut points: Vec<Point> = vec![];
+
+        let validator = |point: &Point| {
+            board.is_ally_cell(&point, &self.color)
+        };
+        let terminator = |point: &Point| {
+            !board.is_empty_cell(&point)
+        };
+
+        let diagonal_vector = DiagonalVector { x, y, max_x, max_y };
+        let line_vector = LineVector { x, y, max_x, max_y };
+
+        for direction in DiagonalDirection::all_variants() {
+            points.append(&mut diagonal_vector.calc_points(direction, validator, terminator));
         }
-
-        // from current point to top left point
-        {
-            let mut x = current_x;
-            let mut y = current_y;
-
-            loop {
-                x -= 1;
-                y += 1;
-                if add_point_and_or_stop(x, y, &mut points) { break }
-            }
-        }
-
-        // from current point to bottom right point
-        {
-            let mut x = current_x;
-            let mut y = current_y;
-
-            loop {
-                x += 1;
-                y -= 1;
-                if add_point_and_or_stop(x, y, &mut points) { break }
-            }
-        }
-
-        // from current point to right
-        {
-            let mut x = current_x;
-
-            loop {
-                x += 1;
-                if add_point_and_or_stop(x, current_y, &mut points) { break }
-            }
-        }
-
-        // from current point to left
-        {
-            let mut x = current_x;
-
-            loop {
-                x -= 1;
-                if add_point_and_or_stop(x, current_y, &mut points) { break }
-            }
-        }
-
-        // from current point to top
-        {
-            let mut y = current_y;
-
-            loop {
-                y += 1;
-                if add_point_and_or_stop(current_x, y, &mut points) { break }
-            }
-        }
-
-        // from current point to bottom
-        {
-            let mut y = current_y;
-
-            loop {
-                y -= 1;
-                if add_point_and_or_stop(current_x, y, &mut points) { break }
-            }
+        for direction in LineDirection::all_variants() {
+            points.append(&mut line_vector.calc_points(direction, validator, terminator));
         }
 
         points

@@ -1,6 +1,8 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::pieces::{AttackPoints, PieceColor, PieceInit};
+use crate::diagonal_vector::{DiagonalDirection, DiagonalVector};
+use crate::line_vector::{LineDirection, LineVector};
+use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
@@ -40,27 +42,58 @@ impl PieceColor for King {
 
 impl AttackPoints for King {
     fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
-        let current_x = current_point.get_x().get_value();
-        let current_y = current_point.get_y().get_value();
+        let x = current_point.get_x().get_value();
+        let y = current_point.get_y().get_value();
+        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
+
+        let mut points: Vec<Point> = vec![];
+        
+        let validator = |point: &Point| {
+            board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
+        };
+        let terminator = |_point: &Point| {
+            true
+        };
+
+        let diagonal_vector = DiagonalVector { x, y, max_x, max_y };
+        let line_vector = LineVector { x, y, max_x, max_y };
+
+        for direction in DiagonalDirection::all_variants() {
+            points.append(&mut diagonal_vector.calc_points(direction, validator, terminator));
+        }
+        for direction in LineDirection::all_variants() {
+            points.append(&mut line_vector.calc_points(direction, validator, terminator));
+        }
+
+        points
+    }
+}
+
+impl DefensivePoints for King {
+    fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+        let x = current_point.get_x().get_value();
+        let y = current_point.get_y().get_value();
+        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
 
         let mut points: Vec<Point> = vec![];
 
-        let variants = [
-            (current_x + 1, current_y + 1),
-            (current_x - 1, current_y - 1),
-            (current_x + 1, current_y - 1),
-            (current_x - 1, current_y + 1),
-            (current_x + 1, current_y),
-            (current_x - 1, current_y),
-            (current_x, current_y + 1),
-            (current_x, current_y - 1),
-        ];
-        for (x, y) in variants {
-            let point = Point::new(x, y);
-            if Self::is_attackable(&point, &board, &self.color) {
-                points.push(point)
-            }
+        let validator = |point: &Point| {
+            board.is_ally_cell(&point, &self.color)
+        };
+        let terminator = |_point: &Point| {
+            true
+        };
+
+        let diagonal_vector = DiagonalVector { x, y, max_x, max_y };
+        let line_vector = LineVector { x, y, max_x, max_y };
+
+        for direction in DiagonalDirection::all_variants() {
+            points.append(&mut diagonal_vector.calc_points(direction, validator, terminator));
         }
+        for direction in LineDirection::all_variants() {
+            points.append(&mut line_vector.calc_points(direction, validator, terminator));
+        }
+
         points
     }
 }

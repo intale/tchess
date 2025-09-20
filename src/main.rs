@@ -5,6 +5,9 @@ mod utils;
 mod point;
 mod cell;
 mod point_to_piece_association;
+mod diagonal_vector;
+mod line_vector;
+mod jump_vector;
 
 use pieces::*;
 use color::*;

@@ -48,6 +48,10 @@ impl BoardDimension {
     fn get_columns_num(&self) -> u8 {
         self.columns
     }
+
+    pub fn to_i16_tuple(&self) -> (i16, i16) {
+        (self.columns as i16, self.rows as i16)
+    }
 }
 
 pub struct Board {
@@ -106,6 +110,7 @@ impl Board {
         board.white_king = board.get_board().get(&Point::new(0, 4)).unwrap().get_piece_rc();
         board.black_king = board.get_board().get(&Point::new(7, 4)).unwrap().get_piece_rc();
         board.calculate_attacks();
+        board.calculate_defends();
         board
     }
 
@@ -163,6 +168,21 @@ impl Board {
         ()
     }
 
+    fn calculate_defends(&mut self) {
+        for (point, cell) in &self.board {
+            if let Some(piece) = cell.get_piece() {
+                let defends = piece.defensive_points(self, point);
+                for defend_point in defends.into_iter() {
+                    match piece.get_color() {
+                        Color::White => self.white_defensive_points.add_move(defend_point, piece),
+                        Color::Black => self.black_defensive_points.add_move(defend_point, piece),
+                    };
+                }
+            }
+        }
+        ()
+    }
+
     pub fn is_in_boundaries(&self, point: &Point) -> bool {
         let point_x = point.get_x().get_value();
         let point_y = point.get_y().get_value();
@@ -178,6 +198,13 @@ impl Board {
     pub fn is_enemy_cell(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.board.get(point).unwrap().get_piece() {
             return piece.get_color() != color;
+        }
+        false
+    }
+
+    pub fn is_ally_cell(&self, point: &Point, color: &Color) -> bool {
+        if let Some(piece) = self.board.get(point).unwrap().get_piece() {
+            return piece.get_color() == color;
         }
         false
     }

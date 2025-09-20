@@ -52,12 +52,16 @@ pub trait PieceColor {
 
 trait AttackPoints {
     fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point>;
+
     fn is_attackable(point: &Point, board: &Board, color: &Color) -> bool {
         board.is_in_boundaries(&point)
           && (board.is_empty_cell(&point) || board.is_enemy_cell(&point, &color))
     }
 }
 
+trait DefensivePoints {
+    fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point>;
+}
 
 #[derive(Debug)]
 pub enum Piece {
@@ -78,6 +82,17 @@ impl Piece {
             Piece::Bishop(p) => p.attack_points(board, current_point),
             Piece::Queen(p) => p.attack_points(board, current_point),
             Piece::King(p) => p.attack_points(board, current_point),
+        }
+    }
+
+    pub fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+        match self {
+            Piece::Pawn(p) => p.defensive_points(board, current_point),
+            Piece::Rook(p) => p.defensive_points(board, current_point),
+            Piece::Knight(p) => p.defensive_points(board, current_point),
+            Piece::Bishop(p) => p.defensive_points(board, current_point),
+            Piece::Queen(p) => p.defensive_points(board, current_point),
+            Piece::King(p) => p.defensive_points(board, current_point),
         }
     }
 
