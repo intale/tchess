@@ -56,6 +56,10 @@ impl PointToPieceAssociation {
     pub fn pp_pieces(&self) -> String {
         self.point_to_pieces.pp()
     }
+
+    pub fn pp_points(&self) -> String {
+        self.piece_to_points.pp()
+    }
 }
 
 impl PrettyPrint for PointToPieceMapT {
@@ -82,6 +86,38 @@ impl PrettyPrint for PointToPieceMapT {
             for piece in pieces {
                 output.push_str(piece.pp().as_str());
                 output.push_str(piece.get_initial_position().pp().as_str());
+            }
+            output.push_str("\n");
+        }
+        output
+    }
+}
+
+impl PrettyPrint for PieceToPointMapT {
+    fn pp(&self) -> String {
+        let mut output = String::new();
+        let mut keys: Vec<&Rc<Piece>> = vec![];
+
+        for key in self.keys() {
+            keys.push(key);
+        }
+        // Sort points to later output them in sorted order
+        keys.sort_by(|x, x1| x.get_initial_position().pp().cmp(&x1.get_initial_position().pp()));
+
+        for piece in keys {
+            output.push_str(piece.pp().as_str());
+            output.push_str(piece.get_initial_position().pp().as_str());
+            output.push_str(": ");
+            let mut points: Vec<&Point> = vec![];
+            for point in self.get(piece).unwrap() {
+                points.push(point);
+            }
+            // Sort pieces to later output them in sorted order
+            points.sort_by(|x, x1|
+                x.pp().cmp(&x1.pp())
+            );
+            for point in points {
+                output.push_str(point.pp().as_str());
             }
             output.push_str("\n");
         }

@@ -137,6 +137,14 @@ impl Board {
         &self.black_attack_points
     }
 
+    pub fn get_white_defensive_points(&self) -> &PointToPieceAssociation {
+        &self.white_defensive_points
+    }
+
+    pub fn get_black_defensive_points(&self) -> &PointToPieceAssociation {
+        &self.black_defensive_points
+    }
+
     pub fn empty(columns: u8, rows: u8) -> Self {
         Self {
             board: IndexMap::with_hasher(BuildHasherDefault::default()),
