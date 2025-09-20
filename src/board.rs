@@ -1,4 +1,3 @@
-use std::cmp::PartialEq;
 use std::hash::{BuildHasherDefault};
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;

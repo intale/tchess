@@ -1,8 +1,6 @@
-use std::sync::TryLockError::Poisoned;
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
 use crate::diagonal_vector::{DiagonalDirection, DiagonalVector};
-use crate::line_vector::LineDirection;
 use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;

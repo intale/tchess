@@ -1,6 +1,5 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::diagonal_vector::{DiagonalDirection, DiagonalVector};
 use crate::line_vector::{LineDirection, LineVector};
 use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit};
 use crate::point::Point;
