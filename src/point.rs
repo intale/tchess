@@ -19,20 +19,24 @@ impl Point {
         Self { x, y }
     }
 
-    pub fn get_x(&self) -> XPointT {
-        self.x
+    pub fn get_x(&self) -> &XPointT {
+        &self.x
     }
 
-    pub fn get_y(&self) -> YPointT {
-        self.y
+    pub fn get_y(&self) -> &YPointT {
+        &self.y
+    }
+
+    pub fn to_tuple(&self) -> (&i16, &i16) {
+        (self.get_x().get_value(), self.get_y().get_value())
     }
 }
 
 // https://docs.rs/nohash-hasher/0.2.0/nohash_hasher/
 impl std::hash::Hash for Point {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
-        let high_bits = (self.x.get_value() as u16) << 8;
-        hasher.write_u16(high_bits + self.y.get_value() as u16)
+        let high_bits = (*self.x.get_value() as u16) << 8;
+        hasher.write_u16(high_bits + *self.y.get_value() as u16)
     }
 }
 

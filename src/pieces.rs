@@ -25,24 +25,27 @@ pub trait PieceInit: Sized {
     type Buff;
     type Debuff;
 
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>, initial_position: Point) -> Self;
+    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>, 
+                  current_position: Point, initial_position: Point) -> Self;
 
     fn new(
         color: Color,
         buffs: Option<Vec<Self::Buff>>,
         debuffs: Option<Vec<Self::Debuff>>,
+        current_position: Point,
         initial_position: Point,
     ) -> Self {
         Self::from_parts(
             color,
             buffs.unwrap_or_default(),
             debuffs.unwrap_or_default(),
-            initial_position
+            current_position,
+            initial_position,
         )
     }
 
-    fn empty(color: Color, initial_position: Point) -> Self {
-        Self::from_parts(color, Vec::new(), Vec::new(), initial_position)
+    fn empty(color: Color, current_position: Point, initial_position: Point) -> Self {
+        Self::from_parts(color, Vec::new(), Vec::new(), current_position, initial_position)
     }
 }
 
@@ -51,16 +54,16 @@ pub trait PieceColor {
 }
 
 trait AttackPoints {
-    fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point>;
-
-    fn is_attackable(point: &Point, board: &Board, color: &Color) -> bool {
-        board.is_in_boundaries(&point)
-          && (board.is_empty_cell(&point) || board.is_enemy_cell(&point, &color))
-    }
+    fn attack_points(&self, board: &Board) -> Vec<Point>;
 }
 
 trait DefensivePoints {
-    fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point>;
+    fn defensive_points(&self, board: &Board) -> Vec<Point>;
+}
+
+trait Positioning {
+    fn get_current_position(&self) -> &Point;
+    fn get_initial_position(&self) -> &Point;
 }
 
 #[derive(Debug)]
@@ -74,25 +77,25 @@ pub enum Piece {
 }
 
 impl Piece {
-    pub fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+    pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         match self {
-            Piece::Pawn(p) => p.attack_points(board, current_point),
-            Piece::Rook(p) => p.attack_points(board, current_point),
-            Piece::Knight(p) => p.attack_points(board, current_point),
-            Piece::Bishop(p) => p.attack_points(board, current_point),
-            Piece::Queen(p) => p.attack_points(board, current_point),
-            Piece::King(p) => p.attack_points(board, current_point),
+            Piece::Pawn(p) => p.attack_points(board),
+            Piece::Rook(p) => p.attack_points(board),
+            Piece::Knight(p) => p.attack_points(board),
+            Piece::Bishop(p) => p.attack_points(board),
+            Piece::Queen(p) => p.attack_points(board),
+            Piece::King(p) => p.attack_points(board),
         }
     }
 
-    pub fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
+    pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         match self {
-            Piece::Pawn(p) => p.defensive_points(board, current_point),
-            Piece::Rook(p) => p.defensive_points(board, current_point),
-            Piece::Knight(p) => p.defensive_points(board, current_point),
-            Piece::Bishop(p) => p.defensive_points(board, current_point),
-            Piece::Queen(p) => p.defensive_points(board, current_point),
-            Piece::King(p) => p.defensive_points(board, current_point),
+            Piece::Pawn(p) => p.defensive_points(board),
+            Piece::Rook(p) => p.defensive_points(board),
+            Piece::Knight(p) => p.defensive_points(board),
+            Piece::Bishop(p) => p.defensive_points(board),
+            Piece::Queen(p) => p.defensive_points(board),
+            Piece::King(p) => p.defensive_points(board),
         }
     }
 
@@ -104,6 +107,17 @@ impl Piece {
             Piece::Bishop(p) => p.get_color(),
             Piece::Queen(p) => p.get_color(),
             Piece::King(p) => p.get_color(),
+        }
+    }
+
+    pub fn get_current_position(&self) -> &Point {
+        match self {
+            Piece::Pawn(p) => p.get_current_position(),
+            Piece::Rook(p) => p.get_current_position(),
+            Piece::Knight(p) => p.get_current_position(),
+            Piece::Bishop(p) => p.get_current_position(),
+            Piece::Queen(p) => p.get_current_position(),
+            Piece::King(p) => p.get_current_position(),
         }
     }
 

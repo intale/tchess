@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasherDefault;
+use std::ops::Deref;
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
 use crate::color::Color;
@@ -25,14 +26,16 @@ type PieceToPointMapT = HashMap<
 pub struct PointToPieceAssociation {
     point_to_pieces: PointToPieceMapT,
     piece_to_points: PieceToPointMapT,
-    color: Color
+    color: Color,
+    x_ray_pieces: PieceHashSetT,
 }
 
 impl PointToPieceAssociation {
     pub fn empty(color: Color) -> Self {
         let point_to_pieces: PointToPieceMapT = HashMap::with_hasher(BuildHasherDefault::default());
         let piece_to_points: PieceToPointMapT = HashMap::with_hasher(BuildHasherDefault::default());
-        Self { color, point_to_pieces, piece_to_points }
+        let x_ray_pieces: PieceHashSetT = HashSet::with_hasher(BuildHasherDefault::default());
+        Self { color, point_to_pieces, piece_to_points, x_ray_pieces }
     }
 
     pub fn get_pieces_mut(&mut self, point: &Point) -> &mut PieceHashSetT {
@@ -40,6 +43,21 @@ impl PointToPieceAssociation {
             self.point_to_pieces.insert(point.clone(), HashSet::with_hasher(BuildHasherDefault::default()));
         }
         self.point_to_pieces.get_mut(point).unwrap()
+    }
+
+    pub fn get_all_pieces(&self) -> Vec<&Rc<Piece>> {
+        self.piece_to_points.keys().collect()
+    }
+
+    pub fn get_x_ray_pieces(&self) -> Vec<&Rc<Piece>> {
+        self.get_all_pieces().into_iter().filter(|piece| {
+            match &***piece {
+                Piece::Bishop(_) => true,
+                Piece::Rook(_) => true,
+                Piece::Queen(_) => true,
+                _ => false
+            }
+        }).collect()
     }
 
     pub fn get_points_mut(&mut self, piece: &Rc<Piece>) -> &mut PointHashSetT {
@@ -85,7 +103,7 @@ impl PrettyPrint for PointToPieceMapT {
             );
             for piece in pieces {
                 output.push_str(piece.pp().as_str());
-                output.push_str(piece.get_initial_position().pp().as_str());
+                output.push_str(piece.get_current_position().pp().as_str());
             }
             output.push_str("\n");
         }
@@ -106,7 +124,7 @@ impl PrettyPrint for PieceToPointMapT {
 
         for piece in keys {
             output.push_str(piece.pp().as_str());
-            output.push_str(piece.get_initial_position().pp().as_str());
+            output.push_str(piece.get_current_position().pp().as_str());
             output.push_str(": ");
             let mut points: Vec<&Point> = vec![];
             for point in self.get(piece).unwrap() {

@@ -1,4 +1,5 @@
 use std::hash::{BuildHasherDefault};
+use std::ops::Add;
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
 
@@ -16,6 +17,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
 use crate::cell::{Cell};
 use indexmap::{IndexMap};
+use crate::dimension::Dimension;
 use crate::point_to_piece_association::{PointToPieceAssociation};
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
@@ -29,39 +31,15 @@ pub const WHITE_SIDE: bool = true;
 // https://docs.rs/indexmap/latest/indexmap/
 type BoardMap = IndexMap<Point, Cell, BuildHasherDefault<NoHashHasher<Point>>>;
 
-pub struct BoardDimension {
-    columns: u8,
-    rows: u8,
-}
-
-impl BoardDimension {
-    fn new(columns: u8, rows: u8) -> Self {
-        // TODO: implement constraints
-        Self { columns, rows }
-    }
-
-    fn get_rows_num(&self) -> u8 {
-        self.rows
-    }
-
-    fn get_columns_num(&self) -> u8 {
-        self.columns
-    }
-
-    pub fn to_i16_tuple(&self) -> (i16, i16) {
-        (self.columns as i16, self.rows as i16)
-    }
-}
-
 pub struct Board {
     board: BoardMap,
-    dimension: BoardDimension,
+    dimension: Dimension,
     white_attack_points: PointToPieceAssociation,
     black_attack_points: PointToPieceAssociation,
     white_moves: PointToPieceAssociation,
     black_moves: PointToPieceAssociation,
-    white_xray_points: PointToPieceAssociation,
-    black_xray_points: PointToPieceAssociation,
+    white_x_ray_points: PointToPieceAssociation,
+    black_x_ray_points: PointToPieceAssociation,
     white_defensive_points: PointToPieceAssociation,
     black_defensive_points: PointToPieceAssociation,
     pub white_king: Option<Rc<Piece>>,
@@ -86,22 +64,88 @@ impl Board {
                 piece = match (y, x) {
                     // White pieces
                     (0, 0) | (0, 7) => Some(
-                        Rc::new(Piece::Rook(Rook::new(Color::White, Some(vec![rook::Buff::Castle]), None, point)))
+                        Rc::new(
+                            Piece::Rook(
+                                Rook::new(
+                                    Color::White, Some(vec![rook::Buff::Castle]), None, point, point
+                                )
+                            )
+                        )
                     ),
-                    (0, 1) | (0, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::White, None, None, point)))),
-                    (0, 2) | (0, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::White, None, None, point)))),
-                    (0, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::White, None, None, point)))),
-                    (0, 4) => Some(Rc::new(Piece::King(King::new(Color::White, Some(vec![king::Buff::Castle]), None, point)))),
-                    (1, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::White, None, None, point)))),
+                    (0, 1) | (0, 6) => Some(
+                        Rc::new(
+                            Piece::Knight(
+                                Knight::new(Color::White, None, None, point, point)
+                            )
+                        )
+                    ),
+                    (0, 2) | (0, 5) => Some(
+                        Rc::new(
+                            Piece::Bishop(
+                                Bishop::new(Color::White, None, None, point, point)
+                            )
+                        )
+                    ),
+                    (0, 3) => Some(
+                        Rc::new(
+                            Piece::Queen(
+                                Queen::new(Color::White, None, None, point, point)
+                            )
+                        )
+                    ),
+                    (0, 4) => Some(
+                        Rc::new(
+                            Piece::King(
+                                King::new(
+                                    Color::White, Some(vec![king::Buff::Castle]), None, point, point
+                                )
+                            )
+                        )
+                    ),
+                    (1, _) => Some(
+                        Rc::new(
+                            Piece::Pawn(Pawn::new(Color::White, None, None, point, point))
+                        )
+                    ),
                     // Black pieces
                     (7, 0) | (7, 7) => Some(
-                        Rc::new(Piece::Rook(Rook::new(Color::Black, Some(vec![rook::Buff::Castle]), None, point)))
+                        Rc::new(
+                            Piece::Rook(
+                                Rook::new(
+                                    Color::Black, Some(vec![rook::Buff::Castle]), None, point, point
+                                )
+                            )
+                        )
                     ),
-                    (7, 1) | (7, 6) => Some(Rc::new(Piece::Knight(Knight::new(Color::Black, None, None, point)))),
-                    (7, 2) | (7, 5) => Some(Rc::new(Piece::Bishop(Bishop::new(Color::Black, None, None, point)))),
-                    (7, 4) => Some(Rc::new(Piece::King(King::new(Color::Black, Some(vec![king::Buff::Castle]), None, point)))),
-                    (7, 3) => Some(Rc::new(Piece::Queen(Queen::new(Color::Black, None, None, point)))),
-                    (6, _) => Some(Rc::new(Piece::Pawn(Pawn::new(Color::Black, None, None, point)))),
+                    (7, 1) | (7, 6) => Some(
+                        Rc::new(
+                            Piece::Knight(Knight::new(Color::Black, None, None, point, point))
+                        )
+                    ),
+                    (7, 2) | (7, 5) => Some(
+                        Rc::new(
+                            Piece::Bishop(Bishop::new(Color::Black, None, None, point, point))
+                        )
+                    ),
+                    (7, 4) => Some(
+                        Rc::new(
+                            Piece::King(
+                                King::new(
+                                    Color::Black, Some(vec![king::Buff::Castle]), None, point, point
+                                )
+                            )
+                        )
+                    ),
+                    (7, 3) => Some(
+                        Rc::new(
+                            Piece::Queen(Queen::new(Color::Black, None, None, point, point))
+                        )
+                    ),
+                    (6, _) => Some(
+                        Rc::new(
+                            Piece::Pawn(Pawn::new(Color::Black, None, None, point, point))
+                        )
+                    ),
                     _ => None
                 };
                 board.get_board_mut().insert(point, Cell::new(color, piece));
@@ -123,11 +167,7 @@ impl Board {
         &mut self.board
     }
 
-    pub fn get_dimension_mut(&mut self) -> &mut BoardDimension {
-        &mut self.dimension
-    }
-
-    pub fn get_dimension(&self) -> &BoardDimension {
+    pub fn get_dimension(&self) -> &Dimension {
         &self.dimension
     }
     
@@ -139,6 +179,13 @@ impl Board {
         &self.black_attack_points
     }
 
+    pub fn get_attacked_points(&self, color: Color) -> &PointToPieceAssociation {
+        match color {
+            Color::White => self.get_black_attack_points(),
+            Color::Black => self.get_white_attack_points(),
+        }
+    }
+
     pub fn get_white_defensive_points(&self) -> &PointToPieceAssociation {
         &self.white_defensive_points
     }
@@ -147,18 +194,18 @@ impl Board {
         &self.black_defensive_points
     }
 
-    pub fn empty(columns: u8, rows: u8) -> Self {
+    pub fn empty(columns: i16, rows: i16) -> Self {
         Self {
             board: IndexMap::with_hasher(BuildHasherDefault::default()),
             white_king: None,
             black_king: None,
-            dimension: BoardDimension::new(columns, rows),
+            dimension: Dimension::new(Point::new(0, 0), Point::new(columns - 1, rows - 1)),
             white_attack_points: PointToPieceAssociation::empty(Color::White),
             black_attack_points: PointToPieceAssociation::empty(Color::Black),
             white_moves: PointToPieceAssociation::empty(Color::White),
             black_moves: PointToPieceAssociation::empty(Color::Black),
-            white_xray_points: PointToPieceAssociation::empty(Color::White),
-            black_xray_points: PointToPieceAssociation::empty(Color::Black),
+            white_x_ray_points: PointToPieceAssociation::empty(Color::White),
+            black_x_ray_points: PointToPieceAssociation::empty(Color::Black),
             white_defensive_points: PointToPieceAssociation::empty(Color::Black),
             black_defensive_points: PointToPieceAssociation::empty(Color::Black),
         }
@@ -167,7 +214,7 @@ impl Board {
     fn calculate_attacks(&mut self) {
         for (point, cell) in &self.board {
             if let Some(piece) = cell.get_piece() {
-                let attacks = piece.attack_points(self, point);
+                let attacks = piece.attack_points(self);
                 for attack_point in attacks.into_iter() {
                     match piece.get_color() {
                         Color::White => self.white_attack_points.add_move(attack_point, piece),
@@ -182,7 +229,7 @@ impl Board {
     fn calculate_defends(&mut self) {
         for (point, cell) in &self.board {
             if let Some(piece) = cell.get_piece() {
-                let defends = piece.defensive_points(self, point);
+                let defends = piece.defensive_points(self);
                 for defend_point in defends.into_iter() {
                     match piece.get_color() {
                         Color::White => self.white_defensive_points.add_move(defend_point, piece),
@@ -194,39 +241,45 @@ impl Board {
         ()
     }
 
-    pub fn is_in_boundaries(&self, point: &Point) -> bool {
-        let point_x = point.get_x().get_value();
-        let point_y = point.get_y().get_value();
-        let columns = self.dimension.get_columns_num() as i16;
-        let rows = self.dimension.get_rows_num() as i16;
-        point_x >= 0 && point_x < columns && point_y >= 0 && point_y < rows
+    fn calculate_x_ray_points(&mut self) {
+        // white_xray_points
+        if let Some(king) = &self.white_king {
+
+        }
+        todo!()
     }
 
     pub fn is_empty_cell(&self, point: &Point) -> bool {
-        self.board.get(point).unwrap().get_piece().is_none()
+        self.get_cell(point).get_piece().is_none()
     }
 
     pub fn is_enemy_cell(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.board.get(point).unwrap().get_piece() {
+        if let Some(piece) = self.get_cell(point).get_piece() {
             return piece.get_color() != color;
         }
         false
     }
 
     pub fn is_ally_cell(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.board.get(point).unwrap().get_piece() {
+        if let Some(piece) = self.get_cell(point).get_piece() {
             return piece.get_color() == color;
         }
         false
     }
+
+    pub fn get_cell(&self, point: &Point) -> &Cell {
+        self.board.get(point).unwrap()
+    }
 }
+
+
 
 impl PrettyPrint for Board {
     fn pp(&self) -> String {
         let mut output = String::new();
         let mut buf: Vec<String> = vec![];
         for (point, cell) in &self.board {
-            if point.get_x() == 0i16 {
+            if point.get_x() == &0 {
                 output.push_str(point.get_y().pp().as_str());
                 output.push_str(" ");
             }
@@ -240,7 +293,7 @@ impl PrettyPrint for Board {
         }
         output.push_str("  ");
         let slice = self.board.get_range(
-            ((self.dimension.get_rows_num() - 1u8) * self.dimension.get_columns_num()) as usize..
+            ((self.dimension.get_rows_num() - 1) * self.dimension.get_columns_num()) as usize..
                 (self.dimension.get_rows_num() * self.dimension.get_columns_num()) as usize
         );
         if let Some(slice) = slice {

@@ -1,15 +1,19 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::jump_vector::{JumpDirection, JumpVector};
-use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit};
+use crate::directions::Direction;
+use crate::directions::jump_direction::JumpDirection;
+use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
+use crate::vectors::jump_vector::JumpVector;
+use crate::vectors::Vector;
 
 #[derive(Debug)]
 pub struct Knight {
     color: Color,
     buffs: Vec<Buff>,
     debuffs: Vec<Debuff>,
+    current_position: Point,
     initial_position: Point,
 }
 
@@ -25,8 +29,9 @@ impl PieceInit for Knight {
     type Buff = Buff;
     type Debuff = Debuff;
 
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>, initial_position: Point) -> Self {
-        Self { color, buffs, debuffs, initial_position }
+    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>,
+                  current_position: Point, initial_position: Point) -> Self {
+        Self { color, buffs, debuffs, current_position, initial_position }
     }
 }
 
@@ -37,11 +42,7 @@ impl PieceColor for Knight {
 }
 
 impl AttackPoints for Knight {
-    fn attack_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
-        let x = current_point.get_x().get_value();
-        let y = current_point.get_y().get_value();
-        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
-
+    fn attack_points(&self, board: &Board) -> Vec<Point> {
         let validator = |point: &Point| {
             board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
         };
@@ -51,8 +52,8 @@ impl AttackPoints for Knight {
 
         let mut points: Vec<Point> = vec![];
 
-        let vector = JumpVector { x, y, max_x, max_y };
-        for direction in JumpDirection::all_variants() {
+        let vector = Vector::Jump(JumpVector::new(self.current_position, *board.get_dimension()));
+        for direction in Direction::jump_directions() {
             points.append(&mut vector.calc_points(direction, validator, terminator));
         }
 
@@ -61,11 +62,7 @@ impl AttackPoints for Knight {
 }
 
 impl DefensivePoints for Knight {
-    fn defensive_points(&self, board: &Board, current_point: &Point) -> Vec<Point> {
-        let x = current_point.get_x().get_value();
-        let y = current_point.get_y().get_value();
-        let (max_x, max_y) = board.get_dimension().to_i16_tuple();
-
+    fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let validator = |point: &Point| {
             board.is_ally_cell(point, &self.color)
         };
@@ -75,8 +72,8 @@ impl DefensivePoints for Knight {
 
         let mut points: Vec<Point> = vec![];
 
-        let vector = JumpVector { x, y, max_x, max_y };
-        for direction in JumpDirection::all_variants() {
+        let vector = Vector::Jump(JumpVector::new(self.current_position, *board.get_dimension()));
+        for direction in Direction::jump_directions() {
             points.append(&mut vector.calc_points(direction, validator, terminator));
         }
 
@@ -93,8 +90,12 @@ impl PrettyPrint for Knight {
     }
 }
 
-impl Knight {
-    pub fn get_initial_position(&self) -> &Point {
+impl Positioning for Knight {
+    fn get_current_position(&self) -> &Point {
+        &self.current_position
+    }
+
+    fn get_initial_position(&self) -> &Point {
         &self.initial_position
     }
 }

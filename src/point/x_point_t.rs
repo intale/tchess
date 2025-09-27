@@ -10,12 +10,20 @@ impl XPointT {
         Self(value)
     }
     
-    pub fn get_value(&self) -> i16 {
-        self.0
+    pub fn get_value(&self) -> &i16 {
+        &self.0
     }
 }
 
 impl Add<i16> for XPointT {
+    type Output = i16;
+
+    fn add(self, rhs: i16) -> Self::Output {
+        self.0 + rhs
+    }
+}
+
+impl Add<i16> for &XPointT {
     type Output = i16;
 
     fn add(self, rhs: i16) -> Self::Output {
