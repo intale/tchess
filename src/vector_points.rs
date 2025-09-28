@@ -23,10 +23,11 @@ impl VectorPoints {
         FF: FnMut(&Point) -> bool,
     {
         let mut points: Vec<Point> = vec![];
-        let current_point = self.start_point;
+        let mut current_point = self.start_point;
 
         loop {
-            let current_point = vector.calc_next_point(&current_point);
+            current_point = vector.calc_next_point(&current_point);
+
             if !self.dimension.is_in_boundaries(&current_point) {
                 break
             }
