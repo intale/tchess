@@ -1,5 +1,4 @@
 use std::hash::{BuildHasherDefault};
-use std::ops::Add;
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
 
@@ -19,6 +18,9 @@ use crate::cell::{Cell};
 use indexmap::{IndexMap};
 use crate::dimension::Dimension;
 use crate::point_to_piece_association::{PointToPieceAssociation};
+use crate::vector::line_vector::LineVector;
+use crate::vector::Vector;
+use crate::vector_points::VectorPoints;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -48,10 +50,13 @@ pub struct Board {
 
 impl Board {
     pub fn classic_chess_board() -> Self {
-        let mut board = Self::empty(8, 8);
+        let mut board = Self::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+        );
 
-        for y in 0..board.get_dimension().get_rows_num() {
-            for x in 0..board.get_dimension().get_columns_num() {
+        for y in board.get_dimension().get_rows_range() {
+            for x in board.get_dimension().get_columns_range() {
                 let color = {
                     if (x + y) % 2 == 0 {
                         Color::Black
@@ -60,10 +65,10 @@ impl Board {
                     }
                 };
                 let piece: Option<Rc<Piece>>;
-                let point = Point::new(x as i16, y as i16);
+                let point = Point::new(x, y);
                 piece = match (y, x) {
                     // White pieces
-                    (0, 0) | (0, 7) => Some(
+                    (1, 1) | (1, 8) => Some(
                         Rc::new(
                             Piece::Rook(
                                 Rook::new(
@@ -72,28 +77,28 @@ impl Board {
                             )
                         )
                     ),
-                    (0, 1) | (0, 6) => Some(
+                    (1, 2) | (1, 7) => Some(
                         Rc::new(
                             Piece::Knight(
                                 Knight::new(Color::White, None, None, point, point)
                             )
                         )
                     ),
-                    (0, 2) | (0, 5) => Some(
+                    (1, 3) | (1, 6) => Some(
                         Rc::new(
                             Piece::Bishop(
                                 Bishop::new(Color::White, None, None, point, point)
                             )
                         )
                     ),
-                    (0, 3) => Some(
+                    (1, 4) => Some(
                         Rc::new(
                             Piece::Queen(
                                 Queen::new(Color::White, None, None, point, point)
                             )
                         )
                     ),
-                    (0, 4) => Some(
+                    (1, 5) => Some(
                         Rc::new(
                             Piece::King(
                                 King::new(
@@ -102,13 +107,13 @@ impl Board {
                             )
                         )
                     ),
-                    (1, _) => Some(
+                    (2, _) => Some(
                         Rc::new(
                             Piece::Pawn(Pawn::new(Color::White, None, None, point, point))
                         )
                     ),
                     // Black pieces
-                    (7, 0) | (7, 7) => Some(
+                    (8, 1) | (8, 8) => Some(
                         Rc::new(
                             Piece::Rook(
                                 Rook::new(
@@ -117,17 +122,17 @@ impl Board {
                             )
                         )
                     ),
-                    (7, 1) | (7, 6) => Some(
+                    (8, 2) | (8, 7) => Some(
                         Rc::new(
                             Piece::Knight(Knight::new(Color::Black, None, None, point, point))
                         )
                     ),
-                    (7, 2) | (7, 5) => Some(
+                    (8, 3) | (8, 6) => Some(
                         Rc::new(
                             Piece::Bishop(Bishop::new(Color::Black, None, None, point, point))
                         )
                     ),
-                    (7, 4) => Some(
+                    (8, 5) => Some(
                         Rc::new(
                             Piece::King(
                                 King::new(
@@ -136,12 +141,12 @@ impl Board {
                             )
                         )
                     ),
-                    (7, 3) => Some(
+                    (8, 4) => Some(
                         Rc::new(
                             Piece::Queen(Queen::new(Color::Black, None, None, point, point))
                         )
                     ),
-                    (6, _) => Some(
+                    (7, _) => Some(
                         Rc::new(
                             Piece::Pawn(Pawn::new(Color::Black, None, None, point, point))
                         )
@@ -152,8 +157,8 @@ impl Board {
             }
         }
 
-        board.white_king = board.get_board().get(&Point::new(0, 4)).unwrap().get_piece_rc();
-        board.black_king = board.get_board().get(&Point::new(7, 4)).unwrap().get_piece_rc();
+        board.white_king = board.get_board().get(&Point::new(1, 5)).unwrap().get_piece_rc();
+        board.black_king = board.get_board().get(&Point::new(8, 5)).unwrap().get_piece_rc();
         board.calculate_attacks();
         board.calculate_defends();
         board
@@ -194,12 +199,12 @@ impl Board {
         &self.black_defensive_points
     }
 
-    pub fn empty(columns: i16, rows: i16) -> Self {
+    pub fn empty(min_point: Point, max_point: Point) -> Self {
         Self {
             board: IndexMap::with_hasher(BuildHasherDefault::default()),
             white_king: None,
             black_king: None,
-            dimension: Dimension::new(Point::new(0, 0), Point::new(columns - 1, rows - 1)),
+            dimension: Dimension::new(min_point, max_point),
             white_attack_points: PointToPieceAssociation::empty(Color::White),
             black_attack_points: PointToPieceAssociation::empty(Color::Black),
             white_moves: PointToPieceAssociation::empty(Color::White),
@@ -273,35 +278,36 @@ impl Board {
 }
 
 
-
 impl PrettyPrint for Board {
     fn pp(&self) -> String {
         let mut output = String::new();
         let mut buf: Vec<String> = vec![];
         for (point, cell) in &self.board {
-            if point.get_x() == &0 {
+            if point.get_x() == self.dimension.get_min_point().get_x() {
                 output.push_str(point.get_y().pp().as_str());
                 output.push_str(" ");
             }
             output.push_str(cell.pp().as_str());
             output.push(' ');
-            if point.get_x() + 1i16 == self.dimension.get_columns_num() as i16 {
+            if point.get_x() == self.dimension.get_max_point().get_x() {
                 output.push_str("\n");
                 buf.push(output.clone());
                 output = String::new();
             }
         }
         output.push_str("  ");
-        let slice = self.board.get_range(
-            ((self.dimension.get_rows_num() - 1) * self.dimension.get_columns_num()) as usize..
-                (self.dimension.get_rows_num() * self.dimension.get_columns_num()) as usize
+
+        let vector_points = VectorPoints::new(
+            Point::new(
+                *self.dimension.get_min_point().get_x().get_value() - 1,
+                *self.dimension.get_max_point().get_y().get_value()
+            ),
+            self.dimension
         );
-        if let Some(slice) = slice {
-            for (point, cell) in slice {
-                output.push_str(" ");
-                output.push_str(point.get_x().pp().as_str());
-                output.push_str("  ");
-            }
+        for point in vector_points.calc_points(Vector::Line(LineVector::Right), |_| true, |_| false) {
+            output.push_str(" ");
+            output.push_str(point.get_x().pp().as_str());
+            output.push_str("  ");
         }
         if(WHITE_SIDE){
             buf = buf.into_iter().rev().collect();

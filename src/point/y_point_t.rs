@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::ops::{Add, Deref};
+use std::ops::{Add, Deref, Sub};
 use crate::utils::pretty_print::PrettyPrint;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -32,6 +32,14 @@ impl Add<i16> for &YPointT {
     }
 }
 
+impl Sub for &YPointT {
+    type Output = i16;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.0 - rhs.get_value()
+    }
+}
+
 impl PartialEq<i16> for YPointT {
     fn eq(&self, other: &i16) -> bool {
         &self.0 == other
@@ -54,9 +62,6 @@ impl Deref for YPointT {
 
 impl PrettyPrint for YPointT {
     fn pp(&self) -> String {
-        if self.0 < 0 {
-            return "".to_string()
-        }
-        (self.0 + 1i16).to_string()
+        self.0.to_string()
     }
 }

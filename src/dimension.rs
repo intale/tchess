@@ -1,3 +1,4 @@
+use std::ops::{Range, RangeInclusive, Sub};
 use crate::point::Point;
 
 #[derive(Copy, Clone)]
@@ -19,10 +20,26 @@ impl Dimension {
     }
 
     pub fn get_columns_num(&self) -> i16 {
-        self.max_point.get_x().get_value() + 1
+        self.max_point.get_x() - self.min_point.get_x()
     }
 
     pub fn get_rows_num(&self) -> i16 {
-        self.max_point.get_y().get_value() + 1
+        self.max_point.get_y() - self.min_point.get_y()
+    }
+
+    pub fn get_min_point(&self) -> &Point {
+        &self.min_point
+    }
+
+    pub fn get_max_point(&self) -> &Point {
+        &self.max_point
+    }
+
+    pub fn get_columns_range(&self) -> RangeInclusive<i16> {
+        *self.min_point.get_x().get_value()..=*self.max_point.get_x().get_value()
+    }
+
+    pub fn get_rows_range(&self) -> RangeInclusive<i16> {
+        *self.min_point.get_y().get_value()..=*self.max_point.get_y().get_value()
     }
 }
