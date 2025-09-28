@@ -1,12 +1,10 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::directions::Direction;
-use crate::directions::jump_direction::JumpDirection;
 use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
-use crate::vectors::jump_vector::JumpVector;
-use crate::vectors::Vector;
+use crate::vector::Vector;
+use crate::vector_points::{VectorPoints};
 
 #[derive(Debug)]
 pub struct Knight {
@@ -51,10 +49,10 @@ impl AttackPoints for Knight {
         };
 
         let mut points: Vec<Point> = vec![];
+        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        let vector = Vector::Jump(JumpVector::new(self.current_position, *board.get_dimension()));
-        for direction in Direction::jump_directions() {
-            points.append(&mut vector.calc_points(direction, validator, terminator));
+        for direction in Vector::jump_vectors() {
+            points.append(&mut vector_points.calc_points(direction, validator, terminator));
         }
 
         points
@@ -71,10 +69,10 @@ impl DefensivePoints for Knight {
         };
 
         let mut points: Vec<Point> = vec![];
+        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        let vector = Vector::Jump(JumpVector::new(self.current_position, *board.get_dimension()));
-        for direction in Direction::jump_directions() {
-            points.append(&mut vector.calc_points(direction, validator, terminator));
+        for direction in Vector::jump_vectors() {
+            points.append(&mut vector_points.calc_points(direction, validator, terminator));
         }
 
         points

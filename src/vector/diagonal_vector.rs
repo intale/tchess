@@ -1,13 +1,13 @@
 use crate::point::Point;
 
-pub enum DiagonalDirection {
+pub enum DiagonalVector {
     TopLeft,
     TopRight,
     BottomLeft,
     BottomRight,
 }
 
-impl DiagonalDirection {
+impl DiagonalVector {
     pub fn all_variants() -> Vec<Self> {
         vec![
             Self::TopLeft,
@@ -18,7 +18,7 @@ impl DiagonalDirection {
     }
 }
 
-impl DiagonalDirection {
+impl DiagonalVector {
     pub fn calc_direction(point1: &Point, point2: &Point) -> Option<Self> {
         let (x1, y1) = point1.to_tuple();
         let (x2, y2) = point2.to_tuple();

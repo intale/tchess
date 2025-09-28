@@ -66,6 +66,79 @@ trait Positioning {
     fn get_initial_position(&self) -> &Point;
 }
 
+// trait XRayPoints: Positioning + PieceColor where Piece: PartialEq<Self> {
+//     fn x_ray_points(&self, board: &Board) -> Vec<Point> {
+//         let color = self.get_color();
+// 
+//         let mut points: Vec<Point> = vec![];
+// 
+//         let covering_ally: &Rc<Piece>;
+//         let attacking_ = false;
+// 
+//         let validator = |_point: &Point| {
+//             true
+//         };
+//         let terminator = |_point: &Point| {
+//             false
+//         };
+// 
+//         let diagonal_vector = DiagonalVector { x, y, max_x, max_y };
+//         let line_vector = LineVector { x, y, max_x, max_y };
+// 
+//         let bounds: HashMap<Rc<Piece>, Direction>;
+//         let opposite_pieces = board.get_attacked_points(self.get_color()).get_x_ray_pieces();
+//         for piece in opposite_pieces {
+//             let current_piece_position = piece.get_current_position();
+//             match &**piece {
+//                 Piece::Bishop(p) => {
+//                     let direction = DiagonalDirection::calc_direction(
+//                         p.get_current_position(), current_piece_position
+//                     );
+//                     let (bishop_x, bishop_y) = p.get_current_position().to_tuple();
+//                     if let Some(direction) = direction {
+//                         let diagonal_vector = DiagonalVector { x: bishop_x, y: bishop_x, max_x, max_y };
+//                         let mut current_piece_on_the_way: Option<&Rc<Piece>> = None;
+//                         let validator = |_point: &Point| {
+//                             false
+//                         };
+//                         let terminator = |point: &Point| {
+//                             if let Some(piece) = board.get_cell(point).get_piece() {
+//                                 if piece.get_color() != &color {
+//                                     return false;
+//                                 }
+//                                 match current_piece_on_the_way {
+//                                     Some(prev_piece_on_the_way) => {
+//                                         if(&**piece == self) {
+// 
+//                                         }
+//                                     },
+//                                     None => { current_piece_on_the_way = Some(piece) }
+//                                 }
+//                             }
+// 
+//                             false
+//                         };
+//                         diagonal_vector.calc_points(direction, validator, terminator);
+//                     }
+// 
+//                 },
+//                 _ => ()
+//             }
+//         }
+// 
+//         for direction in DiagonalDirection::all_variants() {
+//             points.append(&mut diagonal_vector.calc_points(direction, validator, terminator));
+//         }
+//         for direction in LineDirection::all_variants() {
+//             points.append(&mut line_vector.calc_points(direction, validator, terminator));
+//         }
+// 
+//         points;
+// 
+//         todo!()
+//     }
+// }
+
 #[derive(Debug)]
 pub enum Piece {
     Pawn(Pawn),

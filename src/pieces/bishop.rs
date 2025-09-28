@@ -1,12 +1,10 @@
 use crate::board::{Board, INVERT_COLORS};
 use crate::color::Color;
-use crate::directions::diagonal_direction::DiagonalDirection;
-use crate::directions::Direction;
 use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
-use crate::vectors::diagonal_vector::DiagonalVector;
-use crate::vectors::Vector;
+use crate::vector::Vector;
+use crate::vector_points::VectorPoints;
 
 #[derive(Debug)]
 pub struct Bishop {
@@ -43,8 +41,6 @@ impl PieceColor for Bishop {
 
 impl AttackPoints for Bishop {
     fn attack_points(&self, board: &Board) -> Vec<Point> {
-        let mut points: Vec<Point> = vec![];
-
         let validator = |point: &Point| {
             board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
         };
@@ -52,10 +48,11 @@ impl AttackPoints for Bishop {
             !board.is_empty_cell(&point)
         };
 
-        let vector = Vector::Diagonal(DiagonalVector::new(self.current_position, *board.get_dimension()));
+        let mut points: Vec<Point> = vec![];
+        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        for direction in Direction::diagonal_directions() {
-            points.append(&mut vector.calc_points(direction, validator, terminator));
+        for direction in Vector::diagonal_vectors() {
+            points.append(&mut vector_points.calc_points(direction, validator, terminator));
         }
 
         points
@@ -64,8 +61,6 @@ impl AttackPoints for Bishop {
 
 impl DefensivePoints for Bishop {
     fn defensive_points(&self, board: &Board) -> Vec<Point> {
-        let mut points: Vec<Point> = vec![];
-
         let validator = |point: &Point| {
             board.is_ally_cell(&point, &self.color)
         };
@@ -73,10 +68,11 @@ impl DefensivePoints for Bishop {
             !board.is_empty_cell(&point)
         };
 
-        let vector = Vector::Diagonal(DiagonalVector::new(self.current_position, *board.get_dimension()));
+        let mut points: Vec<Point> = vec![];
+        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        for direction in Direction::diagonal_directions() {
-            points.append(&mut vector.calc_points(direction, validator, terminator));
+        for direction in Vector::diagonal_vectors() {
+            points.append(&mut vector_points.calc_points(direction, validator, terminator));
         }
 
         points

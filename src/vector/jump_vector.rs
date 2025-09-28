@@ -1,6 +1,6 @@
 use crate::point::Point;
 
-pub enum JumpDirection {
+pub enum JumpVector {
     TopLeftLeft,
     TopLeftRight,
     TopRightLeft,
@@ -11,7 +11,7 @@ pub enum JumpDirection {
     BottomRightRight,
 }
 
-impl JumpDirection {
+impl JumpVector {
     pub fn all_variants() -> Vec<Self> {
         vec![
             Self::TopLeftLeft,

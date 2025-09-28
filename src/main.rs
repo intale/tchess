@@ -5,8 +5,8 @@ mod utils;
 mod point;
 mod cell;
 mod point_to_piece_association;
-mod directions;
-mod vectors;
+mod vector;
+mod vector_points;
 mod dimension;
 
 use pieces::*;

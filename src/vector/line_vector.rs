@@ -1,13 +1,13 @@
 use crate::point::Point;
 
-pub enum LineDirection {
+pub enum LineVector {
     Top,
     Bottom,
     Left,
     Right,
 }
 
-impl LineDirection {
+impl LineVector {
     pub fn all_variants() -> Vec<Self> {
         vec![
             Self::Top,
