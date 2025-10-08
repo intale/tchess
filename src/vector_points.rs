@@ -3,43 +3,96 @@ use crate::point::Point;
 use crate::vector::Vector;
 
 pub struct VectorPoints {
-    start_point: Point,
+    current_point: Point,
     dimension: Dimension,
+    vector: Vector,
 }
 
 impl VectorPoints {
-    pub fn new(start_point: Point, dimension: Dimension) -> Self {
-        Self { start_point, dimension }
+    pub fn with_initial(starting_point: Point, dimension: Dimension, vector: Vector) -> Self {
+        Self { current_point: starting_point, dimension, vector }
     }
 
-    pub fn calc_points<F, FF>(
-        &self,
-        vector: Vector,
-        mut validator: F,
-        mut terminator: FF,
-    ) -> Vec<Point>
-    where
-        F: FnMut(&Point) -> bool,
-        FF: FnMut(&Point) -> bool,
-    {
-        let mut points: Vec<Point> = vec![];
-        let mut current_point = self.start_point;
+    pub fn without_initial(starting_point: Point, dimension: Dimension, vector: Vector) -> Self {
+        let mut vector_points = Self {
+            current_point: starting_point, dimension, vector
+        };
+        vector_points.next();
+        vector_points
+    }
+}
 
-        loop {
-            current_point = vector.calc_next_point(&current_point);
+impl Iterator for VectorPoints {
+    type Item = Point;
 
-            if !self.dimension.is_in_boundaries(&current_point) {
-                break
-            }
-
-            if (validator(&current_point)) {
-                points.push(current_point);
-            }
-
-            if terminator(&current_point) {
-                break;
-            }
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.dimension.is_in_boundaries(&self.current_point) {
+            return None
         }
-        points
+
+        let current_point = self.current_point;
+        self.current_point = self.vector.calc_next_point(&self.current_point);
+        Some(current_point)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::vector::line_vector::LineVector;
+    use super::*;
+
+    #[test]
+    fn test_iteration_including_initial_point() {
+        let point = Point::new(1, 1);
+        let dimension = Dimension::new(Point::new(0, 0), Point::new(2, 2));
+        let vector = Vector::Line(LineVector::Top);
+        let mut vector_points = VectorPoints::with_initial(
+            point,
+            dimension,
+            vector
+        );
+        assert_eq!(vector_points.next(), Some(point));
+        assert_eq!(vector_points.next(), Some(Point::new(1, 2)));
+        assert_eq!(vector_points.next(), None);
+    }
+
+    #[test]
+    fn test_out_ouf_bounce_iteration_including_initial_point() {
+        let point = Point::new(3, 1);
+        let dimension = Dimension::new(Point::new(0, 0), Point::new(2, 2));
+        let vector = Vector::Line(LineVector::Top);
+        let mut vector_points = VectorPoints::with_initial(
+            point,
+            dimension,
+            vector
+        );
+        assert_eq!(vector_points.next(), None);
+    }
+
+    #[test]
+    fn test_iteration_excluding_initial_point() {
+        let point = Point::new(1, 1);
+        let dimension = Dimension::new(Point::new(0, 0), Point::new(2, 2));
+        let vector = Vector::Line(LineVector::Top);
+        let mut vector_points = VectorPoints::without_initial(
+            point,
+            dimension,
+            vector
+        );
+        assert_eq!(vector_points.next(), Some(Point::new(1, 2)));
+        assert_eq!(vector_points.next(), None);
+    }
+
+    #[test]
+    fn test_out_of_bounce_iteration_excluding_initial_point() {
+        let point = Point::new(1, 2);
+        let dimension = Dimension::new(Point::new(0, 0), Point::new(2, 2));
+        let vector = Vector::Line(LineVector::Top);
+        let mut vector_points = VectorPoints::without_initial(
+            point,
+            dimension,
+            vector
+        );
+        assert_eq!(vector_points.next(), None);
     }
 }

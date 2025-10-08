@@ -8,6 +8,8 @@ mod point_to_piece_association;
 mod vector;
 mod vector_points;
 mod dimension;
+mod buff;
+mod debuff;
 
 use pieces::*;
 use color::*;

@@ -40,7 +40,7 @@ impl PointToPieceAssociation {
 
     pub fn get_pieces_mut(&mut self, point: &Point) -> &mut PieceHashSetT {
         if !self.point_to_pieces.contains_key(point) {
-            self.point_to_pieces.insert(point.clone(), HashSet::with_hasher(BuildHasherDefault::default()));
+            self.point_to_pieces.insert(*point, HashSet::with_hasher(BuildHasherDefault::default()));
         }
         self.point_to_pieces.get_mut(point).unwrap()
     }
@@ -67,8 +67,24 @@ impl PointToPieceAssociation {
         self.piece_to_points.get_mut(piece).unwrap()
     }
 
+    pub fn get_points(&self, piece: &Rc<Piece>) -> Option<&PointHashSetT> {
+        self.piece_to_points.get(piece)
+    }
+
     pub fn add_move(&mut self, point: Point, piece: &Rc<Piece>) -> bool {
         self.get_pieces_mut(&point).insert(Rc::clone(piece)) && self.get_points_mut(piece).insert(point)
+    }
+
+    pub fn clear_moves(&mut self, piece: &Rc<Piece>) {
+        let points = self.piece_to_points.remove(piece);
+        if let Some(points) = points {
+            for point in points.iter() {
+                if let Some(pieces) = self.point_to_pieces.get_mut(point) {
+                    pieces.remove(piece);
+                }
+            }
+        }
+        ()
     }
 
     pub fn pp_pieces(&self) -> String {
@@ -86,7 +102,9 @@ impl PrettyPrint for PointToPieceMapT {
         let mut keys: Vec<&Point> = vec![];
 
         for key in self.keys() {
-            keys.push(key);
+            if self.get(key).unwrap().len() > 0 {
+                keys.push(key);
+            }
         }
         // Sort points to later output them in sorted order
         keys.sort_by(|x, x1| x.pp().cmp(&x1.pp()));
@@ -99,7 +117,7 @@ impl PrettyPrint for PointToPieceMapT {
             }
             // Sort pieces to later output them in sorted order
             pieces.sort_by(|x, x1|
-                x.get_initial_position().pp().cmp(&x1.get_initial_position().pp())
+                x.id().cmp(&x1.id())
             );
             for piece in pieces {
                 output.push_str(piece.pp().as_str());
@@ -120,7 +138,7 @@ impl PrettyPrint for PieceToPointMapT {
             keys.push(key);
         }
         // Sort points to later output them in sorted order
-        keys.sort_by(|x, x1| x.get_initial_position().pp().cmp(&x1.get_initial_position().pp()));
+        keys.sort_by(|x, x1| x.id().cmp(&x1.id()));
 
         for piece in keys {
             output.push_str(piece.pp().as_str());

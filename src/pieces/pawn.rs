@@ -1,5 +1,8 @@
+use std::ops::DerefMut;
 use crate::board::{Board, INVERT_COLORS};
+use crate::buff::Buff;
 use crate::color::Color;
+use crate::debuff::Debuff;
 use crate::pieces::{AttackPoints, DefensivePoints, Piece, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
@@ -10,54 +13,57 @@ use crate::vector_points::{VectorPoints};
 #[derive(Debug)]
 pub struct Pawn {
     color: Color,
-    buffs: Vec<Buff>,
-    debuffs: Vec<Debuff>,
+    buffs: Box<Vec<Buff>>,
+    debuffs: Box<Vec<Debuff>>,
     current_position: Point,
-    initial_position: Point,
+    id: usize,
 }
 
-#[derive(Debug)]
-pub enum Buff {
-    EnPassant(Point),
-    LevelUp(Piece),
-}
+impl Pawn {
+    pub fn add_debuff(&mut self, debuff: Debuff) {
+        self.debuffs.deref_mut().push(debuff);
+    }
 
-#[derive(Debug)]
-pub enum Debuff {
-    Captured,
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 impl PieceInit for Pawn {
-    type Buff = Buff;
-    type Debuff = Debuff;
-
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>,
-                  current_position: Point, initial_position: Point) -> Self {
-        Self { color, buffs, debuffs, current_position, initial_position }
+    fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
+                  current_position: Point, id: usize) -> Self {
+        Self { color, buffs: Box::new(buffs), debuffs: Box::new(debuffs), current_position, id }
     }
 }
 
 impl AttackPoints for Pawn {
     fn attack_points(&self, board: &Board) -> Vec<Point> {
-        let validator = |point: &Point| {
-            board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
-        };
-        let terminator = |_point: &Point| {
-            true
-        };
-
         let mut points: Vec<Point> = vec![];
-        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        match self.color {
+        let directions = match self.color {
             Color::White => {
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::TopLeft), validator, terminator));
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::TopRight), validator, terminator));
+                vec![
+                    Vector::Diagonal(DiagonalVector::TopLeft),
+                    Vector::Diagonal(DiagonalVector::TopRight),
+                ]
             },
             Color::Black => {
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::BottomLeft), validator, terminator));
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::BottomRight), validator, terminator));
+                vec![
+                    Vector::Diagonal(DiagonalVector::BottomLeft),
+                    Vector::Diagonal(DiagonalVector::BottomRight),
+                ]
             },
+        };
+        for direction in directions {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position, *board.get_dimension(), direction
+            );
+            for point in vector_points {
+                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                    points.push(point)
+                }
+                break
+            }
         }
         points
     }
@@ -65,25 +71,32 @@ impl AttackPoints for Pawn {
 
 impl DefensivePoints for Pawn {
     fn defensive_points(&self, board: &Board) -> Vec<Point> {
-        let validator = |point: &Point| {
-            board.is_ally_cell(&point, &self.color)
-        };
-        let terminator = |_point: &Point| {
-            true
-        };
-
         let mut points: Vec<Point> = vec![];
-        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        match self.color {
+        let directions = match self.color {
             Color::White => {
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::TopLeft), validator, terminator));
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::TopRight), validator, terminator));
+                vec![
+                    Vector::Diagonal(DiagonalVector::TopLeft),
+                    Vector::Diagonal(DiagonalVector::TopRight),
+                ]
             },
             Color::Black => {
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::BottomLeft), validator, terminator));
-                points.append(&mut vector_points.calc_points(Vector::Diagonal(DiagonalVector::BottomRight), validator, terminator));
+                vec![
+                    Vector::Diagonal(DiagonalVector::BottomLeft),
+                    Vector::Diagonal(DiagonalVector::BottomRight),
+                ]
             },
+        };
+        for direction in directions {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position, *board.get_dimension(), direction
+            );
+            for point in vector_points {
+                if board.is_ally_cell(&point, &self.color) {
+                    points.push(point)
+                }
+                break
+            }
         }
         points
     }
@@ -92,10 +105,6 @@ impl DefensivePoints for Pawn {
 impl Positioning for Pawn {
     fn get_current_position(&self) -> &Point {
         &self.current_position
-    }
-
-    fn get_initial_position(&self) -> &Point {
-        &self.initial_position
     }
 }
 

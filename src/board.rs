@@ -1,9 +1,11 @@
+use std::cmp::PartialEq;
 use std::hash::{BuildHasherDefault};
 use std::rc::Rc;
+use std::slice::RChunks;
 use nohash_hasher::NoHashHasher;
 
 use crate::color::Color;
-use crate::pieces::{bishop, king, knight, pawn, queen, rook, Piece, PieceInit};
+use crate::pieces::{Piece, PieceInit};
 use crate::pieces::{
     bishop::Bishop,
     king::King,
@@ -16,8 +18,11 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
 use crate::cell::{Cell};
 use indexmap::{IndexMap};
+use crate::buff::Buff;
+use crate::debuff::Debuff;
 use crate::dimension::Dimension;
 use crate::point_to_piece_association::{PointToPieceAssociation};
+use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
@@ -44,8 +49,9 @@ pub struct Board {
     black_x_ray_points: PointToPieceAssociation,
     white_defensive_points: PointToPieceAssociation,
     black_defensive_points: PointToPieceAssociation,
-    pub white_king: Option<Rc<Piece>>,
-    pub black_king: Option<Rc<Piece>>,
+    white_king: Option<Rc<Piece>>,
+    black_king: Option<Rc<Piece>>,
+    next_piece_id: usize,
 }
 
 impl Board {
@@ -64,103 +70,52 @@ impl Board {
                         Color::White
                     }
                 };
-                let piece: Option<Rc<Piece>>;
                 let point = Point::new(x, y);
-                piece = match (y, x) {
+                match (y, x) {
                     // White pieces
-                    (1, 1) | (1, 8) => Some(
-                        Rc::new(
-                            Piece::Rook(
-                                Rook::new(
-                                    Color::White, Some(vec![rook::Buff::Castle]), None, point, point
-                                )
-                            )
-                        )
+                    (1, 1) | (1, 8) => board.add_piece(
+                        "Rook", Color::White, vec![Buff::Castle], vec![], point
                     ),
-                    (1, 2) | (1, 7) => Some(
-                        Rc::new(
-                            Piece::Knight(
-                                Knight::new(Color::White, None, None, point, point)
-                            )
-                        )
+                    (1, 2) | (1, 7) => board.add_piece(
+                        "Knight", Color::White, vec![], vec![], point
                     ),
-                    (1, 3) | (1, 6) => Some(
-                        Rc::new(
-                            Piece::Bishop(
-                                Bishop::new(Color::White, None, None, point, point)
-                            )
-                        )
+                    (1, 3) | (1, 6) => board.add_piece(
+                        "Bishop", Color::White, vec![], vec![], point
                     ),
-                    (1, 4) => Some(
-                        Rc::new(
-                            Piece::Queen(
-                                Queen::new(Color::White, None, None, point, point)
-                            )
-                        )
+                    (1, 4) => board.add_piece(
+                        "Queen", Color::White, vec![], vec![], point
                     ),
-                    (1, 5) => Some(
-                        Rc::new(
-                            Piece::King(
-                                King::new(
-                                    Color::White, Some(vec![king::Buff::Castle]), None, point, point
-                                )
-                            )
-                        )
+                    (1, 5) => board.add_piece(
+                        "King", Color::White, vec![Buff::Castle], vec![], point
                     ),
-                    (2, _) => Some(
-                        Rc::new(
-                            Piece::Pawn(Pawn::new(Color::White, None, None, point, point))
-                        )
+                    (2, _) => board.add_piece(
+                        "Pawn", Color::White, vec![], vec![], point
                     ),
                     // Black pieces
-                    (8, 1) | (8, 8) => Some(
-                        Rc::new(
-                            Piece::Rook(
-                                Rook::new(
-                                    Color::Black, Some(vec![rook::Buff::Castle]), None, point, point
-                                )
-                            )
-                        )
+                    (8, 1) | (8, 8) => board.add_piece(
+                        "Rook", Color::Black, vec![Buff::Castle], vec![], point
                     ),
-                    (8, 2) | (8, 7) => Some(
-                        Rc::new(
-                            Piece::Knight(Knight::new(Color::Black, None, None, point, point))
-                        )
+                    (8, 2) | (8, 7) => board.add_piece(
+                        "Knight", Color::Black, vec![], vec![], point
                     ),
-                    (8, 3) | (8, 6) => Some(
-                        Rc::new(
-                            Piece::Bishop(Bishop::new(Color::Black, None, None, point, point))
-                        )
+                    (8, 3) | (8, 6) => board.add_piece(
+                        "Bishop", Color::Black, vec![], vec![], point
                     ),
-                    (8, 5) => Some(
-                        Rc::new(
-                            Piece::King(
-                                King::new(
-                                    Color::Black, Some(vec![king::Buff::Castle]), None, point, point
-                                )
-                            )
-                        )
+                    (8, 5) => board.add_piece(
+                        "King", Color::Black, vec![Buff::Castle], vec![], point
                     ),
-                    (8, 4) => Some(
-                        Rc::new(
-                            Piece::Queen(Queen::new(Color::Black, None, None, point, point))
-                        )
+                    (8, 4) => board.add_piece(
+                        "Queen", Color::Black, vec![], vec![], point
                     ),
-                    (7, _) => Some(
-                        Rc::new(
-                            Piece::Pawn(Pawn::new(Color::Black, None, None, point, point))
-                        )
+                    (7, _) => board.add_piece(
+                        "Pawn", Color::Black, vec![], vec![], point
                     ),
-                    _ => None
+                    _ => ()
                 };
-                board.get_board_mut().insert(point, Cell::new(color, piece));
             }
         }
-
-        board.white_king = board.get_board().get(&Point::new(1, 5)).unwrap().get_piece_rc();
-        board.black_king = board.get_board().get(&Point::new(8, 5)).unwrap().get_piece_rc();
-        board.calculate_attacks();
-        board.calculate_defends();
+        board.white_king = board.get_board().get(&Point::new(5, 1)).unwrap().get_piece_rc();
+        board.black_king = board.get_board().get(&Point::new(5, 8)).unwrap().get_piece_rc();
         board
     }
 
@@ -184,10 +139,40 @@ impl Board {
         &self.black_attack_points
     }
 
-    pub fn get_attacked_points(&self, color: Color) -> &PointToPieceAssociation {
+    pub fn get_white_attack_points_mut(&mut self) -> &mut PointToPieceAssociation {
+        &mut self.white_attack_points
+    }
+
+    pub fn get_black_attack_points_mut(&mut self) -> &mut PointToPieceAssociation {
+        &mut self.black_attack_points
+    }
+
+
+    pub fn get_attacked_points(&self, color: &Color) -> &PointToPieceAssociation {
         match color {
             Color::White => self.get_black_attack_points(),
             Color::Black => self.get_white_attack_points(),
+        }
+    }
+
+    pub fn get_attacked_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+        match color {
+            Color::White => self.get_black_attack_points_mut(),
+            Color::Black => self.get_white_attack_points_mut(),
+        }
+    }
+
+    pub fn get_attack_points(&self, color: &Color) -> &PointToPieceAssociation {
+        match color {
+            Color::White => self.get_white_attack_points(),
+            Color::Black => self.get_black_attack_points(),
+        }
+    }
+
+    pub fn get_attack_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+        match color {
+            Color::White => self.get_white_attack_points_mut(),
+            Color::Black => self.get_black_attack_points_mut(),
         }
     }
 
@@ -199,8 +184,30 @@ impl Board {
         &self.black_defensive_points
     }
 
+    pub fn get_white_defensive_points_mut(&mut self) -> &mut PointToPieceAssociation {
+        &mut self.white_defensive_points
+    }
+
+    pub fn get_black_defensive_points_mut(&mut self) -> &mut PointToPieceAssociation {
+        &mut self.black_defensive_points
+    }
+
+    pub fn get_defensive_points(&self, color: &Color) -> &PointToPieceAssociation {
+        match color {
+            Color::White => self.get_white_defensive_points(),
+            Color::Black => self.get_black_defensive_points(),
+        }
+    }
+
+    pub fn get_defensive_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+        match color {
+            Color::White => self.get_white_defensive_points_mut(),
+            Color::Black => self.get_black_defensive_points_mut(),
+        }
+    }
+
     pub fn empty(min_point: Point, max_point: Point) -> Self {
-        Self {
+        let mut board = Self {
             board: IndexMap::with_hasher(BuildHasherDefault::default()),
             white_king: None,
             black_king: None,
@@ -213,45 +220,55 @@ impl Board {
             black_x_ray_points: PointToPieceAssociation::empty(Color::Black),
             white_defensive_points: PointToPieceAssociation::empty(Color::Black),
             black_defensive_points: PointToPieceAssociation::empty(Color::Black),
-        }
-    }
-
-    fn calculate_attacks(&mut self) {
-        for (point, cell) in &self.board {
-            if let Some(piece) = cell.get_piece() {
-                let attacks = piece.attack_points(self);
-                for attack_point in attacks.into_iter() {
-                    match piece.get_color() {
-                        Color::White => self.white_attack_points.add_move(attack_point, piece),
-                        Color::Black => self.black_attack_points.add_move(attack_point, piece),
-                    };
-                }
+            next_piece_id: 0,
+        };
+        for y in board.get_dimension().get_rows_range() {
+            for x in board.get_dimension().get_columns_range() {
+                let color = {
+                    if (x + y) % 2 == 0 {
+                        Color::Black
+                    } else {
+                        Color::White
+                    }
+                };
+                let point = Point::new(x, y);
+                board.get_board_mut().insert(point, Cell::new(color, None));
             }
         }
-        ()
+        board
     }
 
-    fn calculate_defends(&mut self) {
-        for (point, cell) in &self.board {
-            if let Some(piece) = cell.get_piece() {
-                let defends = piece.defensive_points(self);
-                for defend_point in defends.into_iter() {
-                    match piece.get_color() {
-                        Color::White => self.white_defensive_points.add_move(defend_point, piece),
-                        Color::Black => self.black_defensive_points.add_move(defend_point, piece),
-                    };
-                }
-            }
-        }
-        ()
+    fn pieces_to_recalculate(&mut self, point: &Point) -> Vec<Rc<Piece>> {
+        let mut pieces =
+            self.white_attack_points.get_pieces_mut(&point).iter().collect::<Vec<_>>();
+        pieces.append(
+            &mut self.black_attack_points.get_pieces_mut(&point).iter().collect::<Vec<_>>()
+        );
+        pieces.into_iter().map(|piece| Rc::clone(piece)).collect::<Vec<_>>()
     }
 
-    fn calculate_x_ray_points(&mut self) {
-        // white_xray_points
-        if let Some(king) = &self.white_king {
+    fn calculate_attacks_for(&mut self, piece: &Rc<Piece>) {
+        self.get_attack_points_mut(&piece.get_color()).clear_moves(piece);
 
+        let attacks = piece.attack_points(self);
+        for attack_point in attacks.into_iter() {
+            self.get_attack_points_mut(&piece.get_color()).add_move(attack_point, piece);
         }
-        todo!()
+    }
+
+    fn calculate_defends_for(&mut self, piece: &Rc<Piece>) {
+        self.get_defensive_points_mut(&piece.get_color()).clear_moves(piece);
+
+        let defends = piece.defensive_points(self);
+        for defend_point in defends.into_iter() {
+            self.get_defensive_points_mut(&piece.get_color()).add_move(defend_point, piece);
+        }
+    }
+
+    fn calculate_pins_for(&self, piece: &Rc<Piece>) {
+        for pinned_by in self.get_attacked_points(&piece.get_color()).get_x_ray_pieces() {
+            self.add_pins(piece, pinned_by)
+        }
     }
 
     pub fn is_empty_cell(&self, point: &Point) -> bool {
@@ -275,6 +292,141 @@ impl Board {
     pub fn get_cell(&self, point: &Point) -> &Cell {
         self.board.get(point).unwrap()
     }
+
+    pub fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
+        let points = self.get_attacked_points(&pin_to.get_color()).get_points(pinned_by);
+        if let Some(points) = points {
+            if points.contains(pin_to.get_current_position()) {
+                // No need to calculate pinned pieces, because pin_to piece is directly attacked by the
+                // given pinned_by piece
+                return;
+            }
+        }
+
+        let enemy_color = pinned_by.get_color();
+        let x_ray_direction =
+            match &**pinned_by {
+                Piece::Bishop(_) => {
+                    if let Some(vector) = DiagonalVector::calc_direction(
+                        pinned_by.get_current_position(), pin_to.get_current_position()
+                    ) {
+                        Some(Vector::Diagonal(vector))
+                    } else {
+                        None
+                    }
+                },
+                Piece::Rook(_) => {
+                    if let Some(vector) = LineVector::calc_direction(
+                        pinned_by.get_current_position(), pin_to.get_current_position()
+                    ) {
+                        Some(Vector::Line(vector))
+                    } else {
+                        None
+                    }
+                },
+                Piece::Queen(_) => {
+                    if let Some(vector) = DiagonalVector::calc_direction(
+                        pinned_by.get_current_position(), pin_to.get_current_position()
+                    ) {
+                        Some(Vector::Diagonal(vector))
+                    } else if let Some(vector) = LineVector::calc_direction(
+                        pinned_by.get_current_position(), pin_to.get_current_position()
+                    ) {
+                        Some(Vector::Line(vector))
+                    } else {
+                        None
+                    }
+                },
+                _ => None,
+            };
+
+        match x_ray_direction {
+            Some(direction) => {
+                let mut current_piece_on_the_way: Option<&Rc<Piece>> = None;
+                let vector_points = VectorPoints::without_initial(
+                    *pinned_by.get_current_position(),
+                    *self.get_dimension(),
+                    direction
+                );
+
+                for point in vector_points {
+                    if let Some(piece) = self.get_cell(&point).get_piece() {
+                        // Enemy piece meets his ally
+                        if piece.get_color() == &enemy_color {
+                            break
+                        }
+                        match current_piece_on_the_way {
+                            Some(p) => {
+                                if piece == pin_to {
+                                    // Current piece meets itself. We have a bound!
+                                    Rc::get_mut(&mut Rc::clone(p)).unwrap().add_debuff(
+                                        Debuff::Pin(direction.reverse())
+                                    );
+                                }
+                                break
+                            },
+                            None => { current_piece_on_the_way = Some(piece) }
+                        }
+                    }
+                }
+                ()
+            }
+            None => ()
+        }
+    }
+
+    pub fn get_next_piece_id(&mut self) -> usize {
+        self.next_piece_id += 1;
+        self.next_piece_id
+    }
+
+    pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
+                     position: Point) {
+        let piece = Rc::new(
+            Piece::init_piece_by_name(
+                name, color, buffs, debuffs, position, self.get_next_piece_id()
+            )
+        );
+        let cell = &mut self.get_board_mut().get_mut(&position).unwrap();
+        cell.set_piece_rc(&piece);
+        let mut pieces_to_recalculate = self.pieces_to_recalculate(&position);
+        pieces_to_recalculate.push(piece);
+        for piece in pieces_to_recalculate {
+            self.calculate_attacks_for(&piece);
+            self.calculate_defends_for(&piece);
+        }
+        if let Some(white_king) = &self.white_king {
+            self.calculate_pins_for(&white_king);
+        }
+        if let Some(black_king) = &self.black_king {
+            self.calculate_pins_for(&black_king);
+        }
+    }
+
+    pub fn set_king(&mut self, position: &Point) {
+        let cell = self.get_board().get(position).unwrap();
+        match cell.get_piece() {
+            Some(p) => {
+                match &**p {
+                    Piece::King(_) => {
+                        match p.get_color() {
+                            Color::White => {
+                                self.white_king = cell.get_piece_rc();
+                                self.calculate_pins_for(&self.white_king.as_ref().unwrap());
+                            },
+                            Color::Black => {
+                                self.black_king = cell.get_piece_rc();
+                                self.calculate_pins_for(&self.black_king.as_ref().unwrap());
+                            },
+                        }
+                    },
+                    _ => panic!("Can't assign {} as {:?} king!", p.pp(), p.get_color())
+                }
+                ()
+            }
+            _ => ()
+        }
+    }
 }
 
 
@@ -297,14 +449,15 @@ impl PrettyPrint for Board {
         }
         output.push_str("  ");
 
-        let vector_points = VectorPoints::new(
+        let vector_points = VectorPoints::with_initial(
             Point::new(
-                *self.dimension.get_min_point().get_x().get_value() - 1,
+                *self.dimension.get_min_point().get_x().get_value(),
                 *self.dimension.get_max_point().get_y().get_value()
             ),
-            self.dimension
+            self.dimension,
+            Vector::Line(LineVector::Right)
         );
-        for point in vector_points.calc_points(Vector::Line(LineVector::Right), |_| true, |_| false) {
+        for point in vector_points {
             output.push_str(" ");
             output.push_str(point.get_x().pp().as_str());
             output.push_str("  ");
@@ -314,5 +467,25 @@ impl PrettyPrint for Board {
         }
         buf.push(output);
         buf.join("")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_white_attack_points() {
+        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        board.add_piece(
+            "King", Color::Black, vec![], vec![], Point::new(4, 6)
+        );
+        board.add_piece(
+            "Knight", Color::Black, vec![], vec![], Point::new(4, 5)
+        );
+        board.add_piece(
+            "Queen", Color::White, vec![], vec![], Point::new(4, 2)
+        );
+        todo!()
     }
 }

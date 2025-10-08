@@ -22,6 +22,14 @@ impl Cell {
         }        
     }
 
+    pub fn set_piece_rc(&mut self, piece: &Rc<Piece>) {
+        self.piece = Some(Rc::clone(piece));
+    }
+
+    pub fn remove_piece(&mut self) {
+        self.piece = None;
+    }
+
     pub fn get_piece(&self) -> &Option<Rc<Piece>> {
         &self.piece
     }

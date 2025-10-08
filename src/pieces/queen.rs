@@ -1,5 +1,7 @@
 use crate::board::{Board, INVERT_COLORS};
+use crate::buff::Buff;
 use crate::color::Color;
+use crate::debuff::Debuff;
 use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
@@ -12,24 +14,23 @@ pub struct Queen {
     buffs: Vec<Buff>,
     debuffs: Vec<Debuff>,
     current_position: Point,
-    initial_position: Point,
+    id: usize,
 }
 
-#[derive(Debug)]
-pub enum Buff {}
+impl Queen {
+    pub fn add_debuff(&mut self, debuff: Debuff) {
+        self.debuffs.push(debuff)
+    }
 
-#[derive(Debug)]
-pub enum Debuff {
-    Captured,
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 impl PieceInit for Queen {
-    type Buff = Buff;
-    type Debuff = Debuff;
-
-    fn from_parts(color: Color, buffs: Vec<Self::Buff>, debuffs: Vec<Self::Debuff>,
-                  current_position: Point, initial_position: Point) -> Self {
-        Self { color, buffs, debuffs, current_position, initial_position }
+    fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
+                  current_position: Point, id: usize) -> Self {
+        Self { color, buffs, debuffs, current_position, id }
     }
 }
 
@@ -50,21 +51,20 @@ impl PrettyPrint for Queen {
 
 impl AttackPoints for Queen {
     fn attack_points(&self, board: &Board) -> Vec<Point> {
-        let validator = |point: &Point| {
-            board.is_empty_cell(point) || board.is_enemy_cell(point, &self.color)
-        };
-        let terminator = |point: &Point| {
-            !board.is_empty_cell(&point)
-        };
-
         let mut points: Vec<Point> = vec![];
-        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        for direction in Vector::diagonal_vectors() {
-            points.append(&mut vector_points.calc_points(direction, validator, terminator));
-        }
-        for direction in Vector::line_vectors() {
-            points.append(&mut vector_points.calc_points(direction, validator, terminator));
+        for direction in Vector::diagonal_and_line_vectors() {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position, *board.get_dimension(), direction
+            );
+            for point in vector_points {
+                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                    points.push(point)
+                }
+                if !board.is_empty_cell(&point) {
+                    break
+                }
+            }
         }
 
         points
@@ -73,21 +73,20 @@ impl AttackPoints for Queen {
 
 impl DefensivePoints for Queen {
     fn defensive_points(&self, board: &Board) -> Vec<Point> {
-        let validator = |point: &Point| {
-            board.is_ally_cell(&point, &self.color)
-        };
-        let terminator = |point: &Point| {
-            !board.is_empty_cell(&point)
-        };
-
         let mut points: Vec<Point> = vec![];
-        let vector_points = VectorPoints::new(self.current_position, *board.get_dimension());
 
-        for direction in Vector::diagonal_vectors() {
-            points.append(&mut vector_points.calc_points(direction, validator, terminator));
-        }
-        for direction in Vector::line_vectors() {
-            points.append(&mut vector_points.calc_points(direction, validator, terminator));
+        for direction in Vector::diagonal_and_line_vectors() {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position, *board.get_dimension(), direction
+            );
+            for point in vector_points {
+                if board.is_ally_cell(&point, &self.color) {
+                    points.push(point)
+                }
+                if !board.is_empty_cell(&point) {
+                    break
+                }
+            }
         }
 
         points
@@ -97,9 +96,5 @@ impl DefensivePoints for Queen {
 impl Positioning for Queen {
     fn get_current_position(&self) -> &Point {
         &self.current_position
-    }
-
-    fn get_initial_position(&self) -> &Point {
-        &self.initial_position
     }
 }
