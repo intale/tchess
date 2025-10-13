@@ -7,7 +7,7 @@ pub mod diagonal_vector;
 pub mod line_vector;
 pub mod jump_vector;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Vector {
     Diagonal(DiagonalVector),
     Jump(JumpVector),

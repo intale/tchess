@@ -1,7 +1,7 @@
 use crate::pieces::Piece;
 use crate::point::Point;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Buff {
     Castle,
     EnPassant(Point),

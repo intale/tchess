@@ -158,6 +158,28 @@ impl Piece {
             Piece::King(p) => p.id(),
         }
     }
+
+    pub fn buffs(&self) -> &Vec<Buff> {
+        match self {
+            Piece::Pawn(p) => p.buffs(),
+            Piece::Rook(p) => p.buffs(),
+            Piece::Knight(p) => p.buffs(),
+            Piece::Bishop(p) => p.buffs(),
+            Piece::Queen(p) => p.buffs(),
+            Piece::King(p) => p.buffs(),
+        }
+    }
+
+    pub fn debuffs(&self) -> &Vec<Debuff> {
+        match self {
+            Piece::Pawn(p) => p.debuffs(),
+            Piece::Rook(p) => p.debuffs(),
+            Piece::Knight(p) => p.debuffs(),
+            Piece::Bishop(p) => p.debuffs(),
+            Piece::Queen(p) => p.debuffs(),
+            Piece::King(p) => p.debuffs(),
+        }
+    }
 }
 
 impl PrettyPrint for Piece {

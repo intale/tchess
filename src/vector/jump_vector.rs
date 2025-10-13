@@ -1,6 +1,6 @@
 use crate::point::Point;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum JumpVector {
     TopLeftLeft,
     TopLeftRight,

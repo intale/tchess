@@ -1,6 +1,6 @@
 use crate::vector::Vector;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Debuff {
     Captured,
     Check,

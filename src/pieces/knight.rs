@@ -25,6 +25,14 @@ impl Knight {
     pub fn id(&self) -> usize {
         self.id
     }
+
+    pub fn buffs(&self) -> &Vec<Buff> {
+        &self.buffs
+    }
+
+    pub fn debuffs(&self) -> &Vec<Debuff> {
+        &self.debuffs
+    }
 }
 
 impl PieceInit for Knight {
