@@ -349,10 +349,9 @@ impl Board {
                         match current_piece_on_the_way {
                             Some(p) => {
                                 if piece == pin_to {
-                                    // Current piece meets itself. We have a bound!
-                                    Rc::get_mut(&mut Rc::clone(p)).unwrap().add_debuff(
-                                        Debuff::Pin(direction.reverse())
-                                    );
+                                    // Current piece is pin_to. We have a bound!
+                                    p.debuffs().add(Debuff::Pin(direction));
+                                    p.debuffs().add(Debuff::Pin(direction.reverse()));
                                 }
                                 break
                             },
@@ -467,33 +466,41 @@ impl PrettyPrint for Board {
 
 #[cfg(test)]
 pub mod test_util {
+    use crate::board::Board;
     use crate::buff::Buff;
     use crate::debuff::Debuff;
+    use crate::utils::pretty_print::PrettyPrint;
 
-    pub fn compare_buffs(vec1: &Vec<Buff>, vec2: &Vec<Buff>) {
-        let lh_rest = vec1.iter().filter(|buff| vec2.contains(buff)).collect::<Vec<_>>();
-        let rh_rest = vec2.iter().filter(|buff| vec1.contains(buff)).collect::<Vec<_>>();
+    pub fn compare_buffs(board: &Board, vec1: &Vec<Buff>, vec2: &Vec<Buff>) {
+        let lh_rest = vec1.iter().filter(|buff| !vec2.contains(buff)).collect::<Vec<_>>();
+        let rh_rest = vec2.iter().filter(|buff| !vec1.contains(buff)).collect::<Vec<_>>();
         if lh_rest.len() > 0 && rh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}. Extra elements: {rh_rest:?}.")
         }
         if lh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}.")
         }
         if rh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Extra elements: {rh_rest:?}.")
         }
     }
 
-    pub fn compare_debuffs(vec1: &Vec<Debuff>, vec2: &Vec<Debuff>) {
-        let lh_rest = vec1.iter().filter(|debuff| vec2.contains(debuff)).collect::<Vec<_>>();
-        let rh_rest = vec2.iter().filter(|debuff| vec1.contains(debuff)).collect::<Vec<_>>();
+    pub fn compare_debuffs(board: &Board, vec1: &Vec<Debuff>, vec2: &Vec<Debuff>) {
+        let lh_rest = vec1.iter().filter(|debuff| !vec2.contains(debuff)).collect::<Vec<_>>();
+        let rh_rest = vec2.iter().filter(|debuff| !vec1.contains(debuff)).collect::<Vec<_>>();
         if lh_rest.len() > 0 && rh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}. Extra elements: {rh_rest:?}.")
         }
         if lh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}.")
         }
         if rh_rest.len() > 0 {
+            println!("{}", board.pp());
             panic!("Expected {vec2:?} to match {vec1:?}. Extra elements: {rh_rest:?}.")
         }
     }
@@ -505,7 +512,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_white_pin_points() {
+    fn test_black_pin_points() {
         let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
         board.add_piece(
             "King", Color::Black, vec![], vec![], Point::new(4, 6)
@@ -518,9 +525,39 @@ mod tests {
         );
 
         let knight = board.get_cell(&Point::new(4, 5)).get_piece().as_ref().unwrap();
-        println!("{}", board.pp());
-        println!("{:?}", knight.debuffs());
-        todo!();
-        compare_debuffs(&knight.debuffs(), &vec![])
+
+        compare_debuffs(
+            &board,
+            &knight.debuffs().to_vec(),
+            &vec![
+                Debuff::Pin(Vector::Line(LineVector::Top)),
+                Debuff::Pin(Vector::Line(LineVector::Bottom)),
+            ]
+        )
+    }
+
+    #[test]
+    fn test_white_pin_points() {
+        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        board.add_piece(
+            "King", Color::White, vec![], vec![], Point::new(2, 2)
+        );
+        board.add_piece(
+            "Pawn", Color::White, vec![], vec![], Point::new(4, 4)
+        );
+        board.add_piece(
+            "Bishop", Color::Black, vec![], vec![], Point::new(6, 6)
+        );
+
+        let pawn = board.get_cell(&Point::new(4, 4)).get_piece().as_ref().unwrap();
+
+        compare_debuffs(
+            &board,
+            &pawn.debuffs().to_vec(),
+            &vec![
+                Debuff::Pin(Vector::Diagonal(DiagonalVector::BottomLeft)),
+                Debuff::Pin(Vector::Diagonal(DiagonalVector::TopRight)),
+            ]
+        )
     }
 }

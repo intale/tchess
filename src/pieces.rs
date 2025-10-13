@@ -13,9 +13,9 @@ use bishop::*;
 use queen::*;
 use king::*;
 use crate::board::{Board};
-use crate::buff::Buff;
+use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
-use crate::debuff::Debuff;
+use crate::debuff::{Debuff, DebuffsCollection};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
@@ -132,17 +132,6 @@ impl Piece {
         }
     }
 
-    pub fn add_debuff(&mut self, debuff: Debuff) {
-        match self {
-            Piece::Pawn(p) => p.add_debuff(debuff),
-            Piece::Rook(p) => p.add_debuff(debuff),
-            Piece::Knight(p) => p.add_debuff(debuff),
-            Piece::Bishop(p) => p.add_debuff(debuff),
-            Piece::Queen(p) => p.add_debuff(debuff),
-            Piece::King(p) => p.add_debuff(debuff),
-        }
-    }
-
     pub fn id(&self) -> usize {
         match self {
             Piece::Pawn(p) => p.id(),
@@ -154,7 +143,7 @@ impl Piece {
         }
     }
 
-    pub fn buffs(&self) -> &Vec<Buff> {
+    pub fn buffs(&self) -> &BuffsCollection {
         match self {
             Piece::Pawn(p) => p.buffs(),
             Piece::Rook(p) => p.buffs(),
@@ -165,7 +154,7 @@ impl Piece {
         }
     }
 
-    pub fn debuffs(&self) -> &Vec<Debuff> {
+    pub fn debuffs(&self) -> &DebuffsCollection {
         match self {
             Piece::Pawn(p) => p.debuffs(),
             Piece::Rook(p) => p.debuffs(),
