@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasherDefault;
-use std::ops::Deref;
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
 use crate::color::Color;

@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use crate::board::{Board, INVERT_COLORS};
 use crate::buff::Buff;
 use crate::color::Color;
@@ -13,7 +14,7 @@ pub struct King {
     color: Color,
     buffs: Vec<Buff>,
     debuffs: Vec<Debuff>,
-    current_position: Point,
+    current_position: Cell<Point>,
     id: usize,
 }
 
@@ -38,7 +39,7 @@ impl King {
 impl PieceInit for King {
     fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                   current_position: Point, id: usize) -> Self {
-        Self { color, buffs, debuffs, current_position, id }
+        Self { color, buffs, debuffs, current_position: Cell::new(current_position), id }
     }
 }
 
@@ -54,7 +55,7 @@ impl AttackPoints for King {
 
         for direction in Vector::diagonal_and_line_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position, *board.get_dimension(), direction
+                self.current_position.get(), *board.get_dimension(), direction
             );
             for point in vector_points {
                 if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
@@ -74,7 +75,7 @@ impl DefensivePoints for King {
 
         for direction in Vector::diagonal_and_line_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position, *board.get_dimension(), direction
+                self.current_position.get(), *board.get_dimension(), direction
             );
             for point in vector_points {
                 if board.is_ally_cell(&point, &self.color) {
@@ -98,7 +99,7 @@ impl PrettyPrint for King {
 }
 
 impl Positioning for King {
-    fn get_current_position(&self) -> &Point {
-        &self.current_position
+    fn get_current_position(&self) -> Point {
+        self.current_position.get()
     }
 }

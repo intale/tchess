@@ -5,12 +5,12 @@ use crate::pieces::Piece;
 use crate::utils::pretty_print::PrettyPrint;
 
 #[derive(Debug)]
-pub struct Cell {
+pub struct BoardCell {
     piece: Option<Rc<Piece>>,
     color: Color,
 }
 
-impl Cell {
+impl BoardCell {
     pub fn new(color: Color, piece: Option<Rc<Piece>>) -> Self {
         Self { color, piece }
     }
@@ -35,7 +35,7 @@ impl Cell {
     }
 }
 
-impl PrettyPrint for Cell {
+impl PrettyPrint for BoardCell {
     fn pp(&self) -> String {
         let mut output = String::new();
         let base_sym = match self.color {

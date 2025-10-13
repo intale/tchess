@@ -3,7 +3,7 @@ mod color;
 mod board;
 mod utils;
 mod point;
-mod cell;
+mod board_cell;
 mod point_to_piece_association;
 mod vector;
 mod vector_points;
@@ -11,8 +11,6 @@ mod dimension;
 mod buff;
 mod debuff;
 
-use pieces::*;
-use color::*;
 use board::*;
 use crate::utils::pretty_print::PrettyPrint;
 

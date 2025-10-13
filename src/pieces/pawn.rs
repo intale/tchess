@@ -1,9 +1,9 @@
-use std::ops::DerefMut;
+use std::cell::Cell;
 use crate::board::{Board, INVERT_COLORS};
 use crate::buff::Buff;
 use crate::color::Color;
 use crate::debuff::Debuff;
-use crate::pieces::{AttackPoints, DefensivePoints, Piece, PieceColor, PieceInit, Positioning};
+use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::diagonal_vector::DiagonalVector;
@@ -13,15 +13,15 @@ use crate::vector_points::{VectorPoints};
 #[derive(Debug)]
 pub struct Pawn {
     color: Color,
-    buffs: Box<Vec<Buff>>,
-    debuffs: Box<Vec<Debuff>>,
-    current_position: Point,
+    buffs: Vec<Buff>,
+    debuffs: Vec<Debuff>,
+    current_position: Cell<Point>,
     id: usize,
 }
 
 impl Pawn {
     pub fn add_debuff(&mut self, debuff: Debuff) {
-        self.debuffs.deref_mut().push(debuff);
+        self.debuffs.push(debuff);
     }
 
     pub fn id(&self) -> usize {
@@ -40,7 +40,7 @@ impl Pawn {
 impl PieceInit for Pawn {
     fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                   current_position: Point, id: usize) -> Self {
-        Self { color, buffs: Box::new(buffs), debuffs: Box::new(debuffs), current_position, id }
+        Self { color, buffs, debuffs, current_position: Cell::new(current_position), id }
     }
 }
 
@@ -64,7 +64,7 @@ impl AttackPoints for Pawn {
         };
         for direction in directions {
             let vector_points = VectorPoints::without_initial(
-                self.current_position, *board.get_dimension(), direction
+                self.current_position.get(), *board.get_dimension(), direction
             );
             for point in vector_points {
                 if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
@@ -97,7 +97,7 @@ impl DefensivePoints for Pawn {
         };
         for direction in directions {
             let vector_points = VectorPoints::without_initial(
-                self.current_position, *board.get_dimension(), direction
+                self.current_position.get(), *board.get_dimension(), direction
             );
             for point in vector_points {
                 if board.is_ally_cell(&point, &self.color) {
@@ -111,8 +111,8 @@ impl DefensivePoints for Pawn {
 }
 
 impl Positioning for Pawn {
-    fn get_current_position(&self) -> &Point {
-        &self.current_position
+    fn get_current_position(&self) -> Point {
+        self.current_position.get()
     }
 }
 

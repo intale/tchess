@@ -1,4 +1,4 @@
-use std::ops::{Range, RangeInclusive, Sub};
+use std::ops::{RangeInclusive};
 use crate::point::Point;
 
 #[derive(Copy, Clone)]

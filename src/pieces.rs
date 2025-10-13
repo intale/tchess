@@ -6,7 +6,6 @@ pub mod queen;
 pub mod king;
 
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use pawn::*;
 use rook::*;
 use knight::*;
@@ -19,10 +18,6 @@ use crate::color::Color;
 use crate::debuff::Debuff;
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
-use crate::vector::diagonal_vector::DiagonalVector;
-use crate::vector::line_vector::LineVector;
-use crate::vector::Vector;
-use crate::vector_points::VectorPoints;
 
 trait MovePiece {
     fn move_piece(&self, x: u8);
@@ -66,7 +61,7 @@ trait DefensivePoints {
 }
 
 trait Positioning {
-    fn get_current_position(&self) -> &Point;
+    fn get_current_position(&self) -> Point;
 }
 
 #[derive(Debug)]
@@ -126,7 +121,7 @@ impl Piece {
         }
     }
 
-    pub fn get_current_position(&self) -> &Point {
+    pub fn get_current_position(&self) -> Point {
         match self {
             Piece::Pawn(p) => p.get_current_position(),
             Piece::Rook(p) => p.get_current_position(),

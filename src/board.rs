@@ -1,22 +1,13 @@
 use std::cmp::PartialEq;
 use std::hash::{BuildHasherDefault};
 use std::rc::Rc;
-use std::slice::RChunks;
 use nohash_hasher::NoHashHasher;
 
 use crate::color::Color;
 use crate::pieces::{Piece, PieceInit};
-use crate::pieces::{
-    bishop::Bishop,
-    king::King,
-    knight::Knight,
-    pawn::Pawn,
-    queen::Queen,
-    rook::Rook,
-};
 use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
-use crate::cell::{Cell};
+use crate::board_cell::{BoardCell};
 use indexmap::{IndexMap};
 use crate::buff::Buff;
 use crate::debuff::Debuff;
@@ -36,7 +27,7 @@ pub const INVERT_COLORS: bool = true;
 pub const WHITE_SIDE: bool = true;
 
 // https://docs.rs/indexmap/latest/indexmap/
-type BoardMap = IndexMap<Point, Cell, BuildHasherDefault<NoHashHasher<Point>>>;
+type BoardMap = IndexMap<Point, BoardCell, BuildHasherDefault<NoHashHasher<Point>>>;
 
 pub struct Board {
     board: BoardMap,
@@ -232,7 +223,7 @@ impl Board {
                     }
                 };
                 let point = Point::new(x, y);
-                board.get_board_mut().insert(point, Cell::new(color, None));
+                board.get_board_mut().insert(point, BoardCell::new(color, None));
             }
         }
         board
@@ -289,14 +280,14 @@ impl Board {
         false
     }
 
-    pub fn get_cell(&self, point: &Point) -> &Cell {
+    pub fn get_cell(&self, point: &Point) -> &BoardCell {
         self.board.get(point).unwrap()
     }
 
     pub fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
         let points = self.get_attacked_points(&pin_to.get_color()).get_points(pinned_by);
         if let Some(points) = points {
-            if points.contains(pin_to.get_current_position()) {
+            if points.contains(&pin_to.get_current_position()) {
                 // No need to calculate pinned pieces, because pin_to piece is directly attacked by the
                 // given pinned_by piece
                 return;
@@ -308,7 +299,7 @@ impl Board {
             match &**pinned_by {
                 Piece::Bishop(_) => {
                     if let Some(vector) = DiagonalVector::calc_direction(
-                        pinned_by.get_current_position(), pin_to.get_current_position()
+                        &pinned_by.get_current_position(), &pin_to.get_current_position()
                     ) {
                         Some(Vector::Diagonal(vector))
                     } else {
@@ -317,7 +308,7 @@ impl Board {
                 },
                 Piece::Rook(_) => {
                     if let Some(vector) = LineVector::calc_direction(
-                        pinned_by.get_current_position(), pin_to.get_current_position()
+                        &pinned_by.get_current_position(), &pin_to.get_current_position()
                     ) {
                         Some(Vector::Line(vector))
                     } else {
@@ -326,11 +317,11 @@ impl Board {
                 },
                 Piece::Queen(_) => {
                     if let Some(vector) = DiagonalVector::calc_direction(
-                        pinned_by.get_current_position(), pin_to.get_current_position()
+                        &pinned_by.get_current_position(), &pin_to.get_current_position()
                     ) {
                         Some(Vector::Diagonal(vector))
                     } else if let Some(vector) = LineVector::calc_direction(
-                        pinned_by.get_current_position(), pin_to.get_current_position()
+                        &pinned_by.get_current_position(), &pin_to.get_current_position()
                     ) {
                         Some(Vector::Line(vector))
                     } else {
@@ -344,7 +335,7 @@ impl Board {
             Some(direction) => {
                 let mut current_piece_on_the_way: Option<&Rc<Piece>> = None;
                 let vector_points = VectorPoints::without_initial(
-                    *pinned_by.get_current_position(),
+                    pinned_by.get_current_position(),
                     *self.get_dimension(),
                     direction
                 );
