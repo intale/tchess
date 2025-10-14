@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use crate::debuff::Debuff;
 use crate::point::Point;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -23,7 +22,7 @@ impl BuffsCollection {
         self.buffs.borrow_mut().push(buff)
     }
 
-    pub fn to_vec(&self) -> Vec<Buff> {
-        self.buffs.borrow()[..].iter().map(|buff| buff.clone()).collect::<Vec<_>>()
+    pub fn to_ref_cell(&self) -> RefCell<Vec<Buff>> {
+        self.buffs.to_owned()
     }
 }

@@ -14,9 +14,9 @@ impl BoardCell {
     pub fn new(color: Color, piece: Option<Rc<Piece>>) -> Self {
         Self { color, piece }
     }
-    
+
     pub fn get_piece_rc(&self) -> Option<Rc<Piece>> {
-        match &self.piece { 
+        match &self.piece {
             Some(piece) => Some(Rc::clone(piece)),
             _ => None
         }        

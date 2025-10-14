@@ -25,7 +25,7 @@ impl DebuffsCollection {
         self.debuffs.borrow_mut().push(debuff)
     }
 
-    pub fn to_vec(&self) -> Vec<Debuff> {
-        self.debuffs.borrow()[..].iter().map(|debuff| debuff.clone()).collect::<Vec<_>>()
+    pub fn to_ref_cell(&self) -> RefCell<Vec<Debuff>> {
+        self.debuffs.to_owned()
     }
 }

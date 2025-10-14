@@ -1,18 +1,5 @@
-mod pieces;
-mod color;
-mod board;
-mod utils;
-mod point;
-mod board_cell;
-mod point_to_piece_association;
-mod vector;
-mod vector_points;
-mod dimension;
-mod buff;
-mod debuff;
-
-use board::*;
-use crate::utils::pretty_print::PrettyPrint;
+use tchess::board::*;
+use tchess::utils::pretty_print::PrettyPrint;
 
 fn main() {
     let board = Board::classic_chess_board();

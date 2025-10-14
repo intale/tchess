@@ -64,43 +64,79 @@ impl Board {
                 let point = Point::new(x, y);
                 match (y, x) {
                     // White pieces
-                    (1, 1) | (1, 8) => board.add_piece(
-                        "Rook", Color::White, vec![Buff::Castle], vec![], point
-                    ),
-                    (1, 2) | (1, 7) => board.add_piece(
-                        "Knight", Color::White, vec![], vec![], point
-                    ),
-                    (1, 3) | (1, 6) => board.add_piece(
-                        "Bishop", Color::White, vec![], vec![], point
-                    ),
-                    (1, 4) => board.add_piece(
-                        "Queen", Color::White, vec![], vec![], point
-                    ),
-                    (1, 5) => board.add_piece(
-                        "King", Color::White, vec![Buff::Castle], vec![], point
-                    ),
-                    (2, _) => board.add_piece(
-                        "Pawn", Color::White, vec![], vec![], point
-                    ),
+                    (1, 1) | (1, 8) => {
+                        board.add_piece(
+                            "Rook", Color::White, vec![Buff::Castle], vec![], point,
+                        );
+                            ()
+                    },
+                    (1, 2) | (1, 7) => {
+                        board.add_piece(
+                            "Knight", Color::White, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (1, 3) | (1, 6) => {
+                        board.add_piece(
+                            "Bishop", Color::White, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (1, 4) => {
+                        board.add_piece(
+                            "Queen", Color::White, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (1, 5) => {
+                        board.add_piece(
+                            "King", Color::White, vec![Buff::Castle], vec![], point,
+                        );
+                        ()
+                    },
+                    (2, _) => {
+                        board.add_piece(
+                            "Pawn", Color::White, vec![], vec![], point,
+                        );
+                        ()
+                    },
                     // Black pieces
-                    (8, 1) | (8, 8) => board.add_piece(
-                        "Rook", Color::Black, vec![Buff::Castle], vec![], point
-                    ),
-                    (8, 2) | (8, 7) => board.add_piece(
-                        "Knight", Color::Black, vec![], vec![], point
-                    ),
-                    (8, 3) | (8, 6) => board.add_piece(
-                        "Bishop", Color::Black, vec![], vec![], point
-                    ),
-                    (8, 5) => board.add_piece(
-                        "King", Color::Black, vec![Buff::Castle], vec![], point
-                    ),
-                    (8, 4) => board.add_piece(
-                        "Queen", Color::Black, vec![], vec![], point
-                    ),
-                    (7, _) => board.add_piece(
-                        "Pawn", Color::Black, vec![], vec![], point
-                    ),
+                    (8, 1) | (8, 8) => {
+                        board.add_piece(
+                            "Rook", Color::Black, vec![Buff::Castle], vec![], point,
+                        );
+                        ()
+                    },
+                    (8, 2) | (8, 7) => {
+                        board.add_piece(
+                            "Knight", Color::Black, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (8, 3) | (8, 6) => {
+                        board.add_piece(
+                            "Bishop", Color::Black, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (8, 5) => {
+                        board.add_piece(
+                            "King", Color::Black, vec![Buff::Castle], vec![], point,
+                        );
+                        ()
+                    },
+                    (8, 4) => {
+                        board.add_piece(
+                            "Queen", Color::Black, vec![], vec![], point,
+                        );
+                        ()
+                    },
+                    (7, _) => {
+                        board.add_piece(
+                            "Pawn", Color::Black, vec![], vec![], point,
+                        );
+                        ()
+                    },
                     _ => ()
                 };
             }
@@ -121,7 +157,7 @@ impl Board {
     pub fn get_dimension(&self) -> &Dimension {
         &self.dimension
     }
-    
+
     pub fn get_white_attack_points(&self) -> &PointToPieceAssociation {
         &self.white_attack_points
     }
@@ -371,7 +407,7 @@ impl Board {
     }
 
     pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                     position: Point) {
+                     position: Point) -> Rc<Piece> {
         let piece = Rc::new(
             Piece::init_piece_by_name(
                 name, color, buffs, debuffs, position, self.get_next_piece_id()
@@ -384,7 +420,7 @@ impl Board {
             _ => (),
         }
         let mut pieces_to_recalculate = self.pieces_to_recalculate(&position);
-        pieces_to_recalculate.push(piece);
+        pieces_to_recalculate.push(Rc::clone(&piece));
         for piece in pieces_to_recalculate {
             self.calculate_attacks_for(&piece);
             self.calculate_defends_for(&piece);
@@ -395,6 +431,7 @@ impl Board {
         if let Some(black_king) = &self.black_king {
             self.calculate_pins_for(&black_king);
         }
+        piece
     }
 
     pub fn set_king(&mut self, position: &Point) {
@@ -464,100 +501,9 @@ impl PrettyPrint for Board {
     }
 }
 
-#[cfg(test)]
-pub mod test_util {
-    use crate::board::Board;
-    use crate::buff::Buff;
-    use crate::debuff::Debuff;
-    use crate::utils::pretty_print::PrettyPrint;
 
-    pub fn compare_buffs(board: &Board, vec1: &Vec<Buff>, vec2: &Vec<Buff>) {
-        let lh_rest = vec1.iter().filter(|buff| !vec2.contains(buff)).collect::<Vec<_>>();
-        let rh_rest = vec2.iter().filter(|buff| !vec1.contains(buff)).collect::<Vec<_>>();
-        if lh_rest.len() > 0 && rh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}. Extra elements: {rh_rest:?}.")
-        }
-        if lh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}.")
-        }
-        if rh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Extra elements: {rh_rest:?}.")
-        }
-    }
-
-    pub fn compare_debuffs(board: &Board, vec1: &Vec<Debuff>, vec2: &Vec<Debuff>) {
-        let lh_rest = vec1.iter().filter(|debuff| !vec2.contains(debuff)).collect::<Vec<_>>();
-        let rh_rest = vec2.iter().filter(|debuff| !vec1.contains(debuff)).collect::<Vec<_>>();
-        if lh_rest.len() > 0 && rh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}. Extra elements: {rh_rest:?}.")
-        }
-        if lh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Missing elements: {lh_rest:?}.")
-        }
-        if rh_rest.len() > 0 {
-            println!("{}", board.pp());
-            panic!("Expected {vec2:?} to match {vec1:?}. Extra elements: {rh_rest:?}.")
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
-    use crate::board::test_util::*;
-    use super::*;
 
-    #[test]
-    fn test_black_pin_points() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
-        board.add_piece(
-            "King", Color::Black, vec![], vec![], Point::new(4, 6)
-        );
-        board.add_piece(
-            "Knight", Color::Black, vec![], vec![], Point::new(4, 5)
-        );
-        board.add_piece(
-            "Queen", Color::White, vec![], vec![], Point::new(4, 2)
-        );
-
-        let knight = board.get_cell(&Point::new(4, 5)).get_piece().as_ref().unwrap();
-
-        compare_debuffs(
-            &board,
-            &knight.debuffs().to_vec(),
-            &vec![
-                Debuff::Pin(Vector::Line(LineVector::Top)),
-                Debuff::Pin(Vector::Line(LineVector::Bottom)),
-            ]
-        )
-    }
-
-    #[test]
-    fn test_white_pin_points() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
-        board.add_piece(
-            "King", Color::White, vec![], vec![], Point::new(2, 2)
-        );
-        board.add_piece(
-            "Pawn", Color::White, vec![], vec![], Point::new(4, 4)
-        );
-        board.add_piece(
-            "Bishop", Color::Black, vec![], vec![], Point::new(6, 6)
-        );
-
-        let pawn = board.get_cell(&Point::new(4, 4)).get_piece().as_ref().unwrap();
-
-        compare_debuffs(
-            &board,
-            &pawn.debuffs().to_vec(),
-            &vec![
-                Debuff::Pin(Vector::Diagonal(DiagonalVector::BottomLeft)),
-                Debuff::Pin(Vector::Diagonal(DiagonalVector::TopRight)),
-            ]
-        )
-    }
 }

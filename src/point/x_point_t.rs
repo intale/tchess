@@ -9,7 +9,7 @@ impl XPointT {
     pub fn new(value: i16) -> Self {
         Self(value)
     }
-    
+
     pub fn get_value(&self) -> &i16 {
         &self.0
     }

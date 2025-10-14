@@ -48,15 +48,8 @@ impl PointToPieceAssociation {
         self.piece_to_points.keys().collect()
     }
 
-    pub fn get_x_ray_pieces(&self) -> Vec<&Rc<Piece>> {
-        self.get_all_pieces().into_iter().filter(|piece| {
-            match &***piece {
-                Piece::Bishop(_) => true,
-                Piece::Rook(_) => true,
-                Piece::Queen(_) => true,
-                _ => false
-            }
-        }).collect()
+    pub fn get_x_ray_pieces(&self) -> &PieceHashSetT {
+        &self.x_ray_pieces
     }
 
     pub fn get_points_mut(&mut self, piece: &Rc<Piece>) -> &mut PointHashSetT {
@@ -71,11 +64,23 @@ impl PointToPieceAssociation {
     }
 
     pub fn add_move(&mut self, point: Point, piece: &Rc<Piece>) -> bool {
+        match **piece {
+            Piece::Bishop(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
+            Piece::Rook(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
+            Piece::Queen(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
+            _ => false
+        };
         self.get_pieces_mut(&point).insert(Rc::clone(piece)) && self.get_points_mut(piece).insert(point)
     }
 
     pub fn clear_moves(&mut self, piece: &Rc<Piece>) {
         let points = self.piece_to_points.remove(piece);
+        match **piece {
+            Piece::Bishop(_) => self.x_ray_pieces.remove(piece),
+            Piece::Rook(_) => self.x_ray_pieces.remove(piece),
+            Piece::Queen(_) => self.x_ray_pieces.remove(piece),
+            _ => false
+        };
         if let Some(points) = points {
             for point in points.iter() {
                 if let Some(pieces) = self.point_to_pieces.get_mut(point) {

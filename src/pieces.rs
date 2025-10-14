@@ -75,7 +75,7 @@ pub enum Piece {
 }
 
 impl Piece {
-    pub fn init_piece_by_name(name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>, 
+    pub fn init_piece_by_name(name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                               current_position: Point, id: usize) -> Self {
         match name {
             "Pawn" => Self::Pawn(Pawn::new(color, buffs, debuffs, current_position, id)),
@@ -168,7 +168,7 @@ impl Piece {
 
 impl PrettyPrint for Piece {
     fn pp(&self) -> String {
-        match self { 
+        match self {
             Piece::Pawn(p) => p.pp(),
             Piece::Rook(p) => p.pp(),
             Piece::Knight(p) => p.pp(),
