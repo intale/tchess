@@ -121,6 +121,14 @@ impl Piece {
         }
     }
 
+    pub fn opposite_color(&self) -> Color {
+        let color = self.get_color();
+        match color {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
+
     pub fn get_current_position(&self) -> Point {
         match self {
             Piece::Pawn(p) => p.get_current_position(),

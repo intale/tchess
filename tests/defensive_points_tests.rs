@@ -15,7 +15,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop).to_vec(),
         &vec![],
     );
 }
@@ -32,12 +32,12 @@ fn when_there_is_an_enemy_piece_around() {
 
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop).to_vec(),
         &vec![],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
+        &board.defensive_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
         &vec![],
     );
 }
@@ -54,14 +54,14 @@ fn when_there_is_an_ally_piece_around() {
 
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop1).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop1).to_vec(),
         &vec![
             &Point::new(3, 3)
         ],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop2).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop2).to_vec(),
         &vec![
             &Point::new(2, 2)
         ],
@@ -83,17 +83,17 @@ fn when_there_is_an_enemy_piece_between_ally_pieces() {
 
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop1).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop1).to_vec(),
         &vec![],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop2).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop2).to_vec(),
         &vec![],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
+        &board.defensive_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
         &vec![],
     );
 }
@@ -113,21 +113,21 @@ fn when_there_is_an_ally_piece_between_ally_pieces() {
 
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop1).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop1).to_vec(),
         &vec![
             &Point::new(3, 3)
         ],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&bishop2).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&bishop2).to_vec(),
         &vec![
             &Point::new(3, 3)
         ],
     );
     compare(
         &board,
-        &board.get_defensive_points(&Color::White).get_points(&pawn).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&pawn).to_vec(),
         &vec![
             &Point::new(4, 4)
         ],

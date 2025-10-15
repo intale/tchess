@@ -15,7 +15,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.get_attack_points(&Color::White).get_points(&bishop).to_vec(),
+        &board.attack_points(&Color::White).get_points(&bishop).to_vec(),
         &vec![
             &Point::new(1, 1),
             &Point::new(1, 3),
@@ -40,7 +40,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
 
     compare(
         &board,
-        &board.get_attack_points(&Color::White).get_points(&bishop).to_vec(),
+        &board.attack_points(&Color::White).get_points(&bishop).to_vec(),
         &vec![
             &Point::new(1, 1),
             &Point::new(1, 3),
@@ -50,7 +50,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
     );
     compare(
         &board,
-        &board.get_attack_points(&Color::Black).get_points(&enemy_bishop1).to_vec(),
+        &board.attack_points(&Color::Black).get_points(&enemy_bishop1).to_vec(),
         &vec![
             &Point::new(2, 2),
             &Point::new(2, 4),
@@ -59,7 +59,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
     );
     compare(
         &board,
-        &board.get_attack_points(&Color::Black).get_points(&enemy_bishop2).to_vec(),
+        &board.attack_points(&Color::Black).get_points(&enemy_bishop2).to_vec(),
         &vec![],
     );
 }
@@ -79,7 +79,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
     compare(
         &board,
-        &board.get_attack_points(&Color::White).get_points(&bishop1).to_vec(),
+        &board.attack_points(&Color::White).get_points(&bishop1).to_vec(),
         &vec![
             &Point::new(1, 1),
             &Point::new(1, 3),
@@ -88,7 +88,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
     );
     compare(
         &board,
-        &board.get_attack_points(&Color::White).get_points(&bishop2).to_vec(),
+        &board.attack_points(&Color::White).get_points(&bishop2).to_vec(),
         &vec![
             &Point::new(2, 4),
             &Point::new(4, 2),
@@ -97,7 +97,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
     );
     compare(
         &board,
-        &board.get_attack_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
+        &board.attack_points(&Color::Black).get_points(&enemy_bishop).to_vec(),
         &vec![
             &Point::new(3, 3),
         ],

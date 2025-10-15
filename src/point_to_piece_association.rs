@@ -2,12 +2,11 @@ use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasherDefault;
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
-use crate::color::Color;
 use crate::pieces::{Piece};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
-type PieceHashSetT = HashSet<Rc<Piece>, BuildHasherDefault<NoHashHasher<Piece>>>;
+pub type PieceHashSetT = HashSet<Rc<Piece>, BuildHasherDefault<NoHashHasher<Piece>>>;
 type PointHashSetT = HashSet<Point, BuildHasherDefault<NoHashHasher<Point>>>;
 type PointToPieceMapT = HashMap<
     Point,
@@ -25,16 +24,13 @@ type PieceToPointMapT = HashMap<
 pub struct PointToPieceAssociation {
     point_to_pieces: PointToPieceMapT,
     piece_to_points: PieceToPointMapT,
-    color: Color,
-    x_ray_pieces: PieceHashSetT,
 }
 
 impl PointToPieceAssociation {
-    pub fn empty(color: Color) -> Self {
+    pub fn empty() -> Self {
         let point_to_pieces: PointToPieceMapT = HashMap::with_hasher(BuildHasherDefault::default());
         let piece_to_points: PieceToPointMapT = HashMap::with_hasher(BuildHasherDefault::default());
-        let x_ray_pieces: PieceHashSetT = HashSet::with_hasher(BuildHasherDefault::default());
-        Self { color, point_to_pieces, piece_to_points, x_ray_pieces }
+        Self { point_to_pieces, piece_to_points }
     }
 
     pub fn get_pieces_mut(&mut self, point: &Point) -> &mut PieceHashSetT {
@@ -46,10 +42,6 @@ impl PointToPieceAssociation {
 
     pub fn get_all_pieces(&self) -> Vec<&Rc<Piece>> {
         self.piece_to_points.keys().collect()
-    }
-
-    pub fn get_x_ray_pieces(&self) -> &PieceHashSetT {
-        &self.x_ray_pieces
     }
 
     pub fn get_points_mut(&mut self, piece: &Rc<Piece>) -> &mut PointHashSetT {
@@ -64,23 +56,11 @@ impl PointToPieceAssociation {
     }
 
     pub fn add_move(&mut self, point: Point, piece: &Rc<Piece>) -> bool {
-        match **piece {
-            Piece::Bishop(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
-            Piece::Rook(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
-            Piece::Queen(_) => self.x_ray_pieces.insert(Rc::clone(piece)),
-            _ => false
-        };
         self.get_pieces_mut(&point).insert(Rc::clone(piece)) && self.get_points_mut(piece).insert(point)
     }
 
     pub fn clear_moves(&mut self, piece: &Rc<Piece>) {
         let points = self.piece_to_points.remove(piece);
-        match **piece {
-            Piece::Bishop(_) => self.x_ray_pieces.remove(piece),
-            Piece::Rook(_) => self.x_ray_pieces.remove(piece),
-            Piece::Queen(_) => self.x_ray_pieces.remove(piece),
-            _ => false
-        };
         if let Some(points) = points {
             for point in points.iter() {
                 if let Some(pieces) = self.point_to_pieces.get_mut(point) {

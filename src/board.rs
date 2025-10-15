@@ -1,4 +1,5 @@
 use std::cmp::PartialEq;
+use std::collections::HashSet;
 use std::hash::{BuildHasherDefault};
 use std::rc::Rc;
 use nohash_hasher::NoHashHasher;
@@ -12,7 +13,7 @@ use indexmap::{IndexMap};
 use crate::buff::Buff;
 use crate::debuff::Debuff;
 use crate::dimension::Dimension;
-use crate::point_to_piece_association::{PointToPieceAssociation};
+use crate::point_to_piece_association::{PieceHashSetT, PointToPieceAssociation};
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
@@ -36,8 +37,8 @@ pub struct Board {
     black_attack_points: PointToPieceAssociation,
     white_moves: PointToPieceAssociation,
     black_moves: PointToPieceAssociation,
-    white_x_ray_points: PointToPieceAssociation,
-    black_x_ray_points: PointToPieceAssociation,
+    white_x_ray_pieces: PieceHashSetT,
+    black_x_ray_pieces: PieceHashSetT,
     white_defensive_points: PointToPieceAssociation,
     black_defensive_points: PointToPieceAssociation,
     white_king: Option<Rc<Piece>>,
@@ -158,78 +159,59 @@ impl Board {
         &self.dimension
     }
 
-    pub fn get_white_attack_points(&self) -> &PointToPieceAssociation {
-        &self.white_attack_points
-    }
-
-    pub fn get_black_attack_points(&self) -> &PointToPieceAssociation {
-        &self.black_attack_points
-    }
-
-    pub fn get_white_attack_points_mut(&mut self) -> &mut PointToPieceAssociation {
-        &mut self.white_attack_points
-    }
-
-    pub fn get_black_attack_points_mut(&mut self) -> &mut PointToPieceAssociation {
-        &mut self.black_attack_points
-    }
-
-
-    pub fn get_attacked_points(&self, color: &Color) -> &PointToPieceAssociation {
+    pub fn attacked_points(&self, color: &Color) -> &PointToPieceAssociation {
         match color {
-            Color::White => self.get_black_attack_points(),
-            Color::Black => self.get_white_attack_points(),
+            Color::White => &self.black_attack_points,
+            Color::Black => &self.white_attack_points,
         }
     }
 
-    pub fn get_attacked_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    pub fn attacked_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
-            Color::White => self.get_black_attack_points_mut(),
-            Color::Black => self.get_white_attack_points_mut(),
+            Color::White => &mut self.black_attack_points,
+            Color::Black => &mut self.white_attack_points,
         }
     }
 
-    pub fn get_attack_points(&self, color: &Color) -> &PointToPieceAssociation {
+    pub fn attack_points(&self, color: &Color) -> &PointToPieceAssociation {
         match color {
-            Color::White => self.get_white_attack_points(),
-            Color::Black => self.get_black_attack_points(),
+            Color::White => &self.white_attack_points,
+            Color::Black => &self.black_attack_points,
         }
     }
 
-    pub fn get_attack_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    pub fn attack_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
-            Color::White => self.get_white_attack_points_mut(),
-            Color::Black => self.get_black_attack_points_mut(),
+            Color::White => &mut self.white_attack_points,
+            Color::Black => &mut self.black_attack_points,
         }
     }
 
-    pub fn get_white_defensive_points(&self) -> &PointToPieceAssociation {
-        &self.white_defensive_points
-    }
-
-    pub fn get_black_defensive_points(&self) -> &PointToPieceAssociation {
-        &self.black_defensive_points
-    }
-
-    pub fn get_white_defensive_points_mut(&mut self) -> &mut PointToPieceAssociation {
-        &mut self.white_defensive_points
-    }
-
-    pub fn get_black_defensive_points_mut(&mut self) -> &mut PointToPieceAssociation {
-        &mut self.black_defensive_points
-    }
-
-    pub fn get_defensive_points(&self, color: &Color) -> &PointToPieceAssociation {
+    pub fn defensive_points(&self, color: &Color) -> &PointToPieceAssociation {
         match color {
-            Color::White => self.get_white_defensive_points(),
-            Color::Black => self.get_black_defensive_points(),
+            Color::White => &self.white_defensive_points,
+            Color::Black => &self.black_defensive_points,
         }
     }
 
-    pub fn get_defensive_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    pub fn defensive_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
-            Color::White => self.get_white_defensive_points_mut(),
-            Color::Black => self.get_black_defensive_points_mut(),
+            Color::White => &mut self.white_defensive_points,
+            Color::Black => &mut self.black_defensive_points,
+        }
+    }
+
+    fn x_ray_pieces(&self, color: &Color) -> &PieceHashSetT {
+        match color {
+            Color::White => &self.white_x_ray_pieces,
+            Color::Black => &self.black_x_ray_pieces,
+        }
+    }
+
+    fn x_ray_pieces_mut(&mut self, color: &Color) -> &mut PieceHashSetT {
+        match color {
+            Color::White => &mut self.white_x_ray_pieces,
+            Color::Black => &mut self.black_x_ray_pieces,
         }
     }
 
@@ -239,14 +221,14 @@ impl Board {
             white_king: None,
             black_king: None,
             dimension: Dimension::new(min_point, max_point),
-            white_attack_points: PointToPieceAssociation::empty(Color::White),
-            black_attack_points: PointToPieceAssociation::empty(Color::Black),
-            white_moves: PointToPieceAssociation::empty(Color::White),
-            black_moves: PointToPieceAssociation::empty(Color::Black),
-            white_x_ray_points: PointToPieceAssociation::empty(Color::White),
-            black_x_ray_points: PointToPieceAssociation::empty(Color::Black),
-            white_defensive_points: PointToPieceAssociation::empty(Color::Black),
-            black_defensive_points: PointToPieceAssociation::empty(Color::Black),
+            white_attack_points: PointToPieceAssociation::empty(),
+            black_attack_points: PointToPieceAssociation::empty(),
+            white_moves: PointToPieceAssociation::empty(),
+            black_moves: PointToPieceAssociation::empty(),
+            white_x_ray_pieces: HashSet::with_hasher(BuildHasherDefault::default()),
+            black_x_ray_pieces: HashSet::with_hasher(BuildHasherDefault::default()),
+            white_defensive_points: PointToPieceAssociation::empty(),
+            black_defensive_points: PointToPieceAssociation::empty(),
             next_piece_id: 0,
         };
         for y in board.get_dimension().get_rows_range() {
@@ -275,25 +257,43 @@ impl Board {
     }
 
     fn calculate_attacks_for(&mut self, piece: &Rc<Piece>) {
-        self.get_attack_points_mut(&piece.get_color()).clear_moves(piece);
+        self.attack_points_mut(&piece.get_color()).clear_moves(piece);
 
         let attacks = piece.attack_points(self);
+
+        if attacks.is_empty() {
+            match **piece {
+                Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
+                    self.x_ray_pieces_mut(&piece.get_color()).remove(piece)
+                },
+                _ => false,
+            };
+        } else {
+            match **piece {
+                Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
+                    self.x_ray_pieces_mut(&piece.get_color()).insert(Rc::clone(piece))
+                },
+                _ => false
+            };
+        }
+
         for attack_point in attacks.into_iter() {
-            self.get_attack_points_mut(&piece.get_color()).add_move(attack_point, piece);
+            self.x_ray_pieces_mut(&piece.get_color()).insert(Rc::clone(piece));
+            self.attack_points_mut(&piece.get_color()).add_move(attack_point, piece);
         }
     }
 
     fn calculate_defends_for(&mut self, piece: &Rc<Piece>) {
-        self.get_defensive_points_mut(&piece.get_color()).clear_moves(piece);
+        self.defensive_points_mut(&piece.get_color()).clear_moves(piece);
 
         let defends = piece.defensive_points(self);
         for defend_point in defends.into_iter() {
-            self.get_defensive_points_mut(&piece.get_color()).add_move(defend_point, piece);
+            self.defensive_points_mut(&piece.get_color()).add_move(defend_point, piece);
         }
     }
 
     fn calculate_pins_for(&self, piece: &Rc<Piece>) {
-        for pinned_by in self.get_attacked_points(&piece.get_color()).get_x_ray_pieces() {
+        for pinned_by in self.x_ray_pieces(&piece.opposite_color()) {
             self.add_pins(piece, pinned_by)
         }
     }
@@ -321,7 +321,7 @@ impl Board {
     }
 
     pub fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
-        let points = self.get_attacked_points(&pin_to.get_color()).get_points(pinned_by);
+        let points = self.attacked_points(&pin_to.get_color()).get_points(pinned_by);
         if let Some(points) = points {
             if points.contains(&pin_to.get_current_position()) {
                 // No need to calculate pinned pieces, because pin_to piece is directly attacked by the
@@ -460,7 +460,6 @@ impl Board {
     }
 }
 
-
 impl PrettyPrint for Board {
     fn pp(&self) -> String {
         let mut output = String::new();
@@ -500,8 +499,6 @@ impl PrettyPrint for Board {
         buf.join("")
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
