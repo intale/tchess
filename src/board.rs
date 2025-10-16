@@ -166,7 +166,7 @@ impl Board {
         }
     }
 
-    pub fn attacked_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    fn attacked_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
             Color::White => &mut self.black_attack_points,
             Color::Black => &mut self.white_attack_points,
@@ -180,7 +180,7 @@ impl Board {
         }
     }
 
-    pub fn attack_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    fn attack_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
             Color::White => &mut self.white_attack_points,
             Color::Black => &mut self.black_attack_points,
@@ -194,7 +194,7 @@ impl Board {
         }
     }
 
-    pub fn defensive_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
+    fn defensive_points_mut(&mut self, color: &Color) -> &mut PointToPieceAssociation {
         match color {
             Color::White => &mut self.white_defensive_points,
             Color::Black => &mut self.black_defensive_points,
@@ -316,11 +316,11 @@ impl Board {
         false
     }
 
-    pub fn get_cell(&self, point: &Point) -> &BoardCell {
+    fn get_cell(&self, point: &Point) -> &BoardCell {
         self.board.get(point).unwrap()
     }
 
-    pub fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
+    fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
         let points = self.attacked_points(&pin_to.get_color()).get_points(pinned_by);
         if let Some(points) = points {
             if points.contains(&pin_to.get_current_position()) {
@@ -401,7 +401,7 @@ impl Board {
         }
     }
 
-    pub fn get_next_piece_id(&mut self) -> usize {
+    fn get_next_piece_id(&mut self) -> usize {
         self.next_piece_id += 1;
         self.next_piece_id
     }
@@ -434,7 +434,7 @@ impl Board {
         piece
     }
 
-    pub fn set_king(&mut self, position: &Point) {
+    fn set_king(&mut self, position: &Point) {
         let cell = self.get_board().get(position).unwrap();
         match cell.get_piece() {
             Some(p) => {

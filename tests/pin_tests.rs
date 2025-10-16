@@ -65,8 +65,6 @@ fn when_there_is_another_enemy_piece_in_front_of_a_piece_to_pin() {
         "Queen", Color::White, vec![], vec![], Point::new(4, 2)
     );
 
-    let knight = board.get_cell(&Point::new(4, 5)).get_piece().as_ref().unwrap();
-
     compare(&board, &knight.debuffs().to_vec(), &vec![]);
 }
 
