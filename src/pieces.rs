@@ -48,22 +48,6 @@ pub trait PieceInit: Sized {
     }
 }
 
-pub trait PieceColor {
-    fn get_color(&self) -> Color;
-}
-
-trait AttackPoints {
-    fn attack_points(&self, board: &Board) -> Vec<Point>;
-}
-
-trait DefensivePoints {
-    fn defensive_points(&self, board: &Board) -> Vec<Point>;
-}
-
-trait Positioning {
-    fn get_current_position(&self) -> Point;
-}
-
 #[derive(Debug)]
 pub enum Piece {
     Pawn(Pawn),
@@ -110,33 +94,33 @@ impl Piece {
         }
     }
 
-    pub fn get_color(&self) -> Color {
+    pub fn color(&self) -> &Color {
         match self {
-            Piece::Pawn(p) => p.get_color(),
-            Piece::Rook(p) => p.get_color(),
-            Piece::Knight(p) => p.get_color(),
-            Piece::Bishop(p) => p.get_color(),
-            Piece::Queen(p) => p.get_color(),
-            Piece::King(p) => p.get_color(),
+            Piece::Pawn(p) => p.color(),
+            Piece::Rook(p) => p.color(),
+            Piece::Knight(p) => p.color(),
+            Piece::Bishop(p) => p.color(),
+            Piece::Queen(p) => p.color(),
+            Piece::King(p) => p.color(),
         }
     }
 
-    pub fn opposite_color(&self) -> Color {
-        let color = self.get_color();
+    pub fn opposite_color(&self) -> &Color {
+        let color = self.color();
         match color {
-            Color::White => Color::Black,
-            Color::Black => Color::White,
+            Color::White => &Color::Black,
+            Color::Black => &Color::White,
         }
     }
 
-    pub fn get_current_position(&self) -> Point {
+    pub fn current_position(&self) -> Point {
         match self {
-            Piece::Pawn(p) => p.get_current_position(),
-            Piece::Rook(p) => p.get_current_position(),
-            Piece::Knight(p) => p.get_current_position(),
-            Piece::Bishop(p) => p.get_current_position(),
-            Piece::Queen(p) => p.get_current_position(),
-            Piece::King(p) => p.get_current_position(),
+            Piece::Pawn(p) => p.current_position(),
+            Piece::Rook(p) => p.current_position(),
+            Piece::Knight(p) => p.current_position(),
+            Piece::Bishop(p) => p.current_position(),
+            Piece::Queen(p) => p.current_position(),
+            Piece::King(p) => p.current_position(),
         }
     }
 

@@ -257,38 +257,38 @@ impl Board {
     }
 
     fn calculate_attacks_for(&mut self, piece: &Rc<Piece>) {
-        self.attack_points_mut(&piece.get_color()).clear_moves(piece);
+        self.attack_points_mut(&piece.color()).clear_moves(piece);
 
         let attacks = piece.attack_points(self);
 
         if attacks.is_empty() {
             match **piece {
                 Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
-                    self.x_ray_pieces_mut(&piece.get_color()).remove(piece)
+                    self.x_ray_pieces_mut(&piece.color()).remove(piece)
                 },
                 _ => false,
             };
         } else {
             match **piece {
                 Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
-                    self.x_ray_pieces_mut(&piece.get_color()).insert(Rc::clone(piece))
+                    self.x_ray_pieces_mut(&piece.color()).insert(Rc::clone(piece))
                 },
                 _ => false
             };
         }
 
         for attack_point in attacks.into_iter() {
-            self.x_ray_pieces_mut(&piece.get_color()).insert(Rc::clone(piece));
-            self.attack_points_mut(&piece.get_color()).add_move(attack_point, piece);
+            self.x_ray_pieces_mut(&piece.color()).insert(Rc::clone(piece));
+            self.attack_points_mut(&piece.color()).add_move(attack_point, piece);
         }
     }
 
     fn calculate_defends_for(&mut self, piece: &Rc<Piece>) {
-        self.defensive_points_mut(&piece.get_color()).clear_moves(piece);
+        self.defensive_points_mut(&piece.color()).clear_moves(piece);
 
         let defends = piece.defensive_points(self);
         for defend_point in defends.into_iter() {
-            self.defensive_points_mut(&piece.get_color()).add_move(defend_point, piece);
+            self.defensive_points_mut(&piece.color()).add_move(defend_point, piece);
         }
     }
 
@@ -304,14 +304,14 @@ impl Board {
 
     pub fn is_enemy_cell(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.get_cell(point).get_piece() {
-            return piece.get_color() != color;
+            return piece.color() != color;
         }
         false
     }
 
     pub fn is_ally_cell(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.get_cell(point).get_piece() {
-            return piece.get_color() == color;
+            return piece.color() == color;
         }
         false
     }
@@ -321,21 +321,21 @@ impl Board {
     }
 
     fn add_pins(&self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
-        let points = self.attacked_points(&pin_to.get_color()).get_points(pinned_by);
+        let points = self.attacked_points(&pin_to.color()).get_points(pinned_by);
         if let Some(points) = points {
-            if points.contains(&pin_to.get_current_position()) {
+            if points.contains(&pin_to.current_position()) {
                 // No need to calculate pinned pieces, because pin_to piece is directly attacked by the
                 // given pinned_by piece
                 return;
             }
         }
 
-        let enemy_color = pinned_by.get_color();
+        let enemy_color = pinned_by.color();
         let x_ray_direction =
             match &**pinned_by {
                 Piece::Bishop(_) => {
                     if let Some(vector) = DiagonalVector::calc_direction(
-                        &pinned_by.get_current_position(), &pin_to.get_current_position()
+                        &pinned_by.current_position(), &pin_to.current_position()
                     ) {
                         Some(Vector::Diagonal(vector))
                     } else {
@@ -344,7 +344,7 @@ impl Board {
                 },
                 Piece::Rook(_) => {
                     if let Some(vector) = LineVector::calc_direction(
-                        &pinned_by.get_current_position(), &pin_to.get_current_position()
+                        &pinned_by.current_position(), &pin_to.current_position()
                     ) {
                         Some(Vector::Line(vector))
                     } else {
@@ -353,11 +353,11 @@ impl Board {
                 },
                 Piece::Queen(_) => {
                     if let Some(vector) = DiagonalVector::calc_direction(
-                        &pinned_by.get_current_position(), &pin_to.get_current_position()
+                        &pinned_by.current_position(), &pin_to.current_position()
                     ) {
                         Some(Vector::Diagonal(vector))
                     } else if let Some(vector) = LineVector::calc_direction(
-                        &pinned_by.get_current_position(), &pin_to.get_current_position()
+                        &pinned_by.current_position(), &pin_to.current_position()
                     ) {
                         Some(Vector::Line(vector))
                     } else {
@@ -371,7 +371,7 @@ impl Board {
             Some(direction) => {
                 let mut current_piece_on_the_way: Option<&Rc<Piece>> = None;
                 let vector_points = VectorPoints::without_initial(
-                    pinned_by.get_current_position(),
+                    pinned_by.current_position(),
                     *self.get_dimension(),
                     direction
                 );
@@ -379,7 +379,7 @@ impl Board {
                 for point in vector_points {
                     if let Some(piece) = self.get_cell(&point).get_piece() {
                         // Enemy piece meets his ally
-                        if piece.get_color() == &enemy_color {
+                        if piece.color() == enemy_color {
                             break
                         }
                         match current_piece_on_the_way {
@@ -440,7 +440,7 @@ impl Board {
             Some(p) => {
                 match &**p {
                     Piece::King(_) => {
-                        match p.get_color() {
+                        match p.color() {
                             Color::White => {
                                 self.white_king = cell.get_piece_rc();
                                 self.calculate_pins_for(&self.white_king.as_ref().unwrap());
@@ -451,7 +451,7 @@ impl Board {
                             },
                         }
                     },
-                    _ => panic!("Can't assign {} as {:?} king!", p.pp(), p.get_color())
+                    _ => panic!("Can't assign {} as {:?} king!", p.pp(), p.color())
                 }
                 ()
             }

@@ -105,7 +105,7 @@ impl PrettyPrint for PointToPieceMapT {
             );
             for piece in pieces {
                 output.push_str(piece.pp().as_str());
-                output.push_str(piece.get_current_position().pp().as_str());
+                output.push_str(piece.current_position().pp().as_str());
             }
             output.push_str("\n");
         }
@@ -126,7 +126,7 @@ impl PrettyPrint for PieceToPointMapT {
 
         for piece in keys {
             output.push_str(piece.pp().as_str());
-            output.push_str(piece.get_current_position().pp().as_str());
+            output.push_str(piece.current_position().pp().as_str());
             output.push_str(": ");
             let mut points: Vec<&Point> = vec![];
             for point in self.get(piece).unwrap() {

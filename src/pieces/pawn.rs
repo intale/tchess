@@ -2,7 +2,7 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
+use crate::pieces::{PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
@@ -31,28 +31,16 @@ impl Pawn {
     pub fn debuffs(&self) -> &DebuffsCollection {
         &self.debuffs
     }
-}
 
-impl PieceInit for Pawn {
-    fn from_parts(
-        color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
-        current_position: Point,
-        id: usize,
-    ) -> Self {
-        Self {
-            color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
-            current_position: Cell::new(current_position),
-            id,
-        }
+    pub fn color(&self) -> &Color {
+        &self.color
     }
-}
 
-impl AttackPoints for Pawn {
-    fn attack_points(&self, board: &Board) -> Vec<Point> {
+    pub fn current_position(&self) -> Point {
+        self.current_position.get()
+    }
+
+    pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
         let directions = match self.color {
@@ -84,10 +72,8 @@ impl AttackPoints for Pawn {
         }
         points
     }
-}
 
-impl DefensivePoints for Pawn {
-    fn defensive_points(&self, board: &Board) -> Vec<Point> {
+    pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
         let directions = match self.color {
@@ -121,15 +107,21 @@ impl DefensivePoints for Pawn {
     }
 }
 
-impl Positioning for Pawn {
-    fn get_current_position(&self) -> Point {
-        self.current_position.get()
-    }
-}
-
-impl PieceColor for Pawn {
-    fn get_color(&self) -> Color {
-        self.color
+impl PieceInit for Pawn {
+    fn from_parts(
+        color: Color,
+        buffs: Vec<Buff>,
+        debuffs: Vec<Debuff>,
+        current_position: Point,
+        id: usize,
+    ) -> Self {
+        Self {
+            color,
+            buffs: BuffsCollection::new(buffs),
+            debuffs: DebuffsCollection::new(debuffs),
+            current_position: Cell::new(current_position),
+            id,
+        }
     }
 }
 

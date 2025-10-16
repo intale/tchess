@@ -4,8 +4,8 @@ pub enum Color {
     White,
 }
 
-impl PartialEq<&Color> for Color {
-    fn eq(&self, other: &&Color) -> bool {
+impl PartialEq<Color> for Color {
+    fn eq(&self, other: &Color) -> bool {
         match (self, other) {
             (Color::White, Color::White) => true,
             (Color::Black, Color::Black) => true,

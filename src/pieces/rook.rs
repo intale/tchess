@@ -2,7 +2,7 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{AttackPoints, DefensivePoints, PieceColor, PieceInit, Positioning};
+use crate::pieces::{PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
@@ -30,43 +30,16 @@ impl Rook {
     pub fn debuffs(&self) -> &DebuffsCollection {
         &self.debuffs
     }
-}
 
-impl PieceInit for Rook {
-    fn from_parts(
-        color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
-        current_position: Point,
-        id: usize,
-    ) -> Self {
-        Self {
-            color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
-            current_position: Cell::new(current_position),
-            id,
-        }
+    pub fn color(&self) -> &Color {
+        &self.color
     }
-}
 
-impl PieceColor for Rook {
-    fn get_color(&self) -> Color {
-        self.color
+    pub fn current_position(&self) -> Point {
+        self.current_position.get()
     }
-}
 
-impl PrettyPrint for Rook {
-    fn pp(&self) -> String {
-        match self.color {
-            Color::White => if INVERT_COLORS { '♜' } else { '♖' }.to_string(),
-            Color::Black => if INVERT_COLORS { '♖' } else { '♜' }.to_string(),
-        }
-    }
-}
-
-impl AttackPoints for Rook {
-    fn attack_points(&self, board: &Board) -> Vec<Point> {
+    pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
         for direction in Vector::line_vectors() {
@@ -87,10 +60,8 @@ impl AttackPoints for Rook {
 
         points
     }
-}
 
-impl DefensivePoints for Rook {
-    fn defensive_points(&self, board: &Board) -> Vec<Point> {
+    pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
         for direction in Vector::line_vectors() {
@@ -113,8 +84,29 @@ impl DefensivePoints for Rook {
     }
 }
 
-impl Positioning for Rook {
-    fn get_current_position(&self) -> Point {
-        self.current_position.get()
+impl PieceInit for Rook {
+    fn from_parts(
+        color: Color,
+        buffs: Vec<Buff>,
+        debuffs: Vec<Debuff>,
+        current_position: Point,
+        id: usize,
+    ) -> Self {
+        Self {
+            color,
+            buffs: BuffsCollection::new(buffs),
+            debuffs: DebuffsCollection::new(debuffs),
+            current_position: Cell::new(current_position),
+            id,
+        }
+    }
+}
+
+impl PrettyPrint for Rook {
+    fn pp(&self) -> String {
+        match self.color {
+            Color::White => if INVERT_COLORS { '♜' } else { '♖' }.to_string(),
+            Color::Black => if INVERT_COLORS { '♖' } else { '♜' }.to_string(),
+        }
     }
 }
