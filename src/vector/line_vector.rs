@@ -1,6 +1,6 @@
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
 pub enum LineVector {
     Top,
     Bottom,
@@ -32,7 +32,7 @@ impl LineVector {
         }
     }
 
-    pub fn reverse(&self) -> Self {
+    pub fn inverse(&self) -> Self {
         match self {
             Self::Top => Self::Bottom,
             Self::Bottom => Self::Top,
@@ -107,25 +107,25 @@ mod tests {
     #[test]
     fn test_reverse_top_direction() {
         let direction = LineVector::Top;
-        assert_eq!(direction.reverse(), LineVector::Bottom);
+        assert_eq!(direction.inverse(), LineVector::Bottom);
     }
 
     #[test]
     fn test_reverse_bottom_direction() {
         let direction = LineVector::Bottom;
-        assert_eq!(direction.reverse(), LineVector::Top);
+        assert_eq!(direction.inverse(), LineVector::Top);
     }
 
     #[test]
     fn test_reverse_left_direction() {
         let direction = LineVector::Left;
-        assert_eq!(direction.reverse(), LineVector::Right);
+        assert_eq!(direction.inverse(), LineVector::Right);
     }
 
     #[test]
     fn test_reverse_right_direction() {
         let direction = LineVector::Right;
-        assert_eq!(direction.reverse(), LineVector::Left);
+        assert_eq!(direction.inverse(), LineVector::Left);
     }
 
     #[test]

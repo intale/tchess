@@ -8,6 +8,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
 pub struct Knight {
@@ -37,6 +38,10 @@ impl Knight {
 
     pub fn current_position(&self) -> Point {
         self.current_position.get()
+    }
+
+    pub fn set_current_position(&self, point: Point) {
+        self.current_position.set(point)
     }
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
@@ -77,6 +82,35 @@ impl Knight {
         }
 
         points
+    }
+
+    pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        if self.debuffs.pin().is_none() {
+            // Pinned knight has no legal moves as there is no other mechanics that pins using jump
+            // vectors. Thus, there can't be any other non-pinned jump vector that would allow some
+            // moves.
+            return vec![];
+        }
+        
+        let mut moves: Vec<PieceMove> = vec![];
+
+        for direction in Vector::jump_vectors() {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position.get(),
+                *board.get_dimension(),
+                direction,
+            );
+            for point in vector_points {
+                let piece_move = PieceMove::Point(point);
+                if (board.is_empty_cell(&point) || board.is_capturable_enemy_cell(&point, &self.color))
+                    && board.matches_constraints(&piece_move, self.color()) {
+                    moves.push(piece_move)
+                }
+                break;
+            }
+        }
+
+        moves
     }
 }
 

@@ -8,6 +8,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
 pub struct Queen {
@@ -37,6 +38,10 @@ impl Queen {
 
     pub fn current_position(&self) -> Point {
         self.current_position.get()
+    }
+
+    pub fn set_current_position(&self, point: Point) {
+        self.current_position.set(point)
     }
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
@@ -81,6 +86,42 @@ impl Queen {
         }
 
         points
+    }
+
+    pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        let pin = self.debuffs.pin();
+        let available_directions =
+            if pin.is_none() {
+                Vector::diagonal_and_line_vectors()
+            } else {
+                let pin = pin.unwrap();
+                Vector::diagonal_and_line_vectors()
+                    .iter()
+                    .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                    .map(|&vec| vec)
+                    .collect::<Vec<_>>()
+            };
+        let mut moves: Vec<PieceMove> = vec![];
+
+        for direction in available_directions {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position.get(),
+                *board.get_dimension(),
+                direction,
+            );
+            for point in vector_points {
+                let piece_move = PieceMove::Point(point);
+                if (board.is_empty_cell(&point) || board.is_capturable_enemy_cell(&point, &self.color))
+                    && board.matches_constraints(&piece_move, self.color()) {
+                    moves.push(piece_move)
+                }
+                if !board.is_empty_cell(&point) {
+                    break;
+                }
+            }
+        }
+
+        moves
     }
 }
 

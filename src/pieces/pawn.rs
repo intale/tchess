@@ -9,6 +9,8 @@ use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::piece_move::PieceMove;
+use crate::vector::line_vector::LineVector;
 
 #[derive(Debug)]
 pub struct Pawn {
@@ -38,6 +40,10 @@ impl Pawn {
 
     pub fn current_position(&self) -> Point {
         self.current_position.get()
+    }
+
+    pub fn set_current_position(&self, point: Point) {
+        self.current_position.set(point)
     }
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
@@ -104,6 +110,79 @@ impl Pawn {
             }
         }
         points
+    }
+
+    pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        let pin = self.debuffs.pin();
+        let mut available_directions = match self.color {
+            Color::White => {
+                vec![
+                    Vector::Line(LineVector::Top),
+                    Vector::Diagonal(DiagonalVector::TopLeft),
+                    Vector::Diagonal(DiagonalVector::TopRight),
+                ]
+            }
+            Color::Black => {
+                vec![
+                    Vector::Line(LineVector::Bottom),
+                    Vector::Diagonal(DiagonalVector::BottomLeft),
+                    Vector::Diagonal(DiagonalVector::BottomRight),
+                ]
+            }
+        };
+        let mut moves: Vec<PieceMove> = vec![];
+
+        if !pin.is_none() {
+            let pin = pin.unwrap();
+            available_directions = available_directions
+                .iter()
+                .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                .map(|&vec| vec)
+                .collect::<Vec<_>>();
+        }
+
+        for direction in available_directions {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position.get(),
+                *board.get_dimension(),
+                direction,
+            );
+            let mut points_calculated = 0;
+
+            for point in vector_points {
+                let piece_move = PieceMove::Point(point);
+                match direction {
+                    Vector::Diagonal(_) => {
+                        if let Some(en_passant) = self.buffs.en_passant()
+                            && en_passant == point {
+                            if board.matches_constraints(&piece_move, self.color()) {
+                                moves.push(piece_move)
+                            }
+                        } else {
+                            if board.is_capturable_enemy_cell(&point, &self.color)
+                                && board.matches_constraints(&piece_move, self.color())  {
+                                moves.push(piece_move)
+                            }
+                        }
+
+                    },
+                    Vector::Line(_) => {
+                        if board.is_empty_cell(&point)
+                            && board.matches_constraints(&piece_move, self.color()) {
+                            moves.push(piece_move)
+                        }
+                        points_calculated += 1;
+                        if self.buffs.has_additional_point() && points_calculated < 2 {
+                            continue;
+                        }
+                    },
+                    _ => (),
+                }
+                break;
+            }
+        }
+
+        moves
     }
 }
 

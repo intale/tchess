@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::ops::{Add, Deref, Sub};
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct YPointT(i16);
 
 
@@ -11,7 +11,7 @@ impl YPointT {
         Self(value)
     }
 
-    pub fn get_value(&self) -> &i16 {
+    pub fn value(&self) -> &i16 {
         &self.0
     }
 }
@@ -36,7 +36,7 @@ impl Sub for &YPointT {
     type Output = i16;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self.0 - rhs.get_value()
+        self.0 - rhs.value()
     }
 }
 

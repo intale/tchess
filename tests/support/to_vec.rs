@@ -1,7 +1,5 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
-use tchess::buff::{Buff, BuffsCollection};
-use tchess::debuff::{Debuff, DebuffsCollection};
 
 pub trait ToVecCopy {
     type Item: Clone + Copy;
@@ -19,22 +17,6 @@ impl<T: Copy> ToVecCopy for RefCell<Vec<T>> {
 
     fn to_vec(&self) -> Vec<Self::Item> {
         self.borrow()[..].iter().map(|&v| v).collect::<Vec<_>>()
-    }
-}
-
-impl ToVecCopy for DebuffsCollection {
-    type Item = Debuff;
-
-    fn to_vec(&self) -> Vec<Self::Item> {
-        self.to_ref_cell().to_vec()
-    }
-}
-
-impl ToVecCopy for BuffsCollection {
-    type Item = Buff;
-
-    fn to_vec(&self) -> Vec<Self::Item> {
-        self.to_ref_cell().to_vec()
     }
 }
 

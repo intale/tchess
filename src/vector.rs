@@ -1,3 +1,4 @@
+use std::hash::Hasher;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::jump_vector::JumpVector;
 use crate::vector::line_vector::LineVector;
@@ -7,7 +8,7 @@ pub mod diagonal_vector;
 pub mod line_vector;
 pub mod jump_vector;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
 pub enum Vector {
     Diagonal(DiagonalVector),
     Jump(JumpVector),
@@ -15,6 +16,19 @@ pub enum Vector {
 }
 
 impl Vector {
+    pub fn calc_direction(point1: &Point, point2: &Point) -> Option<Self> {
+        if let Some(diagonal) = DiagonalVector::calc_direction(point1, point2) {
+            return Some(Vector::Diagonal(diagonal));
+        }
+        if let Some(line) = LineVector::calc_direction(point1, point2) {
+            return Some(Vector::Line(line));
+        }
+        if let Some(jump) = JumpVector::calc_direction(point1, point2) {
+            return Some(Vector::Jump(jump));
+        }
+        None
+    }
+
     pub fn calc_next_point(&self, current_point: &Point) -> Point {
         match self {
             Self::Diagonal(d) => d.calc_next_point(current_point),
@@ -41,11 +55,16 @@ impl Vector {
         LineVector::all_variants().into_iter().map(|d| Self::Line(d)).collect::<Vec<_>>()
     }
 
-    pub fn reverse(&self) -> Self {
+    pub fn inverse(&self) -> Self {
         match self {
-            Self::Diagonal(v) => Self::Diagonal(v.reverse()),
-            Self::Jump(v) => Self::Jump(v.reverse()),
-            Self::Line(v) => Self::Line(v.reverse()),
+            Self::Diagonal(v) => Self::Diagonal(v.inverse()),
+            Self::Jump(v) => Self::Jump(v.inverse()),
+            Self::Line(v) => Self::Line(v.inverse()),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }

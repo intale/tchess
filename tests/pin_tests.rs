@@ -28,7 +28,6 @@ fn when_king_and_an_ally_piece_is_on_the_attack_line() {
         &knight.debuffs().to_vec(),
         &vec![
             Debuff::Pin(Vector::Line(LineVector::Top)),
-            Debuff::Pin(Vector::Line(LineVector::Bottom)),
         ]
     );
 }
@@ -106,7 +105,6 @@ fn pinning_white_pawn() {
         &pawn.debuffs().to_vec(),
         &vec![
             Debuff::Pin(Vector::Diagonal(DiagonalVector::BottomLeft)),
-            Debuff::Pin(Vector::Diagonal(DiagonalVector::TopRight)),
         ]
     );
 }
@@ -125,5 +123,5 @@ fn when_enemy_piece_directly_attacks_the_king() {
     );
 
     compare(&board, &knight.debuffs().to_vec(), &vec![]);
-    compare(&board, &king.debuffs().to_vec(), &vec![]);
+    compare(&board, &king.debuffs().to_vec(), &vec![Debuff::Check]);
 }

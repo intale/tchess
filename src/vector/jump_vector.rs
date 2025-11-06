@@ -1,6 +1,6 @@
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
 pub enum JumpVector {
     TopLeftLeft,
     TopLeftRight,
@@ -30,7 +30,7 @@ impl JumpVector {
         todo!()
     }
 
-    pub fn reverse(&self) -> Self { todo!() }
+    pub fn inverse(&self) -> Self { todo!() }
 
     pub fn calc_next_point(&self, current_point: &Point) -> Point {
         let (&x, &y) = current_point.to_tuple();
@@ -70,6 +70,19 @@ impl JumpVector {
             }
         }
         Point::new(x, y)
+    }
+
+    pub fn seq_num(&self) -> u8 {
+        match self {
+            Self::TopLeftLeft => 0,
+            Self::TopLeftRight => 1,
+            Self::TopRightLeft => 2,
+            Self::TopRightRight => 3,
+            Self::BottomLeftLeft => 4,
+            Self::BottomLeftRight => 5,
+            Self::BottomRightLeft => 6,
+            Self::BottomRightRight => 7,
+        }
     }
 }
 

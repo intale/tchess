@@ -1,12 +1,11 @@
 mod x_point_t;
 mod y_point_t;
 
-use std::hash::Hasher;
 use x_point_t::XPointT;
 use y_point_t::YPointT;
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 pub struct Point {
     x: XPointT,
     y: YPointT,
@@ -19,24 +18,16 @@ impl Point {
         Self { x, y }
     }
 
-    pub fn get_x(&self) -> &XPointT {
+    pub fn x(&self) -> &XPointT {
         &self.x
     }
 
-    pub fn get_y(&self) -> &YPointT {
+    pub fn y(&self) -> &YPointT {
         &self.y
     }
 
     pub fn to_tuple(&self) -> (&i16, &i16) {
-        (self.get_x().get_value(), self.get_y().get_value())
-    }
-}
-
-// https://docs.rs/nohash-hasher/0.2.0/nohash_hasher/
-impl std::hash::Hash for Point {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        let high_bits = (*self.x.get_value() as u16) << 8;
-        hasher.write_u16(high_bits + *self.y.get_value() as u16)
+        (self.x().value(), self.y().value())
     }
 }
 
@@ -49,4 +40,7 @@ impl PrettyPrint for Point {
     }
 }
 
-impl nohash_hasher::IsEnabled for Point {}
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

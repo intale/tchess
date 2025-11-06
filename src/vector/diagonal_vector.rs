@@ -1,6 +1,6 @@
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
 pub enum DiagonalVector {
     TopLeft,
     TopRight,
@@ -37,7 +37,7 @@ impl DiagonalVector {
         }
     }
 
-    pub fn reverse(&self) -> Self {
+    pub fn inverse(&self) -> Self {
         match self {
             Self::TopLeft => Self::BottomRight,
             Self::TopRight => Self::BottomLeft,
@@ -113,25 +113,25 @@ mod tests {
     #[test]
     fn test_reverse_top_left_direction() {
         let direction = DiagonalVector::TopLeft;
-        assert_eq!(direction.reverse(), DiagonalVector::BottomRight);
+        assert_eq!(direction.inverse(), DiagonalVector::BottomRight);
     }
 
     #[test]
     fn test_reverse_top_right_direction() {
         let direction = DiagonalVector::TopRight;
-        assert_eq!(direction.reverse(), DiagonalVector::BottomLeft);
+        assert_eq!(direction.inverse(), DiagonalVector::BottomLeft);
     }
 
     #[test]
     fn test_reverse_bottom_left_direction() {
         let direction = DiagonalVector::BottomLeft;
-        assert_eq!(direction.reverse(), DiagonalVector::TopRight);
+        assert_eq!(direction.inverse(), DiagonalVector::TopRight);
     }
 
     #[test]
     fn test_reverse_bottom_right_direction() {
         let direction = DiagonalVector::BottomRight;
-        assert_eq!(direction.reverse(), DiagonalVector::TopLeft);
+        assert_eq!(direction.inverse(), DiagonalVector::TopLeft);
     }
 
     #[test]

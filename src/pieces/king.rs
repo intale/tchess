@@ -2,12 +2,16 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{PieceInit};
+use crate::pieces::{Piece, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use std::rc::Rc;
+use crate::castle_points::{CastlePoints, CastleSide};
+use crate::piece_move::{PieceMove};
+use crate::vector::line_vector::LineVector;
 
 #[derive(Debug)]
 pub struct King {
@@ -37,6 +41,10 @@ impl King {
 
     pub fn current_position(&self) -> Point {
         self.current_position.get()
+    }
+
+    pub fn set_current_position(&self, point: Point) {
+        self.current_position.set(point)
     }
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
@@ -77,6 +85,181 @@ impl King {
         }
 
         points
+    }
+
+    pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        let available_directions = Vector::diagonal_and_line_vectors();
+        let mut moves: Vec<PieceMove> = vec![];
+
+        for direction in available_directions {
+            let vector_points = VectorPoints::without_initial(
+                self.current_position.get(),
+                *board.get_dimension(),
+                direction,
+            );
+            for point in vector_points {
+                if board.is_empty_cell(&point) && !board.is_under_attack(&point, &self.color) {
+                    moves.push(PieceMove::Point(point));
+                    break;
+                }
+                if board.is_enemy_cell(&point, &self.color) &&
+                    !board.is_under_enemy_defense(&point, &self.color) {
+                    moves.push(PieceMove::Point(point));
+                }
+                break
+            }
+        }
+
+        if !self.debuffs.has_check() && self.buffs.has_castle() {
+            moves.append(&mut self.castle_moves(&board))
+        }
+        moves
+    }
+
+    fn castle_moves(&self, board: &Board) -> Vec<PieceMove> {
+        let mut moves: Vec<PieceMove> = vec![];
+        let current_position = self.current_position.get();
+
+        let castle_points_set = [
+            CastleSide::Queen.castle_points(**current_position.y()),
+            CastleSide::King.castle_points(**current_position.y()),
+        ];
+
+        for (king_point, rook_point, side) in castle_points_set {
+            let mut king_path_is_safe = false;
+            let mut rook_path_is_safe = false;
+            let mut ally_rook: Option<&Rc<Piece>> = None;
+            if current_position == king_point {
+                // King is already on its position - no need to calculate its path.
+                king_path_is_safe = true;
+            } else {
+                let direction = LineVector::calc_direction(
+                    &current_position,
+                    &king_point,
+                ).unwrap();
+                let direction = Vector::Line(direction);
+                let points = VectorPoints::without_initial(
+                    current_position,
+                    *board.get_dimension(),
+                    direction,
+                );
+
+                for point in points {
+                    if board.is_under_attack(&point, &self.color) {
+                        break
+                    }
+                    if let Some(piece) = board.piece_at(&point) {
+                        if piece.is_enemy(self.color()) {
+                            break
+                        }
+
+                        match &**piece {
+                            Piece::Rook(_) => {
+                                if direction == side.direction() && ally_rook.is_none() {
+                                    // King meets a rook when looking up its path to its castle
+                                    // point. In this case we can say that rook's path is safe,
+                                    // too
+                                    rook_path_is_safe = true;
+                                    ally_rook = Some(piece);
+                                } else {
+                                    break
+                                }
+                            },
+                            _ => break,
+                        }
+                    }
+                    if point == king_point {
+                        king_path_is_safe = true;
+                        break
+                    }
+                }
+            }
+
+            if !king_path_is_safe {
+                continue
+            }
+
+            // Find rook on the board. The rook to castle with should be to the left for queen
+            // side castle and to the right for king side castle. There should not be any
+            // pieces between the king and the rook.
+            if ally_rook.is_none() {
+                let points = VectorPoints::without_initial(
+                    current_position,
+                    *board.get_dimension(),
+                    side.direction(),
+                );
+
+                for point in points {
+                    if let Some(piece) = board.piece_at(&point) {
+                        if piece.is_enemy(self.color()) {
+                            break
+                        }
+                        match &**piece {
+                            Piece::Rook(_) => {
+                                ally_rook = Some(piece);
+                                break
+                            },
+                            _ => break,
+                        }
+                    }
+                }
+            }
+
+            if let Some(rook) = ally_rook {
+                // Because during castle the king and the rook swap their places - it is
+                // important to make sure rook is not pinned. If it is pinned then it means
+                // castle will result in check which would be illegal move. Such kind of pin
+                // is possible in chess 960. We may skip further checks in this case.
+                if !(rook.buffs().has_castle() && rook.debuffs().pin().is_none()) {
+                    continue
+                }
+
+                // Rook was placed outside of king's path to king's castle point. Thus, we
+                // have to make sure the rook's path to its castle point is safe as well.
+                if !rook_path_is_safe {
+                    let direction = LineVector::calc_direction(
+                        &rook.current_position(),
+                        &rook_point,
+                    );
+                    if let Some(direction) = direction {
+                        let points = VectorPoints::without_initial(
+                            rook.current_position(),
+                            *board.get_dimension(),
+                            Vector::Line(direction),
+                        );
+
+                        for point in points {
+                            if let Some(piece) = board.piece_at(&point) {
+                                if piece.is_enemy(self.color()) {
+                                    break
+                                }
+                                match &**piece {
+                                    Piece::King(_) => continue,
+                                    _ => break,
+                                }
+                            }
+                            if point == rook_point {
+                                rook_path_is_safe = true;
+                                break
+                            }
+                        }
+                    }
+                }
+                if rook_path_is_safe {
+                    moves.push(
+                        PieceMove::Castle(
+                            CastlePoints::new(
+                                king_point,
+                                rook_point,
+                                self.current_position(),
+                                rook.current_position(),
+                            )
+                        )
+                    )
+                }
+            }
+        }
+        moves
     }
 }
 

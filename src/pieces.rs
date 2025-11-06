@@ -16,12 +16,9 @@ use crate::board::{Board};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
+use crate::piece_move::PieceMove;
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
-
-trait MovePiece {
-    fn move_piece(&self, x: u8);
-}
 
 pub trait PieceInit: Sized {
     fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
@@ -94,6 +91,17 @@ impl Piece {
         }
     }
 
+    pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        match self {
+            Piece::Pawn(p) => p.moves(board),
+            Piece::Rook(p) => p.moves(board),
+            Piece::Knight(p) => p.moves(board),
+            Piece::Bishop(p) => p.moves(board),
+            Piece::Queen(p) => p.moves(board),
+            Piece::King(p) => p.moves(board),
+        }
+    }
+
     pub fn color(&self) -> &Color {
         match self {
             Piece::Pawn(p) => p.color(),
@@ -105,14 +113,6 @@ impl Piece {
         }
     }
 
-    pub fn opposite_color(&self) -> &Color {
-        let color = self.color();
-        match color {
-            Color::White => &Color::Black,
-            Color::Black => &Color::White,
-        }
-    }
-
     pub fn current_position(&self) -> Point {
         match self {
             Piece::Pawn(p) => p.current_position(),
@@ -121,6 +121,17 @@ impl Piece {
             Piece::Bishop(p) => p.current_position(),
             Piece::Queen(p) => p.current_position(),
             Piece::King(p) => p.current_position(),
+        }
+    }
+
+    pub fn set_current_position(&self, point: Point) {
+        match self {
+            Piece::Pawn(p) => p.set_current_position(point),
+            Piece::Rook(p) => p.set_current_position(point),
+            Piece::Knight(p) => p.set_current_position(point),
+            Piece::Bishop(p) => p.set_current_position(point),
+            Piece::Queen(p) => p.set_current_position(point),
+            Piece::King(p) => p.set_current_position(point),
         }
     }
 
@@ -156,6 +167,14 @@ impl Piece {
             Piece::King(p) => p.debuffs(),
         }
     }
+
+    pub fn is_ally(&self, color: &Color) -> bool {
+        self.color() == color
+    }
+
+    pub fn is_enemy(&self, color: &Color) -> bool {
+        !self.is_ally(color)
+    }
 }
 
 impl PrettyPrint for Piece {
@@ -174,7 +193,7 @@ impl PrettyPrint for Piece {
 impl Hash for Piece {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
         match self {
-            Piece::Pawn(p) => p.id().hash(hasher),
+            Piece::Pawn(p) => { p.id().hash(hasher) },
             Piece::Rook(p) => p.id().hash(hasher),
             Piece::Knight(p) => p.id().hash(hasher),
             Piece::Bishop(p) => p.id().hash(hasher),
@@ -228,5 +247,3 @@ impl PartialEq for Piece {
 }
 
 impl Eq for Piece {}
-
-impl nohash_hasher::IsEnabled for Piece {}

@@ -1,23 +1,19 @@
-use std::collections::{HashMap, HashSet};
-use std::hash::BuildHasherDefault;
 use std::rc::Rc;
-use nohash_hasher::NoHashHasher;
+use rustc_hash::{FxHashMap, FxHashSet};
 use crate::pieces::{Piece};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
-pub type PieceHashSetT = HashSet<Rc<Piece>, BuildHasherDefault<NoHashHasher<Piece>>>;
-type PointHashSetT = HashSet<Point, BuildHasherDefault<NoHashHasher<Point>>>;
-type PointToPieceMapT = HashMap<
+pub type PieceHashSetT = FxHashSet<Rc<Piece>>;
+type PointHashSetT = FxHashSet<Point>;
+type PointToPieceMapT = FxHashMap<
     Point,
-    PieceHashSetT,
-    BuildHasherDefault<NoHashHasher<Point>>
+    PieceHashSetT
 >;
 
-type PieceToPointMapT = HashMap<
+type PieceToPointMapT = FxHashMap<
     Rc<Piece>,
-    PointHashSetT,
-    BuildHasherDefault<NoHashHasher<Piece>>
+    PointHashSetT
 >;
 
 #[derive(Debug)]
@@ -28,47 +24,61 @@ pub struct PointToPieceAssociation {
 
 impl PointToPieceAssociation {
     pub fn empty() -> Self {
-        let point_to_pieces: PointToPieceMapT = HashMap::with_hasher(BuildHasherDefault::default());
-        let piece_to_points: PieceToPointMapT = HashMap::with_hasher(BuildHasherDefault::default());
+        let point_to_pieces: PointToPieceMapT = FxHashMap::default();
+        let piece_to_points: PieceToPointMapT = FxHashMap::default();
         Self { point_to_pieces, piece_to_points }
     }
 
-    pub fn get_pieces_mut(&mut self, point: &Point) -> &mut PieceHashSetT {
+    fn get_pieces_mut(&mut self, point: &Point) -> &mut PieceHashSetT {
         if !self.point_to_pieces.contains_key(point) {
-            self.point_to_pieces.insert(*point, HashSet::with_hasher(BuildHasherDefault::default()));
+            self.point_to_pieces.insert(*point, FxHashSet::default());
         }
         self.point_to_pieces.get_mut(point).unwrap()
+    }
+
+    fn get_points_mut(&mut self, piece: &Rc<Piece>) -> &mut PointHashSetT {
+        if !self.piece_to_points.contains_key(piece) {
+            self.piece_to_points.insert(Rc::clone(piece), FxHashSet::default());
+        }
+        self.piece_to_points.get_mut(piece).unwrap()
     }
 
     pub fn get_all_pieces(&self) -> Vec<&Rc<Piece>> {
         self.piece_to_points.keys().collect()
     }
 
-    pub fn get_points_mut(&mut self, piece: &Rc<Piece>) -> &mut PointHashSetT {
-        if !self.piece_to_points.contains_key(piece) {
-            self.piece_to_points.insert(Rc::clone(piece), HashSet::with_hasher(BuildHasherDefault::default()));
+    pub fn has_pieces(&self, point: &Point)  -> bool {
+        if let Some(pieces) = self.get_pieces(point) {
+            !pieces.is_empty()
+        } else {
+            false
         }
-        self.piece_to_points.get_mut(piece).unwrap()
     }
 
     pub fn get_points(&self, piece: &Rc<Piece>) -> Option<&PointHashSetT> {
         self.piece_to_points.get(piece)
     }
 
-    pub fn add_move(&mut self, point: Point, piece: &Rc<Piece>) -> bool {
+    pub fn get_pieces(&self, point: &Point) -> Option<&PieceHashSetT> {
+        self.point_to_pieces.get(point)
+    }
+
+    pub fn add_association(&mut self, point: Point, piece: &Rc<Piece>) -> bool {
         self.get_pieces_mut(&point).insert(Rc::clone(piece)) && self.get_points_mut(piece).insert(point)
     }
 
-    pub fn clear_moves(&mut self, piece: &Rc<Piece>) {
+    pub fn remove_piece(&mut self, piece: &Rc<Piece>) {
         let points = self.piece_to_points.remove(piece);
         if let Some(points) = points {
             for point in points.iter() {
                 if let Some(pieces) = self.point_to_pieces.get_mut(point) {
                     pieces.remove(piece);
+                    if pieces.is_empty() {
+                        self.point_to_pieces.remove(point);
+                    }
                 }
             }
         }
-        ()
     }
 
     pub fn pp_pieces(&self) -> String {

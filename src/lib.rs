@@ -10,3 +10,7 @@ pub mod vector_points;
 mod dimension;
 pub mod buff;
 pub mod debuff;
+pub mod moves_map;
+pub mod piece_move;
+pub mod castle_points;
+mod pins_map;
