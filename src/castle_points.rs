@@ -7,7 +7,7 @@ const QUEEN_SIDE_ROOK_CASTLE_X_POS: i16 = 4;
 const KING_SIDE_KING_CASTLE_X_POS: i16 = 7;
 const KING_SIDE_ROOK_CASTLE_X_POS: i16 = 6;
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum CastleSide {
     Queen,
     King,
@@ -37,7 +37,7 @@ impl CastleSide {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub struct CastlePoints {
     king_point: Point,
     rook_point: Point,
@@ -76,9 +76,4 @@ impl CastlePoints {
     pub fn side(&self) -> &CastleSide {
         &self.side
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
 }

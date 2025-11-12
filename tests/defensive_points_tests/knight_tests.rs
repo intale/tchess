@@ -7,7 +7,7 @@ use tchess::point::Point;
 use support::compare;
 use support::to_vec::ToVecRef;
 use tchess::dimension::Dimension;
-use crate::attack_points_tests::knight_tests::support::create_box_of;
+use crate::defensive_points_tests::knight_tests::support::create_box_of;
 
 #[test]
 fn when_there_are_no_pieces_around() {
@@ -18,22 +18,13 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.attack_points(&Color::White).get_points(&knight).to_vec(),
-        &vec![
-            &Point::new(2, 1),
-            &Point::new(1, 2),
-            &Point::new(1, 4),
-            &Point::new(2, 5),
-            &Point::new(4, 5),
-            &Point::new(5, 4),
-            &Point::new(5, 2),
-            &Point::new(4, 1),
-        ],
+        &board.defensive_points(&Color::White).get_points(&knight).to_vec(),
+        &vec![],
     );
 }
 
 #[test]
-fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
+fn when_there_is_a_an_enemy_piece_on_a_move_point() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
     let knight = board.add_piece(
         "Knight", Color::White, vec![], vec![], Point::new(3, 3)
@@ -44,22 +35,13 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
 
     compare(
         &board,
-        &board.attack_points(&Color::White).get_points(&knight).to_vec(),
-        &vec![
-            &Point::new(2, 1),
-            &Point::new(1, 2),
-            &Point::new(1, 4),
-            &Point::new(2, 5),
-            &Point::new(4, 5),
-            &Point::new(5, 4),
-            &Point::new(5, 2),
-            &Point::new(4, 1),
-        ],
+        &board.defensive_points(&Color::White).get_points(&knight).to_vec(),
+        &vec![],
     );
 }
 
 #[test]
-fn when_there_is_an_ally_piece_on_an_attack_point() {
+fn when_there_is_an_ally_piece_on_a_move_point() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
     let knight = board.add_piece(
         "Knight", Color::White, vec![], vec![], Point::new(3, 3)
@@ -70,27 +52,21 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
 
     compare(
         &board,
-        &board.attack_points(&Color::White).get_points(&knight).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&knight).to_vec(),
         &vec![
-            &Point::new(2, 1),
-            &Point::new(1, 2),
-            &Point::new(1, 4),
-            &Point::new(2, 5),
-            &Point::new(5, 4),
-            &Point::new(5, 2),
-            &Point::new(4, 1),
+            &Point::new(4, 5),
         ],
     );
 }
 
 #[test]
-fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
+fn when_there_are_ally_pieces_between_the_knight_and_ally_pieces_knight_defends() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
     let knight = board.add_piece(
         "Knight", Color::White, vec![], vec![], Point::new(3, 3)
     );
 
-    // A box of bishops around the knight
+    // A box of bishops around the knight, first layer
     create_box_of(
         &mut board,
         "Bishop",
@@ -100,13 +76,19 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
         Dimension::new(Point::new(2,2), Point::new(4, 4)),
     );
 
-    board.add_piece(
-        "Bishop", Color::Black, vec![], vec![], Point::new(5, 4)
+    // A box of bishops around the knight, second layer
+    create_box_of(
+        &mut board,
+        "Bishop",
+        Color::White,
+        vec![],
+        vec![],
+        Dimension::new(Point::new(1,1), Point::new(5, 5)),
     );
 
     compare(
         &board,
-        &board.attack_points(&Color::White).get_points(&knight).to_vec(),
+        &board.defensive_points(&Color::White).get_points(&knight).to_vec(),
         &vec![
             &Point::new(2, 1),
             &Point::new(1, 2),

@@ -19,7 +19,7 @@ impl BoardCell {
         match &self.piece {
             Some(piece) => Some(Rc::clone(piece)),
             _ => None
-        }        
+        }
     }
 
     pub fn set_piece_rc(&mut self, piece: &Rc<Piece>) {

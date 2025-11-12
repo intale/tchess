@@ -1,4 +1,3 @@
-use std::hash::Hasher;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::jump_vector::JumpVector;
 use crate::vector::line_vector::LineVector;
@@ -62,9 +61,4 @@ impl Vector {
             Self::Line(v) => Self::Line(v.inverse()),
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
 }

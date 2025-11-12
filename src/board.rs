@@ -1,4 +1,3 @@
-use std::hash::{BuildHasherDefault};
 use std::rc::Rc;
 
 use crate::color::Color;
@@ -23,10 +22,6 @@ use crate::vector_points::VectorPoints;
 // background. Debugging purpose only.
 pub const INVERT_COLORS: bool = true;
 
-// Determines whether to render the board turned to white side. Setting it to false will render the
-// board turned to black side. Debugging purpose only.
-pub const WHITE_SIDE: bool = true;
-
 // https://docs.rs/indexmap/latest/indexmap/
 type BoardMap = FxHashMap<Point, BoardCell>;
 
@@ -37,6 +32,8 @@ pub struct Board {
     black_attack_points: PointToPieceAssociation,
     white_x_ray_pieces: PieceHashSetT,
     black_x_ray_pieces: PieceHashSetT,
+    white_pawns_with_en_passant: PieceHashSetT,
+    black_pawns_with_en_passant: PieceHashSetT,
     white_defensive_points: PointToPieceAssociation,
     black_defensive_points: PointToPieceAssociation,
     white_moves: MovesMap,
@@ -47,6 +44,8 @@ pub struct Board {
     black_king: Option<Rc<Piece>>,
     next_piece_id: usize,
     current_turn: Color,
+    // Determines board's point of view. Debugging purpose only.
+    pov: Color,
 }
 
 impl Board {
@@ -232,6 +231,20 @@ impl Board {
         }
     }
 
+    pub fn pawns_with_en_passant(&self, color: &Color) -> &PieceHashSetT {
+        match color {
+            Color::White => &self.white_pawns_with_en_passant,
+            Color::Black => &self.black_pawns_with_en_passant,
+        }
+    }
+
+    fn pawns_with_en_passant_mut(&mut self, color: &Color) -> &mut PieceHashSetT {
+        match color {
+            Color::White => &mut self.white_pawns_with_en_passant,
+            Color::Black => &mut self.black_pawns_with_en_passant,
+        }
+    }
+
     fn cell_mut(&mut self, point: &Point) -> &mut BoardCell {
         self.get_board_mut().get_mut(point).unwrap()
     }
@@ -246,6 +259,8 @@ impl Board {
             black_attack_points: PointToPieceAssociation::empty(),
             white_x_ray_pieces: FxHashSet::default(),
             black_x_ray_pieces: FxHashSet::default(),
+            white_pawns_with_en_passant: FxHashSet::default(),
+            black_pawns_with_en_passant: FxHashSet::default(),
             white_defensive_points: PointToPieceAssociation::empty(),
             black_defensive_points: PointToPieceAssociation::empty(),
             white_moves: MovesMap::empty(),
@@ -254,6 +269,7 @@ impl Board {
             black_pins: PinsMap::empty(),
             next_piece_id: 0,
             current_turn: Color::White,
+            pov: Color::White,
         };
         for y in board.get_dimension().get_rows_range() {
             for x in board.get_dimension().get_columns_range() {
@@ -271,18 +287,31 @@ impl Board {
         board
     }
 
-    fn pieces_to_recalculate(&mut self, point: &Point, caused_by_color: &Color) -> Vec<Rc<Piece>> {
-        let mut pieces: Vec<&Rc<Piece>> = vec![];
+    // Pins points and castle points are not taken into account here. They require more complex
+    // computations than a simple look up.
+    fn pieces_to_recalculate(&mut self, point: &Point, caused_by_color: &Color) -> FxHashSet<Rc<Piece>> {
+        let mut pieces: FxHashSet<Rc<Piece>> = FxHashSet::default();
         if let Some(attack_pieces) =
             self.attack_points(&caused_by_color.inverse()).get_pieces(point) {
-            pieces.append(&mut attack_pieces.iter().collect::<Vec<_>>());
+            for piece in attack_pieces.iter() {
+                pieces.insert(Rc::clone(piece));
+            }
         }
         if let Some(defense_pieces) =
             self.defensive_points(caused_by_color).get_pieces(point) {
-            pieces.append(&mut defense_pieces.iter().collect::<Vec<_>>());
+            for piece in defense_pieces.iter() {
+                pieces.insert(Rc::clone(piece));
+            }
         }
-
-        pieces.into_iter().map(|piece| Rc::clone(piece)).collect::<Vec<_>>()
+        for piece in self.pawns_with_en_passant_mut(&caused_by_color.inverse()).iter() {
+            pieces.insert(Rc::clone(piece));
+        }
+        // Since the pawn is the only piece whose move points do not match its attack points, we
+        // need to look at the moves map to see if we need to recalculate the pawn's moves as well.
+        for piece in self.moves(&caused_by_color.inverse()).pawns(point) {
+            pieces.insert(Rc::clone(piece));
+        }
+        pieces
     }
 
     fn calculate_attacks_for(&mut self, piece: &Rc<Piece>) {
@@ -307,7 +336,6 @@ impl Board {
         }
 
         for attack_point in attacks.into_iter() {
-            self.x_ray_pieces_mut(&piece.color()).insert(Rc::clone(piece));
             self.attack_points_mut(&piece.color()).add_association(attack_point, piece);
         }
     }
@@ -322,7 +350,7 @@ impl Board {
     }
 
     fn calculate_moves_for(&mut self, piece: &Rc<Piece>) {
-        self.moves_mut(piece.color()).clear(piece);
+        self.moves_mut(piece.color()).remove_piece(piece);
 
         let moves = piece.moves(&self);
         for piece_move in moves.into_iter() {
@@ -380,7 +408,42 @@ impl Board {
         }
     }
 
+    fn calc_en_passant(&mut self, position: &Point, caused_by_color: &Color) {
+        let en_passant_position =
+            match caused_by_color {
+                Color::White => Point::new(*position.x().value(), *position.y().value() - 1),
+                Color::Black => Point::new(*position.x().value(), *position.y().value() + 1),
+            };
+
+        let mut pawns: Vec<Rc<Piece>> = vec![];
+        if let Some(pieces) =
+            self.attack_points(&caused_by_color.inverse()).get_pieces(&en_passant_position) {
+            for piece in pieces {
+                match &**piece {
+                    Piece::Pawn(_) => {
+                        piece.buffs().add(Buff::EnPassant(en_passant_position, *position));
+                        pawns.push(Rc::clone(piece));
+                    },
+                    _ => ()
+                }
+            }
+        }
+        for pawn in pawns {
+            self.pawns_with_en_passant_mut(&caused_by_color.inverse()).insert(pawn);
+        }
+    }
+
+    fn clear_en_passant(&mut self) {
+        for pawn in self.pawns_with_en_passant_mut(&Color::White).drain() {
+            pawn.buffs().remove_en_passant();
+        }
+        for pawn in self.pawns_with_en_passant_mut(&Color::Black).drain() {
+            pawn.buffs().remove_en_passant();
+        }
+    }
+
     fn calculate_pins_for(&mut self, piece: &Rc<Piece>) {
+        self.pins_mut(&piece.color().inverse()).clear_all();
         let pieces =
             self.x_ray_pieces(&piece.color().inverse())
                 .iter()
@@ -391,12 +454,33 @@ impl Board {
         }
     }
 
-    fn pass_turn(&mut self) {
-        self.current_turn = self.current_turn.inverse();
+    pub fn pass_turn(&mut self, color: &Color) {
+        self.current_turn = *color;
     }
 
     pub fn is_empty_cell(&self, point: &Point) -> bool {
         self.piece_at(point).is_none()
+    }
+
+    // This method is used by x-ray capable pieces to calculate their attack points. This allows
+    // properly calculate king's move points when it gets checked. So, for example if ally king is
+    // on b2 and enemy bishop is on d4 - ally king is not able to move to a1 because a1 is on the
+    // bishop's attack diagonal.
+    // 4 ▓▓▓ ░░░ ▓▓▓ ░♗░
+    // 3 ░░░ ▓▓▓ ░░░ ▓▓▓
+    // 2 ▓▓▓ ░♚░ ▓▓▓ ░░░
+    // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
+    //    a   b   c   d
+    pub fn can_look_through(&self, point: &Point, color: &Color) -> bool {
+        if let Some(piece) = self.piece_at(point) {
+            match &**piece {
+                Piece::King(_) => piece.color() != color,
+                _ => false
+            }
+        } else {
+            // Empty cell
+            true
+        }
     }
 
     pub fn is_enemy_cell(&self, point: &Point, color: &Color) -> bool {
@@ -536,6 +620,14 @@ impl Board {
 
     pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                      position: Point) -> Rc<Piece> {
+        if !self.is_empty_cell(&position) {
+            panic!("Can't add {} piece. Position {:?} is not empty!", name, position)
+        }
+        self.add_piece_unchecked(name, color, buffs, debuffs, position)
+    }
+
+    fn add_piece_unchecked(&mut self, name: &str, color: Color, buffs: Vec<Buff>,
+                               debuffs: Vec<Debuff>, position: Point) -> Rc<Piece> {
         let piece = Rc::new(
             Piece::init_piece_by_name(
                 name, color, buffs, debuffs, position, self.get_next_piece_id()
@@ -548,22 +640,30 @@ impl Board {
             },
             _ => (),
         }
-        self.recalculate_connected_positions(&position, &color);
-        self.recalculate_connected_positions(&position, &color.inverse());
+        self.recalculate_connected_positions(&position, &color, true);
+        self.recalculate_connected_positions(&position, &color.inverse(), false);
         piece
     }
 
     pub fn move_piece_unchecked(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) {
+        self.clear_en_passant();
+        match &**piece {
+            Piece::King(_) | Piece::Rook(_) => piece.buffs().remove_castle(),
+            Piece::Pawn(_) => {
+                piece.buffs().remove_additional_point();
+                match piece_move {
+                    PieceMove::LongMove(new_position) => {
+                        self.calc_en_passant(new_position, &piece.color());
+                    },
+                    _ => (),
+                }
+            },
+            _ => (),
+        };
         match piece_move {
-            PieceMove::Point(new_position) => {
+            PieceMove::Point(new_position) | PieceMove::LongMove(new_position) => {
                 let old_position = piece.current_position();
                 let mut piece_captured = false;
-                if let Some(pinned_piece) = self.pins(piece.color()).pinned(piece) {
-                    if Vector::calc_direction(&old_position, &pinned_piece.current_position())
-                        != Vector::calc_direction(new_position, &pinned_piece.current_position()) {
-                        pinned_piece.debuffs().remove_pin()
-                    }
-                }
                 if let Some(piece) = self.piece_at(new_position) {
                     let piece = Rc::clone(piece);
                     self.capture_piece(&piece);
@@ -572,14 +672,29 @@ impl Board {
                 self.cell_mut(&old_position).remove_piece();
                 self.cell_mut(&new_position).set_piece_rc(piece);
                 piece.set_current_position(*new_position);
-                self.recalculate_connected_positions(&old_position, piece.color());
-                self.recalculate_connected_positions(&new_position, piece.color());
+                self.recalculate_connected_positions(&old_position, piece.color(), false);
+                self.recalculate_connected_positions(&new_position, piece.color(), true);
                 if !piece_captured {
                     // If move was performed on a free square - we need to re-calculate
-                    // connected positions for the opposite pieces as well
-                    self.recalculate_connected_positions(&new_position, &piece.color().inverse());
+                    // attack points of current side as well
+                    self.recalculate_connected_positions(
+                        &new_position, &piece.color().inverse(), false
+                    );
                 }
             },
+            PieceMove::EnPassant(new_position, enemy_position) => {
+                let old_position = piece.current_position();
+                let captured_pawn = Rc::clone(self.piece_at(enemy_position).unwrap());
+
+                self.capture_piece(&captured_pawn);
+                self.cell_mut(&old_position).remove_piece();
+                self.cell_mut(&new_position).set_piece_rc(piece);
+                self.recalculate_connected_positions(&old_position, piece.color(), false);
+                self.recalculate_connected_positions(&new_position, piece.color(), true);
+                self.recalculate_connected_positions(
+                    &new_position, &piece.color().inverse(), false
+                );
+            }
             PieceMove::Castle(castle_points) => {
                 let king = Rc::clone(self.piece_at(castle_points.initial_king_point()).unwrap());
                 let rook = Rc::clone(self.piece_at(castle_points.initial_rook_point()).unwrap());
@@ -597,7 +712,7 @@ impl Board {
         if let Some(moves) = self.moves(piece.color()).moves(piece)
             && moves.contains(piece_move) {
             self.move_piece_unchecked(piece, piece_move);
-            self.pass_turn();
+            self.pass_turn(&piece.color().inverse());
             true
         } else {
             false
@@ -605,18 +720,19 @@ impl Board {
     }
 
     fn capture_piece(&mut self, piece: &Rc<Piece>) {
-        self.pins_mut(piece.color()).remove_pinned_by(piece);
         self.attack_points_mut(piece.color()).remove_piece(piece);
         self.defensive_points_mut(piece.color()).remove_piece(piece);
-        self.moves_mut(piece.color()).clear(piece);
+        self.moves_mut(piece.color()).remove_piece(piece);
         self.cell_mut(&piece.current_position()).remove_piece();
+        self.x_ray_pieces_mut(&piece.color()).remove(piece);
     }
 
-    fn recalculate_connected_positions(&mut self, point: &Point, caused_by_color: &Color) {
+    fn recalculate_connected_positions(&mut self, point: &Point, caused_by_color: &Color,
+                                       include_piece_at_position: bool) {
         let mut pieces_to_recalculate = self.pieces_to_recalculate(point, caused_by_color);
 
-        if let Some(piece) = self.piece_at(point) {
-            pieces_to_recalculate.push(Rc::clone(piece))
+        if include_piece_at_position && let Some(piece) = self.piece_at(point) {
+            pieces_to_recalculate.insert(Rc::clone(piece));
         }
 
         for piece in pieces_to_recalculate.iter() {
@@ -629,6 +745,9 @@ impl Board {
             self.calculate_pins_for(&king);
             self.calculate_check(&king);
             self.calculate_moves_for(&king);
+            for piece in self.pins(caused_by_color).pinned_keys() {
+                pieces_to_recalculate.insert(Rc::clone(piece));
+            }
         }
 
         for piece in pieces_to_recalculate.iter() {
@@ -646,30 +765,26 @@ impl Board {
     }
 
     fn set_king(&mut self, position: &Point) {
-        let cell = self.get_board().get(position).unwrap();
-        match cell.get_piece() {
-            Some(p) => {
-                match &**p {
-                    Piece::King(_) => {
-                        match p.color() {
-                            Color::White => {
-                                self.white_king = cell.get_piece_rc();
-                                let king = Rc::clone(self.white_king.as_ref().unwrap());
-                                self.calculate_pins_for(&king);
-                            },
-                            Color::Black => {
-                                self.black_king = cell.get_piece_rc();
-                                let king = Rc::clone(self.black_king.as_ref().unwrap());
-                                self.calculate_pins_for(&king);
-                            },
-                        }
-                    },
-                    _ => panic!("Can't assign {} as {:?} king!", p.pp(), p.color())
-                }
-                ()
+        let king = self.piece_at(position);
+        if let Some(king) = king {
+            match &**king {
+                Piece::King(_) => {
+                    match king.color() {
+                        Color::White => {
+                            self.white_king = Some(Rc::clone(king));
+                        },
+                        Color::Black => {
+                            self.black_king = Some(Rc::clone(king));
+                        },
+                    }
+                },
+                _ => panic!("Can't assign {} as {:?} king!", king.pp(), king.color())
             }
-            _ => ()
         }
+    }
+
+    pub fn set_pov(&mut self, color: Color) {
+        self.pov = color;
     }
 }
 
@@ -678,17 +793,30 @@ impl PrettyPrint for Board {
         let mut output = String::new();
         let mut buf: Vec<String> = vec![];
 
-        for y in *self.dimension.min_point().y().value()..=*self.dimension.max_point().y().value() {
-            for x in *self.dimension.min_point().x().value()..=*self.dimension.max_point().x().value() {
+        let y_range: Vec<i16> = if self.pov == Color::White {
+            (*self.dimension.min_point().y().value()..=*self.dimension.max_point().y().value()).rev().collect()
+        } else {
+            (*self.dimension.min_point().y().value()..=*self.dimension.max_point().y().value()).collect()
+        };
+        let x_range: Vec<i16> = if self.pov == Color::White {
+            (*self.dimension.min_point().x().value()..=*self.dimension.max_point().x().value()).collect()
+        } else {
+            (*self.dimension.min_point().x().value()..=*self.dimension.max_point().x().value()).rev().collect()
+        };
+
+        for y in y_range {
+            for x in x_range.clone() {
                 let point = Point::new(x, y);
                 if let Some(cell) = self.board.get(&point) {
-                    if point.x() == self.dimension.min_point().x() {
+                    if (self.pov == Color::White && point.x() == self.dimension.min_point().x())
+                        || (self.pov == Color::Black && point.x() == self.dimension.max_point().x()) {
                         output.push_str(point.y().pp().as_str());
                         output.push_str(" ");
                     }
                     output.push_str(cell.pp().as_str());
                     output.push(' ');
-                    if point.x() == self.dimension.max_point().x() {
+                    if (self.pov == Color::White && point.x() == self.dimension.max_point().x())
+                        || (self.pov == Color::Black && point.x() == self.dimension.min_point().x()) {
                         output.push_str("\n");
                         buf.push(output.clone());
                         output = String::new();
@@ -698,21 +826,29 @@ impl PrettyPrint for Board {
         }
         output.push_str("  ");
 
-        let vector_points = VectorPoints::with_initial(
-            Point::new(
-                *self.dimension.min_point().x().value(),
-                *self.dimension.max_point().y().value()
-            ),
-            self.dimension,
-            Vector::Line(LineVector::Right)
-        );
+        let vector_points = if self.pov == Color::White {
+            VectorPoints::with_initial(
+                Point::new(
+                    *self.dimension.min_point().x().value(),
+                    *self.dimension.max_point().y().value()
+                ),
+                self.dimension,
+                Vector::Line(LineVector::Right)
+            )
+        } else {
+            VectorPoints::with_initial(
+                Point::new(
+                    *self.dimension.max_point().x().value(),
+                    *self.dimension.max_point().y().value()
+                ),
+                self.dimension,
+                Vector::Line(LineVector::Left)
+            )
+        };
         for point in vector_points {
             output.push_str(" ");
             output.push_str(point.x().pp().as_str());
             output.push_str("  ");
-        }
-        if WHITE_SIDE {
-            buf = buf.into_iter().rev().collect();
         }
         buf.push(output);
         buf.join("")

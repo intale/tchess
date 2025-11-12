@@ -1,5 +1,8 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
+use std::rc::Rc;
+use tchess::board::Board;
+use tchess::pieces::Piece;
 
 pub trait ToVecCopy {
     type Item: Clone + Copy;
@@ -36,5 +39,16 @@ impl<T, B> ToVecRef for Option<&HashSet<T, B>> {
             Some(hash) => hash.to_vec(),
             None => vec![],
         }
+    }
+}
+
+impl ToVecRef for Board {
+    type Item = Rc<Piece>;
+
+    fn to_vec(&self) -> Vec<&Self::Item> {
+        self.get_board()
+            .iter()
+            .filter_map(|(_, cell)| cell.get_piece().as_ref())
+            .collect::<Vec<_>>()
     }
 }

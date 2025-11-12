@@ -1,6 +1,4 @@
 use std::cell::RefCell;
-use std::rc::Rc;
-use crate::pieces::Piece;
 use crate::point::Point;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -11,10 +9,10 @@ pub enum PromotePiece {
     Rook,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Buff {
     Castle,
-    EnPassant(Point),
+    EnPassant(Point, Point),
     Promote(PromotePiece),
     AdditionalPoint, // A pawn buff to allow going one additional point further
 }
@@ -40,7 +38,7 @@ impl BuffsList {
     pub fn add(&mut self, buff: Buff) {
         match buff {
             Buff::Castle => { self.castle = Some(buff) },
-            Buff::EnPassant(_) => { self.en_passant = Some(buff) },
+            Buff::EnPassant(_, _) => { self.en_passant = Some(buff) },
             Buff::Promote(_) => { self.promote = Some(buff) },
             Buff::AdditionalPoint => { self.additional_point = Some(buff) },
         }
@@ -73,16 +71,34 @@ impl BuffsCollection {
         self.buffs.borrow().castle.is_some()
     }
 
-    pub fn en_passant(&self) -> Option<Point> {
+    pub fn en_passant(&self) -> Option<(Point, Point)> {
         if let Some(en_passant) = self.buffs.borrow().en_passant.as_ref() {
             match en_passant {
-                Buff::EnPassant(p) => {
-                    Some(*p)
+                Buff::EnPassant(p1, p2) => {
+                    Some((*p1, *p2))
                 },
                 _ => panic!("Invalid EnPassant buff {:?}!", en_passant)
             }
         } else {
             None
+        }
+    }
+
+    pub fn remove_castle(&self) {
+        if self.has_castle() {
+            self.buffs.borrow_mut().castle = None;
+        }
+    }
+
+    pub fn remove_additional_point(&self) {
+        if self.has_additional_point() {
+            self.buffs.borrow_mut().additional_point = None;
+        }
+    }
+
+    pub fn remove_en_passant(&self) {
+        if self.buffs.borrow().en_passant.is_some() {
+            self.buffs.borrow_mut().en_passant = None;
         }
     }
 

@@ -85,7 +85,7 @@ impl Knight {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        if self.debuffs.pin().is_none() {
+        if self.debuffs.pin().is_some() {
             // Pinned knight has no legal moves as there is no other mechanics that pins using jump
             // vectors. Thus, there can't be any other non-pinned jump vector that would allow some
             // moves.

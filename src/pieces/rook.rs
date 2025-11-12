@@ -57,7 +57,7 @@ impl Rook {
                 if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
                     points.push(point)
                 }
-                if !board.is_empty_cell(&point) {
+                if !board.can_look_through(&point, self.color()) {
                     break;
                 }
             }

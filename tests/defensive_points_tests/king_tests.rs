@@ -6,6 +6,8 @@ use tchess::color::Color;
 use tchess::point::Point;
 use support::compare;
 use support::to_vec::ToVecRef;
+use tchess::dimension::Dimension;
+use crate::defensive_points_tests::king_tests::support::create_box_of;
 
 #[test]
 fn when_there_are_no_pieces_around() {
@@ -82,29 +84,13 @@ fn when_there_are_ally_pieces_around() {
     );
 
     // A box of bishops around the king
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(1, 1)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(1, 2)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(1, 3)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(2, 3)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(3, 3)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(3, 2)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(3, 1)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(2, 1)
+    create_box_of(
+        &mut board,
+        "Bishop",
+        Color::White,
+        vec![],
+        vec![],
+        Dimension::new(Point::new(1,1), Point::new(3, 3)),
     );
 
     compare(

@@ -8,7 +8,6 @@ use tchess::point::Point;
 use tchess::vector::diagonal_vector::DiagonalVector;
 use tchess::vector::line_vector::LineVector;
 use tchess::vector::Vector;
-use crate::support::to_vec::ToVecCopy;
 
 #[test]
 fn when_king_and_an_ally_piece_is_on_the_attack_line() {

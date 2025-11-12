@@ -56,7 +56,7 @@ impl Bishop {
                 if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
                     points.push(point)
                 }
-                if !board.is_empty_cell(&point) {
+                if !board.can_look_through(&point, self.color()) {
                     break;
                 }
             }
@@ -91,7 +91,7 @@ impl Bishop {
             if pin.is_none() {
                 Vector::diagonal_vectors()
             } else {
-                let pin = pin.unwrap(); 
+                let pin = pin.unwrap();
                 Vector::diagonal_vectors()
                     .iter()
                     .filter(|&&vec| pin == vec || pin.inverse() == vec)

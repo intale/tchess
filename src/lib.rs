@@ -7,7 +7,7 @@ mod board_cell;
 mod point_to_piece_association;
 pub mod vector;
 pub mod vector_points;
-mod dimension;
+pub mod dimension;
 pub mod buff;
 pub mod debuff;
 pub mod moves_map;

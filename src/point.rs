@@ -39,8 +39,3 @@ impl PrettyPrint for Point {
         output
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

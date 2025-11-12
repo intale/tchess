@@ -1,5 +1,4 @@
-use std::collections::{HashMap};
-use std::hash::BuildHasherDefault;
+use std::collections::hash_map::Keys;
 use std::rc::Rc;
 use rustc_hash::{FxHashMap};
 use crate::pieces::Piece;
@@ -41,5 +40,14 @@ impl PinsMap {
 
     pub fn pinned_by(&self, pinned: &Rc<Piece>) -> Option<&Rc<Piece>> {
         self.pinned_to_pinned_by.get(pinned)
+    }
+
+    pub fn clear_all(&mut self) {
+        self.pinned_by_to_pinned.clear();
+        self.pinned_to_pinned_by.clear();
+    }
+
+    pub fn pinned_keys(&self) -> Keys<'_, Rc<Piece>, Rc<Piece>> {
+        self.pinned_to_pinned_by.keys()
     }
 }
