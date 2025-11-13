@@ -1,3 +1,11 @@
 # TChess
 
-Implementing my own chess engine in rust for educational purposes. Work in progress.
+The implementation of chess engine using Rust. The main focus of this engine is to support boards with dimension of up to 2^16 x 2^16 cells while keeping acceptable time to calculate next move. The main functional is under the development currently.
+
+## License
+
+This project is available as open source under the terms of the [BSD-2-Clause license](LICENSE).
+
+## Code of Conduct
+
+Everyone interacting in the tchess project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
