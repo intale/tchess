@@ -50,4 +50,12 @@ impl PinsMap {
     pub fn pinned_keys(&self) -> Keys<'_, Rc<Piece>, Rc<Piece>> {
         self.pinned_to_pinned_by.keys()
     }
+
+    pub fn all_pinned(&self) -> Vec<&Rc<Piece>> {
+        self.pinned_keys().collect()
+    }
+
+    pub fn all_pinned_by(&self) -> Vec<&Rc<Piece>> {
+        self.pinned_by_to_pinned.keys().collect()
+    }
 }

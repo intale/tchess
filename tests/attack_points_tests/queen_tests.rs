@@ -7,7 +7,6 @@ use tchess::point::Point;
 use support::compare;
 use support::to_vec::ToVecRef;
 use tchess::dimension::Dimension;
-use tchess::piece_move::PieceMove;
 use crate::attack_points_tests::queen_tests::support::create_box_of;
 
 #[test]

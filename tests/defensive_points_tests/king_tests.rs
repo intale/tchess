@@ -7,7 +7,7 @@ use tchess::point::Point;
 use support::compare;
 use support::to_vec::ToVecRef;
 use tchess::dimension::Dimension;
-use crate::defensive_points_tests::king_tests::support::create_box_of;
+use support::create_box_of;
 
 #[test]
 fn when_there_are_no_pieces_around() {

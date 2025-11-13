@@ -41,6 +41,10 @@ impl MovesMap {
         self.piece_to_moves.get(piece)
     }
 
+    pub fn all_pieces(&self) -> Vec<&Rc<Piece>> {
+        self.piece_to_moves.keys().collect()
+    }
+
     pub fn pawns(&self, point: &Point) -> Vec<&Rc<Piece>> {
         let mut pawns = vec![];
         let moves = [

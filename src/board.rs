@@ -182,7 +182,7 @@ impl Board {
         }
     }
 
-    fn x_ray_pieces(&self, color: &Color) -> &PieceHashSetT {
+    pub fn x_ray_pieces(&self, color: &Color) -> &PieceHashSetT {
         match color {
             Color::White => &self.white_x_ray_pieces,
             Color::Black => &self.black_x_ray_pieces,
@@ -210,15 +210,15 @@ impl Board {
         }
     }
 
-    pub fn pins(&self, color: &Color) -> &PinsMap {
-        match color {
+    pub fn pins(&self, caused_by_color: &Color) -> &PinsMap {
+        match caused_by_color {
             Color::White => &self.white_pins,
             Color::Black => &self.black_pins,
         }
     }
 
-    fn pins_mut(&mut self, color: &Color) -> &mut PinsMap {
-        match color {
+    fn pins_mut(&mut self, caused_by_color: &Color) -> &mut PinsMap {
+        match caused_by_color {
             Color::White => &mut self.white_pins,
             Color::Black => &mut self.black_pins,
         }
