@@ -1,6 +1,6 @@
 # TChess
 
-The implementation of chess engine using Rust. The main focus of this engine is to support boards with dimension of up to 2^16 x 2^16 cells while keeping acceptable time to calculate next move. The main functional is under the development currently.
+The implementation of chess engine using Rust. The main focus of this engine is to support boards with dimension of up to 2^16 x 2^16 cells while keeping acceptable time to calculate next move. The core functional is under the development currently.
 
 ## License
 
