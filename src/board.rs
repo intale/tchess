@@ -308,8 +308,13 @@ impl Board {
         }
         // Since the pawn is the only piece whose move points do not match its attack points, we
         // need to look at the moves map to see if we need to recalculate the pawn's moves as well.
-        for piece in self.moves(&caused_by_color.inverse()).pawns(point) {
-            pieces.insert(Rc::clone(piece));
+        if let Some(pieces_at_point) = self.moves(&caused_by_color.inverse()).pieces_at(&point) {
+            for (piece, _) in pieces_at_point {
+                match &**piece {
+                    Piece::Pawn(_) => { pieces.insert(Rc::clone(piece)); },
+                    _ => ()
+                }
+            }
         }
         pieces
     }
@@ -358,14 +363,14 @@ impl Board {
         }
     }
 
-    fn calculate_check(&mut self, piece: &Rc<Piece>) {
-        if self.is_under_attack(&piece.current_position(), piece.color()) {
-            piece.debuffs().add(Debuff::Check);
+    fn calculate_check(&mut self, king: &Rc<Piece>) {
+        if self.is_under_attack(&king.current_position(), king.color()) {
+            king.debuffs().add(Debuff::Check);
 
             let mut constraints: Vec<PieceMove> = vec![];
             let pieces_caused_check =
-                self.attack_points(&piece.color().inverse())
-                    .get_pieces(&piece.current_position())
+                self.attack_points(&king.color().inverse())
+                    .get_pieces(&king.current_position())
                     .unwrap();
             if pieces_caused_check.len() == 1 {
                 let piece_caused_check = pieces_caused_check.iter().next().unwrap();
@@ -373,7 +378,7 @@ impl Board {
                 constraints.push(PieceMove::Point(piece_caused_check.current_position()));
 
                 let direction = Vector::calc_direction(
-                    &piece_caused_check.current_position(), &piece.current_position()
+                    &piece_caused_check.current_position(), &king.current_position()
                 ).unwrap();
                 match direction {
                     // Jump checks can't be blocked. The only way to remove it is to eliminate the
@@ -385,7 +390,7 @@ impl Board {
                         );
                         for point in vector_points {
                             // Exclude king's position
-                            if point == piece.current_position() {
+                            if point == king.current_position() {
                                 break
                             }
                             constraints.push(PieceMove::Point(point));
@@ -395,16 +400,15 @@ impl Board {
             } else {
                 // When the king is in check by more than one piece, no legal moves can be made by
                 // any piece except the king itself.
-                constraints.push(PieceMove::Point(Point::new(-1, -1)));
+                constraints.push(PieceMove::UnreachablePoint);
             }
+            println!("{:?}", constraints);
             for piece_move in constraints {
-                self.moves_mut(piece.color()).add_constraint(
-                    piece_move
-                );
+                self.moves_mut(king.color()).add_constraints(piece_move);
             }
         } else {
-            piece.debuffs().remove_check();
-            self.moves_mut(piece.color()).clear_constraints();
+            king.debuffs().remove_check();
+            self.moves_mut(king.color()).clear_constraints();
         }
     }
 
@@ -525,10 +529,6 @@ impl Board {
 
     pub fn is_under_enemy_defense(&self, point: &Point, color: &Color) -> bool {
         self.defensive_points(&color.inverse()).has_pieces(point)
-    }
-
-    pub fn matches_constraints(&self, piece_move: &PieceMove, color: &Color) -> bool {
-        self.moves(color).matches_constraints(piece_move)
     }
 
     fn add_pins(&mut self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
@@ -701,6 +701,7 @@ impl Board {
                 self.move_piece_unchecked(&rook, &PieceMove::Point(*castle_points.rook_point()));
                 self.move_piece_unchecked(&king, &PieceMove::Point(*castle_points.king_point()));
             },
+            PieceMove::UnreachablePoint => panic!("Unreachable point!"),
         }
     }
 
@@ -709,7 +710,7 @@ impl Board {
             return false;
         }
 
-        if let Some(moves) = self.moves(piece.color()).moves(piece)
+        if let Some(moves) = self.moves(piece.color()).moves_of(piece)
             && moves.contains(piece_move) {
             self.move_piece_unchecked(piece, piece_move);
             self.pass_turn(&piece.color().inverse());

@@ -19,7 +19,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -45,7 +45,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -74,7 +74,7 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -99,7 +99,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -124,7 +124,7 @@ fn when_move_points_are_under_attack() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(3, 2)),
@@ -147,7 +147,7 @@ fn when_king_is_on_the_diagonal_under_attack() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -171,7 +171,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -196,7 +196,7 @@ fn when_king_is_on_the_line_under_attack() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -220,7 +220,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&king).to_vec(),
+        &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -253,7 +253,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&white_king).to_vec(),
+            &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -264,7 +264,7 @@ mod castle_tests {
         );
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&black_king).to_vec(),
+            &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 8)),
                 &PieceMove::Point(Point::new(4, 7)),
@@ -294,7 +294,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&white_king).to_vec(),
+            &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -311,7 +311,7 @@ mod castle_tests {
         );
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&black_king).to_vec(),
+            &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -354,7 +354,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&white_king).to_vec(),
+            &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -377,7 +377,7 @@ mod castle_tests {
         );
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&black_king).to_vec(),
+            &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -432,7 +432,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&white_king).to_vec(),
+            &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -451,7 +451,7 @@ mod castle_tests {
         );
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&black_king).to_vec(),
+            &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -488,7 +488,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&king).to_vec(),
+            &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -515,7 +515,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&king).to_vec(),
+            &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
                 &PieceMove::Point(Point::new(6, 2)),
@@ -542,7 +542,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&king).to_vec(),
+            &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Castle(
                     CastlePoints::new(
@@ -575,7 +575,7 @@ mod castle_tests {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&king).to_vec(),
+            &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
                 &PieceMove::Point(Point::new(6, 2)),

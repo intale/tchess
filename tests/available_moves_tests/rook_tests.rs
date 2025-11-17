@@ -16,7 +16,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&rook).to_vec(),
+        &board.moves(&Color::White).moves_of(&rook).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 3)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -42,7 +42,7 @@ fn when_there_is_a_an_enemy_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&rook).to_vec(),
+        &board.moves(&Color::White).moves_of(&rook).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -64,7 +64,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&rook).to_vec(),
+        &board.moves(&Color::White).moves_of(&rook).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -87,7 +87,7 @@ fn when_rook_is_pinned_by_a_diagonal() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&rook).to_vec(),
+        &board.moves(&Color::White).moves_of(&rook).to_vec(),
         &vec![],
     );
 }
@@ -107,7 +107,7 @@ fn when_rook_is_pinned_by_line() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&queen).to_vec(),
+        &board.moves(&Color::White).moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 4)),
             &PieceMove::Point(Point::new(2, 2)),

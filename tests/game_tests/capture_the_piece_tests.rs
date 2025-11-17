@@ -11,6 +11,10 @@ use tchess::utils::pretty_print::PrettyPrint;
 use support::Expect;
 use tchess::pieces::Piece;
 
+// 4 ▓▓▓ ░░░ ▓▓▓ ░♔░
+// 3 ░░░ ▓▓▓ ░♗░ ▓▓▓
+// 2 ▓▓▓ ░♝░ ▓▓▓ ░░░
+// 1 ░░░ ▓▓▓ ░░░ ▓▓▓
 fn setup_board() -> Board {
     let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
     board.add_piece(

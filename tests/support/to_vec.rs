@@ -2,11 +2,17 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 use tchess::board::Board;
+use tchess::piece_move::PieceMove;
 use tchess::pieces::Piece;
 
 #[allow(unused)]
 pub trait ClonePieces {
     fn clone_pieces(&self) -> Vec<Rc<Piece>>;
+}
+
+#[allow(unused)]
+pub trait CloneMoves {
+    fn clone_moves(&self) -> Vec<PieceMove>;
 }
 
 #[allow(unused)]
@@ -25,6 +31,12 @@ pub trait ToVecRef {
 impl ClonePieces for Vec<&Rc<Piece>> {
     fn clone_pieces(&self) -> Vec<Rc<Piece>> {
         self.iter().map(|piece| Rc::clone(piece)).collect()
+    }
+}
+
+impl CloneMoves for Vec<&PieceMove> {
+    fn clone_moves(&self) -> Vec<PieceMove> {
+        self.iter().map(|&piece_move| piece_move.clone()).collect()
     }
 }
 

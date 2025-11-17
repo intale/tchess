@@ -156,3 +156,64 @@ fn when_ally_pawn_does_not_utilize_en_passant_on_ally_turn() {
     assert_eq!(board.piece_at(&Point::new(2, 4)), Some(&ally_bishop));
     assert_eq!(board.piece_at(&Point::new(1, 2)), Some(&enemy_bishop));
 }
+
+mod en_passant_for_two_pawns {
+    use std::rc::Rc;
+    use super::*;
+
+    fn setup() -> Board {
+        let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+        board.pass_turn(&Color::Black);
+        board.add_piece(
+            "Pawn", Color::White, vec![], vec![], Point::new(2, 2)
+        );
+        board.add_piece(
+            "Pawn", Color::White, vec![], vec![], Point::new(4, 2)
+        );
+        let enemy_pawn = board.add_piece(
+            "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], Point::new(3, 4)
+        );
+        assert!(
+            board.move_piece(&enemy_pawn, &PieceMove::LongMove(Point::new(3, 2))),
+            "Unable to move {:?} on c2", enemy_pawn
+        );
+        println!("{}", board.pp());
+        board
+    }
+
+    #[test]
+    fn it_is_possible_to_capture_with_the_first_pawn() {
+        let mut board = setup();
+        let first_pawn = Rc::clone(board.piece_at(&Point::new(2, 2)).unwrap());
+        let second_pawn = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
+
+        assert!(
+            board.move_piece(
+                &first_pawn, &PieceMove::EnPassant(Point::new(3, 3), Point::new(3, 2))
+            ),
+            "Unable to move {:?} on c3", first_pawn
+        );
+
+        compare(&board, &board.to_vec(), &vec![&first_pawn, &second_pawn]);
+        assert_eq!(board.piece_at(&Point::new(3, 3)), Some(&first_pawn));
+        assert_eq!(board.piece_at(&Point::new(4, 2)), Some(&second_pawn));
+    }
+
+    #[test]
+    fn it_is_possible_to_capture_with_the_second_pawn() {
+        let mut board = setup();
+        let first_pawn = Rc::clone(board.piece_at(&Point::new(2, 2)).unwrap());
+        let second_pawn = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
+
+        assert!(
+            board.move_piece(
+                &second_pawn, &PieceMove::EnPassant(Point::new(3, 3), Point::new(3, 2))
+            ),
+            "Unable to move {:?} on c3", second_pawn
+        );
+
+        compare(&board, &board.to_vec(), &vec![&first_pawn, &second_pawn]);
+        assert_eq!(board.piece_at(&Point::new(2, 2)), Some(&first_pawn));
+        assert_eq!(board.piece_at(&Point::new(3, 3)), Some(&second_pawn));
+    }
+}

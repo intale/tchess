@@ -16,7 +16,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&bishop).to_vec(),
+        &board.moves(&Color::White).moves_of(&bishop).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -39,7 +39,7 @@ fn when_there_is_a_an_enemy_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&bishop).to_vec(),
+        &board.moves(&Color::White).moves_of(&bishop).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -61,7 +61,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&bishop).to_vec(),
+        &board.moves(&Color::White).moves_of(&bishop).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -85,7 +85,7 @@ fn when_bishop_is_pinned_by_one_of_its_diagonals() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&bishop).to_vec(),
+        &board.moves(&Color::White).moves_of(&bishop).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(4, 4)),
@@ -108,7 +108,7 @@ fn when_bishop_is_pinned_by_line() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&bishop).to_vec(),
+        &board.moves(&Color::White).moves_of(&bishop).to_vec(),
         &vec![],
     );
 }

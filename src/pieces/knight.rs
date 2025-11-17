@@ -102,8 +102,8 @@ impl Knight {
             );
             for point in vector_points {
                 let piece_move = PieceMove::Point(point);
-                if (board.is_empty_cell(&point) || board.is_capturable_enemy_cell(&point, &self.color))
-                    && board.matches_constraints(&piece_move, self.color()) {
+                if board.is_empty_cell(&point) ||
+                    board.is_capturable_enemy_cell(&point, &self.color) {
                     moves.push(piece_move)
                 }
                 break;

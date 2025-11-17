@@ -5,22 +5,59 @@ use crate::pieces::Piece;
 use crate::point::Point;
 
 type MovesSetT = FxHashSet<PieceMove>;
-type PiecesSetT = FxHashSet<Rc<Piece>>;
+type PiecesSetT = FxHashSet<(Rc<Piece>, PieceMove)>;
 type PieceToMovesMapT = FxHashMap<Rc<Piece>, MovesSetT>;
-type MoveToPiecesMapT = FxHashMap<PieceMove, PiecesSetT>;
+type PointToPiecesMapT = FxHashMap<Point, PiecesSetT>;
+
+struct MoveConstraints {
+    constraints: PieceToMovesMapT,
+    has_constraints: bool,
+}
+
+impl MoveConstraints {
+    pub fn empty() -> Self {
+        let constraints = FxHashMap::default();
+        Self { constraints, has_constraints: false }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.has_constraints
+    }
+
+    pub fn enable(&mut self) {
+        self.has_constraints = true;
+    }
+
+    pub fn clear(&mut self) {
+        self.has_constraints = false;
+        self.constraints.clear();
+    }
+
+    pub fn get_mut(&mut self, piece: &Rc<Piece>) -> &mut MovesSetT {
+        if !self.constraints.contains_key(piece) {
+            self.constraints.insert(Rc::clone(piece), FxHashSet::default());
+        }
+        self.constraints.get_mut(piece).unwrap()
+    }
+
+    pub fn get(&self, piece: &Rc<Piece>) -> Option<&MovesSetT> {
+        self.constraints.get(piece)
+    }
+}
 
 pub struct MovesMap {
     piece_to_moves: PieceToMovesMapT,
-    move_to_pieces: MoveToPiecesMapT,
-    constraints: MovesSetT,
+    point_to_pieces: PointToPiecesMapT,
+    // Moves map of pieces, except the king when the king is in check
+    constraints: MoveConstraints,
 }
 
 impl MovesMap {
     pub fn empty() -> Self {
         let piece_to_moves = FxHashMap::default();
-        let move_to_pieces = FxHashMap::default();
-        let constraints = FxHashSet::default();
-        Self { piece_to_moves, move_to_pieces, constraints }
+        let point_to_pieces = FxHashMap::default();
+        let constraints = MoveConstraints::empty();
+        Self { piece_to_moves, point_to_pieces, constraints }
     }
 
     fn moves_mut(&mut self, piece: &Rc<Piece>) -> &mut MovesSetT {
@@ -30,55 +67,54 @@ impl MovesMap {
         self.piece_to_moves.get_mut(piece).unwrap()
     }
 
-    fn pieces_mut(&mut self, piece_move: PieceMove) -> &mut PiecesSetT {
-        if !self.move_to_pieces.contains_key(&piece_move) {
-            self.move_to_pieces.insert(piece_move, FxHashSet::default());
+    fn pieces_mut(&mut self, point: Point) -> &mut PiecesSetT {
+        if !self.point_to_pieces.contains_key(&point) {
+            self.point_to_pieces.insert(point, FxHashSet::default());
         }
-        self.move_to_pieces.get_mut(&piece_move).unwrap()
+        self.point_to_pieces.get_mut(&point).unwrap()
     }
 
-    pub fn moves(&self, piece: &Rc<Piece>) -> Option<&MovesSetT> {
-        self.piece_to_moves.get(piece)
+    pub fn moves_of(&self, piece: &Rc<Piece>) -> Option<&MovesSetT> {
+        match &**piece {
+            Piece::King(_) => { self.piece_to_moves.get(piece) },
+            _ => {
+                if self.constraints.is_enabled() {
+                    self.constraints.get(piece)
+                } else {
+                    self.piece_to_moves.get(piece)
+                }
+            },
+        }
+    }
+
+    pub fn pieces_at(&self, point: &Point) -> Option<&PiecesSetT> {
+        self.point_to_pieces.get(point)
     }
 
     pub fn all_pieces(&self) -> Vec<&Rc<Piece>> {
         self.piece_to_moves.keys().collect()
     }
 
-    pub fn pawns(&self, point: &Point) -> Vec<&Rc<Piece>> {
-        let mut pawns = vec![];
-        let moves = [
-            PieceMove::Point(*point),
-            PieceMove::LongMove(*point),
-        ];
-        for piece_move in moves {
-            if let Some(pieces) = self.move_to_pieces.get(&piece_move) {
-                pawns.append(
-                    &mut pieces.iter().filter(|piece|
-                        match &***piece {
-                            Piece::Pawn(_) => true,
-                            _ => false,
-                        }
-                    ).collect()
-                )
-            };
-        }
-        pawns
-    }
-
     pub fn add(&mut self, piece: &Rc<Piece>, piece_move: PieceMove) -> bool {
-        self.moves_mut(piece).insert(piece_move)
-            && self.pieces_mut(piece_move).insert(Rc::clone(piece))
+        match piece_move.destination() {
+            Some(point) => {
+                self.moves_mut(piece).insert(piece_move)
+                    && self.pieces_mut(point).insert((Rc::clone(piece), piece_move))
+            },
+            None => self.moves_mut(piece).insert(piece_move),
+        }
     }
 
     pub fn remove_piece(&mut self, piece: &Rc<Piece>) {
         let moves = self.piece_to_moves.remove(piece);
         if let Some(moves) = moves {
             for piece_move in moves.iter() {
-                if let Some(pieces) = self.move_to_pieces.get_mut(piece_move) {
-                    pieces.remove(piece);
-                    if pieces.is_empty() {
-                        self.move_to_pieces.remove(piece_move);
+                if let Some(point) = piece_move.destination() {
+                    if let Some(pieces) = self.point_to_pieces.get_mut(&point) {
+                        pieces.remove(&(Rc::clone(piece), *piece_move));
+                        if pieces.is_empty() {
+                            self.point_to_pieces.remove(&point);
+                        }
                     }
                 }
             }
@@ -86,23 +122,17 @@ impl MovesMap {
     }
 
     pub fn clear_constraints(&mut self) {
-        self.constraints.clear()
+        self.constraints.clear();
     }
 
-    pub fn add_constraint(&mut self, piece_move: PieceMove) -> bool {
-        self.constraints.insert(piece_move)
-    }
-
-    pub fn matches_constraints(&self, piece_move: &PieceMove) -> bool {
-        if self.constraints.is_empty() {
-            return true;
-        }
-        match piece_move { 
-            PieceMove::Point(_) => self.constraints.contains(piece_move), 
-            PieceMove::EnPassant(en_passant, _) => 
-                self.constraints.contains(&PieceMove::Point(*en_passant)),
-            PieceMove::LongMove(point) => self.constraints.contains(&PieceMove::Point(*point)),
-            _ => false,
+    pub fn add_constraints(&mut self, piece_move: PieceMove) {
+        self.constraints.enable();
+        if let Some(point) = piece_move.destination() {
+            if let Some(pieces) = self.point_to_pieces.get(&point) {
+                for (piece, piece_move) in pieces {
+                    self.constraints.get_mut(piece).insert(*piece_move);
+                }
+            }
         }
     }
 }

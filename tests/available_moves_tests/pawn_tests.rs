@@ -22,7 +22,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
             ],
@@ -38,7 +38,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -58,7 +58,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
             ],
@@ -77,7 +77,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
             ],
@@ -96,7 +96,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -117,7 +117,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -143,7 +143,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -169,7 +169,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![],
         );
     }
@@ -192,7 +192,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![],
         );
     }
@@ -212,7 +212,7 @@ mod white_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::White).moves(&pawn).to_vec(),
+            &board.moves(&Color::White).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(3, 3))
             ],
@@ -234,7 +234,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
             ],
@@ -251,7 +251,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -272,7 +272,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
             ],
@@ -292,7 +292,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
             ],
@@ -312,7 +312,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -334,7 +334,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -361,7 +361,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 2)),
@@ -388,7 +388,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![],
         );
     }
@@ -412,7 +412,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![],
         );
     }
@@ -433,7 +433,7 @@ mod black_pawn {
 
         compare(
             &board,
-            &board.moves(&Color::Black).moves(&pawn).to_vec(),
+            &board.moves(&Color::Black).moves_of(&pawn).to_vec(),
             &vec![&PieceMove::Point(Point::new(3, 3))],
         );
     }

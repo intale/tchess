@@ -19,7 +19,7 @@ fn when_there_are_no_pieces_around() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&knight).to_vec(),
+        &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -45,7 +45,7 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&knight).to_vec(),
+        &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -71,7 +71,7 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&knight).to_vec(),
+        &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -103,7 +103,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&knight).to_vec(),
+        &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -132,7 +132,7 @@ fn when_knight_is_pinned() {
 
     compare(
         &board,
-        &board.moves(&Color::White).moves(&knight).to_vec(),
+        &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![],
     );
 }

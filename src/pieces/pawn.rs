@@ -154,15 +154,10 @@ impl Pawn {
                     Vector::Diagonal(_) => {
                         if let Some((en_passant, enemy_piece_point)) = self.buffs.en_passant()
                             && en_passant == point {
-                            let piece_move = PieceMove::EnPassant(en_passant, enemy_piece_point);
-                            if board.matches_constraints(&piece_move, self.color()) {
-                                moves.push(piece_move)
-                            }
+                            moves.push(PieceMove::EnPassant(en_passant, enemy_piece_point));
                         } else {
-                            let piece_move = PieceMove::Point(point);
-                            if board.is_capturable_enemy_cell(&point, &self.color)
-                                && board.matches_constraints(&piece_move, self.color())  {
-                                moves.push(piece_move)
+                            if board.is_capturable_enemy_cell(&point, &self.color) {
+                                moves.push(PieceMove::Point(point))
                             }
                         }
 
@@ -174,8 +169,7 @@ impl Pawn {
                             PieceMove::Point(point)
                         };
 
-                        if board.is_empty_cell(&point)
-                            && board.matches_constraints(&piece_move, self.color()) {
+                        if board.is_empty_cell(&point) {
                             moves.push(piece_move)
                         }
                         points_calculated += 1;
