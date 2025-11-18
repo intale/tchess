@@ -78,6 +78,7 @@ fn when_enemy_pawn_steps_from_attack_point_of_ally_pawn() {
     let ally_pawn = board.add_piece(
         "Pawn", Color::White, vec![], vec![], Point::new(2, 2)
     );
+
     let enemy_pawn = board.add_piece(
         "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], Point::new(3, 3)
     );
@@ -112,6 +113,7 @@ fn when_ally_pawn_does_not_utilize_en_passant_on_ally_turn() {
     let ally_bishop = board.add_piece(
         "Bishop", Color::White, vec![], vec![], Point::new(1, 3)
     );
+
     let enemy_pawn = board.add_piece(
         "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], Point::new(3, 4)
     );
@@ -170,6 +172,7 @@ mod en_passant_for_two_pawns {
         board.add_piece(
             "Pawn", Color::White, vec![], vec![], Point::new(4, 2)
         );
+
         let enemy_pawn = board.add_piece(
             "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], Point::new(3, 4)
         );

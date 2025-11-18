@@ -20,6 +20,7 @@ fn setup_board() -> Board {
     board.add_piece(
         "Bishop", Color::White, vec![], vec![], Point::new(2, 2)
     );
+
     board.add_piece(
         "Bishop", Color::Black, vec![], vec![], Point::new(3, 3)
     );

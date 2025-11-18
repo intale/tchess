@@ -363,7 +363,10 @@ impl Board {
         }
     }
 
-    fn calculate_check(&mut self, king: &Rc<Piece>) {
+    fn calculate_check_for(&mut self, king: &Rc<Piece>) {
+        king.debuffs().remove_check();
+        self.moves_mut(king.color()).clear_constraints();
+
         if self.is_under_attack(&king.current_position(), king.color()) {
             king.debuffs().add(Debuff::Check);
 
@@ -402,13 +405,10 @@ impl Board {
                 // any piece except the king itself.
                 constraints.push(PieceMove::UnreachablePoint);
             }
-            println!("{:?}", constraints);
+
             for piece_move in constraints {
                 self.moves_mut(king.color()).add_constraints(piece_move);
             }
-        } else {
-            king.debuffs().remove_check();
-            self.moves_mut(king.color()).clear_constraints();
         }
     }
 
@@ -642,6 +642,8 @@ impl Board {
         }
         self.recalculate_connected_positions(&position, &color, true);
         self.recalculate_connected_positions(&position, &color.inverse(), false);
+        self.recalculate_king_mechanics(&color);
+        self.recalculate_king_mechanics(&color.inverse());
         piece
     }
 
@@ -703,6 +705,7 @@ impl Board {
             },
             PieceMove::UnreachablePoint => panic!("Unreachable point!"),
         }
+        self.recalculate_king_mechanics(&piece.color().inverse());
     }
 
     pub fn move_piece(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) -> bool {
@@ -741,26 +744,34 @@ impl Board {
             self.calculate_defends_for(&piece);
         }
 
-        if let Some(king) = self.king(&caused_by_color.inverse()) {
-            let king = Rc::clone(king);
-            self.calculate_pins_for(&king);
-            self.calculate_check(&king);
-            self.calculate_moves_for(&king);
-            for piece in self.pins(caused_by_color).pinned_keys() {
-                pieces_to_recalculate.insert(Rc::clone(piece));
-            }
-        }
-
         for piece in pieces_to_recalculate.iter() {
             match &**piece {
                 Piece::King(_) => {
-                    // We already calculated king's moves for opposite color. Thus, we only
-                    // calculate moves of the king of the given color if the piece is in the list.
+                    // We will calculate king's moves for the opposite color separately. Thus, we
+                    // only calculate moves of the king of the given color if the piece is in the
+                    // list.
                     if piece.color() == caused_by_color {
                         self.calculate_moves_for(&piece)
                     }
                 },
                 _ => self.calculate_moves_for(&piece)
+            }
+        }
+    }
+
+    fn recalculate_king_mechanics(&mut self, color: &Color) {
+        if let Some(king) = self.king(&color) {
+            let king = Rc::clone(king);
+            self.calculate_pins_for(&king);
+            self.calculate_check_for(&king);
+            self.calculate_moves_for(&king);
+            let pins =
+                self.pins(&color.inverse())
+                    .pinned_keys()
+                    .map(|piece| Rc::clone(piece))
+                    .collect::<Vec<_>>();
+            for piece in pins {
+                self.calculate_moves_for(&piece);
             }
         }
     }
