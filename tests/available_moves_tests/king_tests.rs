@@ -585,4 +585,29 @@ mod castle_tests {
         );
     }
 
+    #[test]
+    fn when_rook_is_pinned() {
+        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let king = board.add_piece(
+            "King", Color::White, vec![Buff::Castle], vec![], Point::new(3, 1)
+        );
+        board.add_piece(
+            "Rook", Color::White, vec![Buff::Castle], vec![], Point::new(2, 1)
+        );
+
+        board.add_piece(
+            "Rook", Color::Black, vec![], vec![], Point::new(1, 1)
+        );
+
+        compare(
+            &board,
+            &board.moves(&Color::White).moves_of(&king).to_vec(),
+            &vec![
+                &PieceMove::Point(Point::new(2, 2)),
+                &PieceMove::Point(Point::new(3, 2)),
+                &PieceMove::Point(Point::new(4, 2)),
+                &PieceMove::Point(Point::new(4, 1)),
+            ],
+        );
+    }
 }

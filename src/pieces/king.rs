@@ -53,7 +53,7 @@ impl King {
         for direction in Vector::diagonal_and_line_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             for point in vector_points {
@@ -73,7 +73,7 @@ impl King {
         for direction in Vector::diagonal_and_line_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             for point in vector_points {
@@ -94,7 +94,7 @@ impl King {
         for direction in available_directions {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             for point in vector_points {
@@ -140,7 +140,7 @@ impl King {
                 let direction = Vector::Line(direction);
                 let points = VectorPoints::without_initial(
                     current_position,
-                    *board.get_dimension(),
+                    *board.dimension(),
                     direction,
                 );
 
@@ -185,7 +185,7 @@ impl King {
             if ally_rook.is_none() {
                 let points = VectorPoints::without_initial(
                     current_position,
-                    *board.get_dimension(),
+                    *board.dimension(),
                     side.direction(),
                 );
 
@@ -210,7 +210,7 @@ impl King {
                 // important to make sure rook is not pinned. If it is pinned then it means
                 // castle will result in check which would be illegal move. Such kind of pin
                 // is possible in chess 960. We may skip further checks in this case.
-                if !(rook.buffs().has_castle() && rook.debuffs().pin().is_none()) {
+                if !rook.buffs().has_castle() || board.has_pin_constraints(rook) {
                     continue
                 }
 
@@ -224,7 +224,7 @@ impl King {
                     if let Some(direction) = direction {
                         let points = VectorPoints::without_initial(
                             rook.current_position(),
-                            *board.get_dimension(),
+                            *board.dimension(),
                             Vector::Line(direction),
                         );
 

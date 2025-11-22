@@ -4,7 +4,7 @@ use crate::pieces::{Piece};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 
-pub type PieceHashSetT = FxHashSet<Rc<Piece>>;
+type PieceHashSetT = FxHashSet<Rc<Piece>>;
 type PointHashSetT = FxHashSet<Point>;
 type PointToPieceMapT = FxHashMap<
     Point,

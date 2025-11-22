@@ -10,6 +10,7 @@ use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
 use crate::piece_move::PieceMove;
+use crate::promote_piece::PromotePiece;
 use crate::vector::line_vector::LineVector;
 
 #[derive(Debug)]
@@ -66,7 +67,7 @@ impl Pawn {
         for direction in directions {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             for point in vector_points {
@@ -99,7 +100,7 @@ impl Pawn {
         for direction in directions {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             for point in vector_points {
@@ -113,7 +114,6 @@ impl Pawn {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        let pin = self.debuffs.pin();
         let mut available_directions = match self.color {
             Color::White => {
                 vec![
@@ -132,19 +132,21 @@ impl Pawn {
         };
         let mut moves: Vec<PieceMove> = vec![];
 
-        if !pin.is_none() {
-            let pin = pin.unwrap();
-            available_directions = available_directions
-                .iter()
-                .filter(|&&vec| pin == vec || pin.inverse() == vec)
-                .map(|&vec| vec)
-                .collect::<Vec<_>>();
-        }
-
+        let pre_promote_position =
+            match self.color {
+                Color::White => {
+                    &(board.dimension().max_point().y().value() - 1) ==
+                        self.current_position.get().y().value()
+                },
+                Color::Black => {
+                    &(board.dimension().min_point().y().value() + 1) ==
+                        self.current_position.get().y().value()
+                }
+            };
         for direction in available_directions {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
-                *board.get_dimension(),
+                *board.dimension(),
                 direction,
             );
             let mut points_calculated = 0;
@@ -157,20 +159,29 @@ impl Pawn {
                             moves.push(PieceMove::EnPassant(en_passant, enemy_piece_point));
                         } else {
                             if board.is_capturable_enemy_cell(&point, &self.color) {
-                                moves.push(PieceMove::Point(point))
+                                if pre_promote_position {
+                                    for variant in PromotePiece::all_variants() {
+                                        moves.push(PieceMove::Promote(point, variant))
+                                    }
+                                } else {
+                                    moves.push(PieceMove::Point(point))
+                                }
                             }
                         }
-
                     },
                     Vector::Line(_) => {
-                        let piece_move = if points_calculated == 1 {
-                            PieceMove::LongMove(point)
-                        } else {
-                            PieceMove::Point(point)
-                        };
-
                         if board.is_empty_cell(&point) {
-                            moves.push(piece_move)
+                            if points_calculated == 1 {
+                                moves.push(PieceMove::LongMove(point))
+                            } else {
+                                if pre_promote_position {
+                                    for variant in PromotePiece::all_variants() {
+                                        moves.push(PieceMove::Promote(point, variant))
+                                    }
+                                } else {
+                                    moves.push(PieceMove::Point(point))
+                                }
+                            }
                         }
                         points_calculated += 1;
                         if self.buffs.has_additional_point() && points_calculated < 2 {

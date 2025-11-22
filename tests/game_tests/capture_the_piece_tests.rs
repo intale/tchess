@@ -20,6 +20,9 @@ fn setup_board() -> Board {
     board.add_piece(
         "Bishop", Color::White, vec![], vec![], Point::new(2, 2)
     );
+    board.add_piece(
+        "King", Color::White, vec![], vec![], Point::new(1, 1)
+    );
 
     board.add_piece(
         "Bishop", Color::Black, vec![], vec![], Point::new(3, 3)
@@ -47,7 +50,7 @@ fn expectation() -> Expect<Vec<Rc<Piece>>, Board> {
 #[test]
 fn it_removes_captured_piece_from_x_ray_pieces_list() {
     expectation().to_change(|board| {
-        board.x_ray_pieces(&Color::Black).to_vec().clone_pieces()
+        board.x_ray_pieces(&Color::Black).pieces().clone_pieces()
     }).to(|_board| {
         Vec::<Rc<Piece>>::new()
     });
@@ -75,17 +78,8 @@ fn it_removes_captured_piece_attack_points_list() {
 fn it_removes_captured_piece_defensive_points_list() {
     expectation().to_change(|board| {
         board.defensive_points(&Color::Black).get_all_pieces().clone_pieces()
-    }).to(|board| {
-        vec![Rc::clone(board.piece_at(&Point::new(4, 4)).unwrap())]
-    });
-}
-
-#[test]
-fn it_removes_captured_piece_pins_list() {
-    expectation().to_change(|board| {
-        board.pins(&Color::White).all_pinned().clone_pieces()
     }).to(|_board| {
-        Vec::<Rc<Piece>>::new()
+        vec![]
     });
 }
 
@@ -97,6 +91,7 @@ fn it_removes_captured_piece_from_the_board_cell() {
         vec![
             Rc::clone(board.piece_at(&Point::new(4, 4)).unwrap()),
             Rc::clone(board.piece_at(&Point::new(3, 3)).unwrap()),
+            Rc::clone(board.piece_at(&Point::new(1, 1)).unwrap()),
         ]
     });
 }

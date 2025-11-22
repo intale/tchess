@@ -13,4 +13,5 @@ pub mod debuff;
 pub mod moves_map;
 pub mod piece_move;
 pub mod castle_points;
-mod pins_map;
+mod promote_piece;
+mod x_ray_pieces;

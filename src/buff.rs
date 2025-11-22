@@ -2,18 +2,9 @@ use std::cell::RefCell;
 use crate::point::Point;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub enum PromotePiece {
-    Bishop,
-    Knight,
-    Queen,
-    Rook,
-}
-
-#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Buff {
     Castle,
     EnPassant(Point, Point),
-    Promote(PromotePiece),
     AdditionalPoint, // A pawn buff to allow going one additional point further
 }
 
@@ -21,7 +12,6 @@ pub enum Buff {
 struct BuffsList {
     pub castle: Option<Buff>,
     pub en_passant: Option<Buff>,
-    pub promote: Option<Buff>,
     pub additional_point: Option<Buff>,
 }
 
@@ -30,7 +20,6 @@ impl BuffsList {
         Self {
             castle: None,
             en_passant: None,
-            promote: None,
             additional_point: None,
         }
     }
@@ -39,7 +28,6 @@ impl BuffsList {
         match buff {
             Buff::Castle => { self.castle = Some(buff) },
             Buff::EnPassant(_, _) => { self.en_passant = Some(buff) },
-            Buff::Promote(_) => { self.promote = Some(buff) },
             Buff::AdditionalPoint => { self.additional_point = Some(buff) },
         }
     }
@@ -107,7 +95,6 @@ impl BuffsCollection {
         let buffs = [
             list.castle.as_ref(),
             list.en_passant.as_ref(),
-            list.promote.as_ref(),
             list.additional_point.as_ref(),
         ];
         buffs

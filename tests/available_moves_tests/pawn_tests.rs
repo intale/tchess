@@ -420,7 +420,7 @@ mod black_pawn {
     #[test]
     fn when_pawn_is_pinned_by_diagonal_by_enemy_piece_on_attack_point() {
         let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
-        board.set_pov(Color::Black);
+        // board.set_pov(Color::Black);
         let pawn = board.add_piece(
             "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], Point::new(2, 4)
         );

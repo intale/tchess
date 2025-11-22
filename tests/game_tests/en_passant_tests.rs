@@ -73,7 +73,7 @@ fn when_enemy_piece_crosses_attack_point_of_ally_pawn() {
 
 #[test]
 fn when_enemy_pawn_steps_from_attack_point_of_ally_pawn() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+    let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
     board.pass_turn(&Color::Black);
     let ally_pawn = board.add_piece(
         "Pawn", Color::White, vec![], vec![], Point::new(2, 2)
