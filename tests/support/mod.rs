@@ -1,4 +1,4 @@
-pub mod to_vec;
+pub mod traits;
 
 use std::fmt::Debug;
 use tchess::utils::pretty_print::PrettyPrint;
@@ -108,6 +108,21 @@ impl<T: PartialEq + Debug, TT> Expect<T, TT> {
     {
         self.change_fn = Some(Box::new(change_fn));
         self
+    }
+
+    #[allow(unused)]
+    pub fn not_to_change<F>(&mut self, change_fn: F)
+    where F: Fn(&mut TT) -> T + 'static
+    {
+        let mut setup = self.setup.as_ref()();
+        let initial_value = change_fn(&mut setup);
+        self.subject_fn.as_ref().unwrap()(&mut setup);
+        let final_value = change_fn(&mut setup);
+
+        assert_eq!(
+            initial_value, final_value,
+            "Expect subject not to change {:?}, but it changed to {:?}.", initial_value, final_value
+        );
     }
 
     #[allow(unused)]

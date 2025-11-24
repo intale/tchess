@@ -5,7 +5,7 @@ use tchess::board::Board;
 use tchess::color::Color;
 use tchess::point::Point;
 use support::compare;
-use support::to_vec::ToVecRef;
+use support::traits::ToVecRef;
 use tchess::dimension::Dimension;
 use tchess::piece_move::PieceMove;
 use support::create_box_of;

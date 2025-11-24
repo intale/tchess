@@ -616,33 +616,23 @@ impl Board {
         };
         match piece_move {
             PieceMove::Point(new_position) | PieceMove::LongMove(new_position) => {
-                let old_position = piece.current_position();
-                if let Some(piece) = self.piece_at(new_position) {
-                    let piece = Rc::clone(piece);
-                    self.capture_piece(&piece);
-                }
-                self.cell_mut(&old_position).remove_piece();
-                self.cell_mut(&new_position).set_piece_rc(piece);
-                piece.set_current_position(*new_position);
-                self.recalculate_connected_positions(&old_position, piece.color(), false);
-                self.recalculate_connected_positions(&new_position, piece.color(), true);
-                self.recalculate_connected_positions(
-                    &new_position, &piece.color().inverse(), false
-                );
+                let enemy_piece: Option<Rc<Piece>> =
+                    if let Some(piece) = self.piece_at(new_position) {
+                        Some(Rc::clone(piece))
+                    } else {
+                        None
+                    };
+                self.perform_move(piece, &piece.current_position(), &new_position, enemy_piece);
             },
             PieceMove::EnPassant(new_position, enemy_position) => {
-                let old_position = piece.current_position();
-                let captured_pawn = Rc::clone(self.piece_at(enemy_position).unwrap());
-
-                self.capture_piece(&captured_pawn);
-                self.cell_mut(&old_position).remove_piece();
-                self.cell_mut(&new_position).set_piece_rc(piece);
-                self.recalculate_connected_positions(&old_position, piece.color(), false);
-                self.recalculate_connected_positions(&new_position, piece.color(), true);
-                self.recalculate_connected_positions(
-                    &new_position, &piece.color().inverse(), false
-                );
-            }
+                let captured_pawn = Some(Rc::clone(self.piece_at(enemy_position).unwrap_or_else(|| {
+                    panic!(
+                        "Logical mistake: enemy pawn should be present at {:?} during en passant",
+                        enemy_position
+                    );
+                })));
+                self.perform_move(piece, &piece.current_position(), &new_position, captured_pawn);
+            },
             PieceMove::Castle(castle_points) => {
                 let king = Rc::clone(self.piece_at(castle_points.initial_king_point()).unwrap());
                 let rook = Rc::clone(self.piece_at(castle_points.initial_rook_point()).unwrap());
@@ -668,6 +658,21 @@ impl Board {
             self.recalculate_king_mechanics(piece.color());
             self.recalculate_king_mechanics(&piece.color().inverse());
         }
+    }
+
+    fn perform_move(&mut self, piece_to_move: &Rc<Piece>, old_position: &Point,
+                    new_position: &Point, enemy_piece: Option<Rc<Piece>>) {
+        if let Some(piece) = enemy_piece {
+            self.capture_piece(&piece);
+        }
+        self.cell_mut(&old_position).remove_piece();
+        self.cell_mut(&new_position).set_piece_rc(piece_to_move);
+        piece_to_move.set_current_position(*new_position);
+        self.recalculate_connected_positions(&old_position, piece_to_move.color(), false);
+        self.recalculate_connected_positions(&new_position, piece_to_move.color(), true);
+        self.recalculate_connected_positions(
+            &new_position, &piece_to_move.color().inverse(), false
+        );
     }
 
     pub fn move_piece(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) -> bool {

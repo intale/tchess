@@ -5,7 +5,7 @@ use std::rc::Rc;
 use tchess::board::Board;
 use tchess::color::Color;
 use tchess::point::Point;
-use support::to_vec::{ToVecRef, ClonePieces};
+use support::traits::{ToVecRef, ClonePieces};
 use tchess::piece_move::PieceMove;
 use tchess::utils::pretty_print::PrettyPrint;
 use support::Expect;

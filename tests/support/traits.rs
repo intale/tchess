@@ -28,6 +28,11 @@ pub trait ToVecRef {
     fn to_vec(&self) -> Vec<&Self::Item>;
 }
 
+#[allow(unused)]
+pub trait FindPiece {
+    fn find_piece_by_id(&self, id: usize) -> Option<Rc<Piece>>;
+}
+
 impl ClonePieces for Vec<&Rc<Piece>> {
     fn clone_pieces(&self) -> Vec<Rc<Piece>> {
         self.iter().map(|piece| Rc::clone(piece)).collect()
@@ -75,5 +80,22 @@ impl ToVecRef for Board {
             .iter()
             .filter_map(|(_, cell)| cell.get_piece().as_ref())
             .collect::<Vec<_>>()
+    }
+}
+
+impl FindPiece for Board {
+    fn find_piece_by_id(&self, id: usize) -> Option<Rc<Piece>> {
+        let cell = self.get_board()
+            .iter()
+            .find(|(_, cell)| {
+                match cell.get_piece() {
+                    Some(piece) => piece.id() == id,
+                    _ => false,
+                }
+            });
+        match cell {
+            Some((_, cell)) => Some(cell.get_piece_rc().unwrap()),
+            _ => None,
+        }
     }
 }

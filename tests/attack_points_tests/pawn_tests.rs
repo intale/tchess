@@ -5,7 +5,7 @@ use tchess::board::Board;
 use tchess::color::Color;
 use tchess::point::Point;
 use support::compare;
-use support::to_vec::ToVecRef;
+use support::traits::ToVecRef;
 
 #[cfg(test)]
 mod white_pawn {
