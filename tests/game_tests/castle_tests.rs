@@ -52,7 +52,7 @@ mod rook_gets_pinned {
         expectation().to_change(|board| {
             let white_king = board.piece_at(&Point::new(4, 1)).unwrap();
             board.moves(&Color::White).moves_of(white_king).to_vec().clone_moves()
-        }).to(|board| {
+        }).to(|_board| {
             vec![
                 PieceMove::Point(Point::new(4, 2)),
                 PieceMove::Point(Point::new(5, 1)),

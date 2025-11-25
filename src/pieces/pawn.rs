@@ -114,7 +114,7 @@ impl Pawn {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        let mut available_directions = match self.color {
+        let available_directions = match self.color {
             Color::White => {
                 vec![
                     Vector::Line(LineVector::Top),
@@ -171,16 +171,16 @@ impl Pawn {
                     },
                     Vector::Line(_) => {
                         if board.is_empty_cell(&point) {
+                            if pre_promote_position {
+                                for variant in PromotePiece::all_variants() {
+                                    moves.push(PieceMove::Promote(point, variant))
+                                }
+                                break
+                            }
                             if points_calculated == 1 {
                                 moves.push(PieceMove::LongMove(point))
                             } else {
-                                if pre_promote_position {
-                                    for variant in PromotePiece::all_variants() {
-                                        moves.push(PieceMove::Promote(point, variant))
-                                    }
-                                } else {
-                                    moves.push(PieceMove::Point(point))
-                                }
+                                moves.push(PieceMove::Point(point))
                             }
                         }
                         points_calculated += 1;

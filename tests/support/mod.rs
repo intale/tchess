@@ -141,4 +141,12 @@ impl<T: PartialEq + Debug, TT> Expect<T, TT> {
         );
         assert_eq!(final_value, expectation(&mut setup));
     }
+
+    // Executes subject_fn with the given setup and returns the setup object
+    #[allow(unused)]
+    pub fn run_expectation(&mut self) -> TT {
+        let mut setup = self.setup.as_ref()();
+        self.subject_fn.as_ref().unwrap()(&mut setup);
+        setup
+    }
 }
