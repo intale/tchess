@@ -1,10 +1,12 @@
 use std::cell::RefCell;
+use crate::vector::Vector;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Debuff {
     Captured,
     Check,
     Checkmate,
+    Pin(Vector),
 }
 
 #[derive(Debug)]
@@ -12,6 +14,7 @@ struct DebuffsList {
     pub captured: Option<Debuff>,
     pub check: Option<Debuff>,
     pub checkmate: Option<Debuff>,
+    pub pin: Option<Debuff>,
 }
 
 impl DebuffsList {
@@ -20,6 +23,7 @@ impl DebuffsList {
             captured: None,
             check: None,
             checkmate: None,
+            pin: None,
         }
     }
 
@@ -28,6 +32,7 @@ impl DebuffsList {
             Debuff::Captured => { self.captured = Some(debuff) },
             Debuff::Check => { self.check = Some(debuff) },
             Debuff::Checkmate => { self.checkmate = Some(debuff) },
+            Debuff::Pin(_) => { self.pin = Some(debuff) },
         }
     }
 }
@@ -50,6 +55,23 @@ impl DebuffsCollection {
         self.debuffs.borrow_mut().add(debuff)
     }
 
+    pub fn pin(&self) -> Option<Vector> {
+        match self.debuffs.borrow().pin {
+            Some(debuff) => {
+                match debuff {
+                    Debuff::Pin(v) => Some(v),
+
+                    _ => panic!("Invalid pin debuff {:?}!", debuff)
+                }
+            },
+            None => None
+        }
+    }
+
+    pub fn remove_pin(&self) {
+        self.debuffs.borrow_mut().pin = None;
+    }
+
     pub fn remove_check(&self) {
         self.debuffs.borrow_mut().check = None;
     }
@@ -60,7 +82,7 @@ impl DebuffsCollection {
 
     pub fn to_vec(&self) -> Vec<Debuff> {
         let list = self.debuffs.borrow();
-        [list.captured, list.check, list.checkmate]
+        [list.captured, list.check, list.checkmate, list.pin]
             .iter()
             .filter(|debuff| debuff.is_some())
             .map(|debuff| debuff.unwrap())

@@ -86,9 +86,21 @@ impl Bishop {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
+        let pin = self.debuffs.pin();
+        let available_directions =
+            if pin.is_none() {
+                Vector::diagonal_vectors()
+            } else {
+                let pin = pin.unwrap();
+                Vector::diagonal_vectors()
+                    .iter()
+                    .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                    .map(|&vec| vec)
+                    .collect::<Vec<_>>()
+            };
         let mut moves: Vec<PieceMove> = vec![];
 
-        for direction in Vector::diagonal_vectors() {
+        for direction in available_directions {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),

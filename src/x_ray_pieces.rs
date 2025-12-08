@@ -20,7 +20,7 @@ impl XRayPieces {
         Self { direction_to_piece: FxHashMap::default(), x_ray_data: FxHashMap::default() }
     }
 
-    pub fn add_x_ray_vector(&mut self, vector: &Vector, piece: &Rc<Piece>) {
+    pub fn add_x_ray_vector(&mut self, vector: &Vector, piece: &Rc<Piece>) -> Rc<Piece> {
         if let Some(existing_piece) = self.direction_to_piece.get(vector) {
             let should_replace =
                 match vector {
@@ -64,9 +64,12 @@ impl XRayPieces {
                 };
             if should_replace {
                 self.add_or_replace_pin_vector(vector, piece);
+                return Rc::clone(piece)
             }
+            Rc::clone(existing_piece)
         } else {
             self.add_or_replace_pin_vector(vector, piece);
+            Rc::clone(piece)
         }
     }
 
@@ -88,8 +91,13 @@ impl XRayPieces {
         }
     }
 
+    pub fn pinned_pieces(&self) -> Vec<&Rc<Piece>> {
+        self.x_ray_data.values().filter_map(|data| data.pin.as_ref()).collect::<Vec<_>>()
+    }
+
     pub fn remove_piece(&mut self, piece: &Rc<Piece>) -> Option<Rc<Piece>> {
         if let Some(data) = self.x_ray_data.remove(piece) {
+            println!("Direction {:?} removed for: {:?}", data.direction, piece);
             self.direction_to_piece.remove(&data.direction)
         } else {
             None
@@ -100,6 +108,10 @@ impl XRayPieces {
         self.x_ray_data.keys().collect()
     }
 
+    pub fn pieces_owned(&self) -> Vec<Rc<Piece>> {
+        self.x_ray_data.keys().map(|piece| Rc::clone(piece)).collect::<Vec<_>>()
+    }
+
     pub fn direction(&self, piece: &Rc<Piece>) -> Option<&Vector> {
         match self.x_ray_data.get(piece) {
             Some(data) => Some(&data.direction),
@@ -107,8 +119,16 @@ impl XRayPieces {
         }
     }
 
+    pub fn piece_by_direction(&self, direction: &Vector) -> Option<&Rc<Piece>> {
+        self.direction_to_piece.get(direction)
+    }
+
     fn add_or_replace_pin_vector(&mut self, vector: &Vector, piece: &Rc<Piece>) {
+        if let Some(current_piece) = self.direction_to_piece.get(vector) {
+            self.x_ray_data.remove(current_piece);
+        };
         self.direction_to_piece.insert(*vector, Rc::clone(piece));
+        println!("Direction {:?} added for: {:?}", vector, piece);
         if let Some(data) = self.x_ray_data.get_mut(piece) {
             data.direction = *vector;
             data.pin = None;

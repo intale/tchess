@@ -54,7 +54,6 @@ pub struct MovesMap {
     point_to_pieces: PointToPiecesMapT,
     // Moves map of pieces, except the king when the king is in check
     general_constraints: MoveConstraints,
-    pin_constraints: FxHashMap<Rc<Piece>, MovesSetT>,
 }
 
 impl MovesMap {
@@ -62,8 +61,7 @@ impl MovesMap {
         let piece_to_moves = FxHashMap::default();
         let point_to_pieces = FxHashMap::default();
         let general_constraints = MoveConstraints::empty();
-        let pin_constraints = FxHashMap::default();
-        Self { piece_to_moves, point_to_pieces, general_constraints, pin_constraints }
+        Self { piece_to_moves, point_to_pieces, general_constraints }
     }
 
     fn moves_mut(&mut self, piece: &Rc<Piece>) -> &mut MovesSetT {
@@ -91,7 +89,7 @@ impl MovesMap {
                 if self.general_constraints.is_enabled() {
                     self.general_constraints.get(piece)
                 } else {
-                    self.pin_constraints.get(piece).or(self.piece_to_moves.get(piece))
+                    self.piece_to_moves.get(piece)
                 }
             },
         }
@@ -115,7 +113,7 @@ impl MovesMap {
         }
     }
 
-    pub fn remove_piece(&mut self, piece: &Rc<Piece>) {
+    pub fn remove_piece(&mut self, piece: &Rc<Piece>) -> Option<MovesSetT> {
         let moves = self.piece_to_moves.remove(piece);
         if let Some(moves) = moves {
             for piece_move in moves.iter() {
@@ -128,7 +126,9 @@ impl MovesMap {
                     }
                 }
             }
+            return Some(moves);
         }
+        None
     }
 
     pub fn clear_general_constraints(&mut self) {
@@ -140,50 +140,11 @@ impl MovesMap {
         if let Some(point) = piece_move.destination() {
             if let Some(pieces) = self.point_to_pieces.get(&point) {
                 for (piece, piece_moves) in pieces {
-                    if let Some(pin_constraints) = self.pin_constraints.get(piece) {
-                        for piece_move in piece_moves {
-                            if pin_constraints.contains(piece_move) {
-                                self.general_constraints.get_mut(piece).insert(*piece_move);
-                            }
-                        }
-                    } else {
-                        for piece_move in piece_moves {
-                            self.general_constraints.get_mut(piece).insert(*piece_move);
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-
-    pub fn add_pin_constraints(&mut self, pinned: &Rc<Piece>, points: &Vec<Point>) {
-        if !self.pin_constraints.contains_key(pinned) {
-            self.pin_constraints.insert(Rc::clone(pinned), FxHashSet::default());
-        }
-
-        // Build an intersection of moves of the given piece based on provided constraints and
-        // available moves
-        for point in points {
-            if let Some(pieces) = self.point_to_pieces.get(&point) {
-                if let Some(moves) = pieces.get(pinned) {
-                    for piece_move in moves {
-                        self.pin_constraints.get_mut(pinned).unwrap().insert(*piece_move);
+                    for piece_move in piece_moves {
+                        self.general_constraints.get_mut(piece).insert(*piece_move);
                     }
                 }
             }
         }
-    }
-
-    pub fn clear_pin_constraints_of(&mut self, pinned: &Rc<Piece>) {
-        self.pin_constraints.remove(pinned);
-    }
-
-    pub fn pinned_pieces(&self) -> Vec<&Rc<Piece>> {
-        self.pin_constraints.keys().collect::<Vec<_>>()
-    }
-
-    pub fn has_pin_constraints(&self, piece: &Rc<Piece>) -> bool {
-        self.pin_constraints.contains_key(piece)
     }
 }

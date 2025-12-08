@@ -210,7 +210,7 @@ impl King {
                 // important to make sure rook is not pinned. If it is pinned then it means
                 // castle will result in check which would be illegal move. Such kind of pin
                 // is possible in chess 960. We may skip further checks in this case.
-                if !rook.buffs().has_castle() || board.has_pin_constraints(rook) {
+                if !(rook.buffs().has_castle() && rook.debuffs().pin().is_none()) {
                     continue
                 }
 

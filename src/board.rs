@@ -317,16 +317,52 @@ impl Board {
             Some(piece) => Rc::clone(piece),
             None => return,
         };
-        self.remove_x_ray_piece(piece);
 
         let attacks = self.attack_points(piece.color()).get_points(piece);
         if let Some(attacks) = attacks && !attacks.is_empty() {
             if let Some(direction) = Self::x_ray_direction(piece, &opposite_king) {
-                self.x_ray_pieces_mut(&piece.color()).add_x_ray_vector(
-                    &direction, &piece
-                );
-                self.add_pins(&opposite_king, piece);
+                // Get current piece which occupies this direction
+                let current_piece =
+                    self.x_ray_pieces(piece.color())
+                        .piece_by_direction(&direction);
+                let current_piece =
+                    match current_piece {
+                        Some(piece) => Some(Rc::clone(piece)),
+                        None => None,
+                    };
+
+                // Add or try to replace the direction by the given piece
+                let new_piece =
+                    self.x_ray_pieces_mut(piece.color())
+                        .add_x_ray_vector(&direction, piece);
+
+                // The direction was replaced by the new piece. We have to remove a pin of the old
+                // piece if any.
+                if let Some(current_piece) = current_piece.as_ref() && current_piece != &new_piece {
+                    self.remove_x_ray_piece(&current_piece);
+                }
+
+                if &new_piece == piece {
+                    // We are calculating pins for the piece which already occupies the given
+                    // direction or have just occupied it. In this case we need to recalculate moves
+                    // of possible pinned piece.
+                    self.clear_existing_pins(&piece);
+                    self.add_pins(&opposite_king, piece);
+                } else {
+                    // The given direction was not replaced by the given piece. This means that
+                    // there is already another piece, positioned closer to the opposite king that
+                    // the given one.
+                    self.remove_x_ray_piece(&piece);
+                }
+            } else {
+                // The given piece does not have any connections to the opposite king - we have to
+                // remove previously existing pin if any.
+                self.remove_x_ray_piece(piece);
             }
+        } else {
+            // The given piece does not have any attack points - we have to remove previously
+            // existing pin if any.
+            self.remove_x_ray_piece(piece);
         }
     }
 
@@ -504,17 +540,13 @@ impl Board {
         self.defensive_points(&color.inverse()).has_pieces(point)
     }
 
-    pub fn has_pin_constraints(&self, piece: &Rc<Piece>) -> bool {
-        self.moves(piece.color()).has_pin_constraints(piece)
-    }
-
-    fn add_pins(&mut self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) {
+    fn add_pins(&mut self, pin_to: &Rc<Piece>, pinned_by: &Rc<Piece>) -> bool {
         let points = self.attack_points(pinned_by.color()).get_points(pinned_by);
         if let Some(points) = points {
             if points.contains(&pin_to.current_position()) {
                 // No need to calculate pinned pieces, because pin_to piece is directly attacked by
                 // the given pinned_by piece
-                return;
+                return false;
             }
         }
 
@@ -532,9 +564,7 @@ impl Board {
             *self.dimension(),
             x_ray_direction
         );
-        let mut constraints: Vec<Point> = vec![];
         for point in vector_points {
-            constraints.push(point);
             if let Some(piece) = self.piece_at(&point) {
                 let piece = Rc::clone(piece);
                 // Enemy piece meets his ally
@@ -545,14 +575,10 @@ impl Board {
                     Some(p) => {
                         if &piece == pin_to {
                             // Current piece is pin_to. We have a bound!
-
-                            // Remove king's position
-                            constraints.pop();
-                            // Add position of the piece caused the pin
-                            constraints.push(pinned_by.current_position());
-                            self.moves_mut(pin_to.color())
-                                .add_pin_constraints(&p, &constraints);
+                            p.debuffs().add(Debuff::Pin(x_ray_direction));
+                            self.calculate_moves_for(&p);
                             self.x_ray_pieces_mut(pinned_by.color()).add_pin(&p, pinned_by);
+                            return true;
                         }
                         break
                     },
@@ -560,6 +586,7 @@ impl Board {
                 }
             }
         }
+        false
     }
 
     fn get_next_piece_id(&mut self) -> usize {
@@ -712,10 +739,6 @@ impl Board {
             pieces_to_recalculate.insert(Rc::clone(piece));
         }
 
-        for piece in self.moves(caused_by_color).pinned_pieces() {
-            pieces_to_recalculate.insert(Rc::clone(piece));
-        }
-
         for piece in pieces_to_recalculate.iter() {
             self.calculate_attacks_for(piece);
             self.calculate_defends_for(piece);
@@ -732,6 +755,29 @@ impl Board {
             }
         }
 
+        // This covers the case when an ally piece moves from the x-ray direction, thus causing
+        // another ally piece, standing in front of it, be pinned. Example, white bishop(or black -
+        // if you are using light theme in your IDE/editor) causes white queen be pinned by moving
+        // to a2:
+        // 3 ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓
+        // 2 ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░
+        // 1 ░♚░ ▓♝▓ ░♛░ ▓▓▓ ░░░ ▓▓▓ ░♖░ ▓♔▓
+        //    a   b   c   d   e   f   g   h
+        // 3 ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓
+        // 2 ▓♝▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░ ▓▓▓ ░░░
+        // 1 ░♚░ ▓▓▓ ░♛░ ▓▓▓ ░░░ ▓▓▓ ░♖░ ▓♔▓
+        //    a   b   c   d   e   f   g   h
+        for piece in self.x_ray_pieces(&caused_by_color.inverse()).pieces_owned() {
+            if let Some(x_ray_direction) = self.x_ray_pieces(&caused_by_color.inverse()).direction(&piece) {
+                if let Some(direction) = Vector::calc_direction(&piece.current_position(), point) {
+                    if x_ray_direction == &direction {
+                        self.calculate_x_ray(&piece);
+                    }
+                }
+            }
+        }
+
+        // Re-calculate x-rays of x-ray pieces, explicitly affected by the current position
         for piece in pieces_to_recalculate {
             match &*piece {
                 Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
@@ -811,12 +857,16 @@ impl Board {
     }
 
     fn remove_x_ray_piece(&mut self, piece: &Rc<Piece>) {
+        self.clear_existing_pins(piece);
+        self.x_ray_pieces_mut(&piece.color()).remove_piece(piece);
+    }
+
+    fn clear_existing_pins(&mut self, piece: &Rc<Piece>) {
         if let Some(pinned) = self.x_ray_pieces_mut(&piece.color()).pinned_piece(piece) {
             let pinned = Rc::clone(pinned);
-            self.moves_mut(&piece.color().inverse())
-                .clear_pin_constraints_of(&pinned);
+            pinned.debuffs().remove_pin();
+            self.calculate_moves_for(&pinned);
         }
-        self.x_ray_pieces_mut(&piece.color()).remove_piece(piece);
     }
 }
 

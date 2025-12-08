@@ -114,7 +114,8 @@ impl Pawn {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        let available_directions = match self.color {
+        let pin = self.debuffs.pin();
+        let mut available_directions = match self.color {
             Color::White => {
                 vec![
                     Vector::Line(LineVector::Top),
@@ -131,6 +132,15 @@ impl Pawn {
             }
         };
         let mut moves: Vec<PieceMove> = vec![];
+
+        if !pin.is_none() {
+            let pin = pin.unwrap();
+            available_directions = available_directions
+                .iter()
+                .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                .map(|&vec| vec)
+                .collect::<Vec<_>>();
+        }
 
         let pre_promote_position =
             match self.color {
