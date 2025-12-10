@@ -97,7 +97,6 @@ impl XRayPieces {
 
     pub fn remove_piece(&mut self, piece: &Rc<Piece>) -> Option<Rc<Piece>> {
         if let Some(data) = self.x_ray_data.remove(piece) {
-            println!("Direction {:?} removed for: {:?}", data.direction, piece);
             self.direction_to_piece.remove(&data.direction)
         } else {
             None
@@ -128,7 +127,6 @@ impl XRayPieces {
             self.x_ray_data.remove(current_piece);
         };
         self.direction_to_piece.insert(*vector, Rc::clone(piece));
-        println!("Direction {:?} added for: {:?}", vector, piece);
         if let Some(data) = self.x_ray_data.get_mut(piece) {
             data.direction = *vector;
             data.pin = None;

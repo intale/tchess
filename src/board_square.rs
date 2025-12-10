@@ -4,13 +4,18 @@ use crate::color::Color;
 use crate::pieces::Piece;
 use crate::utils::pretty_print::PrettyPrint;
 
+pub enum BoardSquare {
+    Square(Square),
+    VoidSquare
+}
+
 #[derive(Debug)]
-pub struct BoardCell {
+pub struct Square {
     piece: Option<Rc<Piece>>,
     color: Color,
 }
 
-impl BoardCell {
+impl Square {
     pub fn new(color: Color, piece: Option<Rc<Piece>>) -> Self {
         Self { color, piece }
     }
@@ -26,8 +31,13 @@ impl BoardCell {
         self.piece = Some(Rc::clone(piece));
     }
 
-    pub fn remove_piece(&mut self) {
-        self.piece = None;
+    pub fn remove_piece(&mut self) -> Option<Rc<Piece>> {
+        if let Some(piece) = self.piece.take() {
+            self.piece = None;
+            Some(piece)
+        } else {
+            None
+        }
     }
 
     pub fn get_piece(&self) -> &Option<Rc<Piece>> {
@@ -35,7 +45,7 @@ impl BoardCell {
     }
 }
 
-impl PrettyPrint for BoardCell {
+impl PrettyPrint for Square {
     fn pp(&self) -> String {
         let mut output = String::new();
         let base_sym = match self.color {

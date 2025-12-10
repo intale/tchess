@@ -43,6 +43,10 @@ impl MoveConstraints {
     pub fn get(&self, piece: &Rc<Piece>) -> Option<&MovesSetT> {
         self.constraints.get(piece)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.constraints.is_empty()
+    }
 }
 
 pub struct MovesMap {
@@ -145,6 +149,15 @@ impl MovesMap {
                     }
                 }
             }
+        }
+    }
+
+    pub fn is_empty(&self, king: Option<&Rc<Piece>>) -> bool {
+        if let Some(king) = king && self.general_constraints.is_enabled() {
+            self.general_constraints.is_empty() && 
+                self.piece_to_moves.get(king).unwrap_or(&MovesSetT::default()).is_empty()
+        } else {
+            self.piece_to_moves.is_empty()
         }
     }
 }

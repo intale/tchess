@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 use tchess::board::Board;
+use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::pieces::Piece;
 
@@ -76,25 +77,17 @@ impl ToVecRef for Board {
     type Item = Rc<Piece>;
 
     fn to_vec(&self) -> Vec<&Self::Item> {
-        self.get_board()
-            .iter()
-            .filter_map(|(_, cell)| cell.get_piece().as_ref())
-            .collect::<Vec<_>>()
+        let mut pieces = self.board_map().active_pieces(&Color::White).to_vec();
+        pieces.append(&mut self.board_map().active_pieces(&Color::Black).to_vec());
+        pieces
     }
 }
 
 impl FindPiece for Board {
     fn find_piece_by_id(&self, id: usize) -> Option<Rc<Piece>> {
-        let cell = self.get_board()
-            .iter()
-            .find(|(_, cell)| {
-                match cell.get_piece() {
-                    Some(piece) => piece.id() == id,
-                    _ => false,
-                }
-            });
-        match cell {
-            Some((_, cell)) => Some(cell.get_piece_rc().unwrap()),
+        let piece = self.to_vec().into_iter().find(|p| p.id() == id);
+        match piece {
+            Some(p) => Some(Rc::clone(p)),
             _ => None,
         }
     }

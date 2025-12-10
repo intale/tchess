@@ -54,7 +54,7 @@ impl Knight {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -74,7 +74,7 @@ impl Knight {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_cell(&point, &self.color) {
+                if board.is_ally_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -102,8 +102,8 @@ impl Knight {
             );
             for point in vector_points {
                 let piece_move = PieceMove::Point(point);
-                if board.is_empty_cell(&point) ||
-                    board.is_capturable_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) ||
+                    board.is_capturable_enemy_square(&point, &self.color) {
                     moves.push(piece_move)
                 }
                 break;

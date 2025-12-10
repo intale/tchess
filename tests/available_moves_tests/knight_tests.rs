@@ -1,24 +1,23 @@
 #[path = "../support/mod.rs"]
 mod support;
 
+use support::compare;
+use support::create_box_of;
+use support::traits::ToVecRef;
 use tchess::board::Board;
 use tchess::color::Color;
-use tchess::point::Point;
-use support::compare;
-use support::traits::ToVecRef;
 use tchess::dimension::Dimension;
 use tchess::piece_move::PieceMove;
-use support::create_box_of;
+use tchess::point::Point;
+use tchess::utils::pretty_print::PrettyPrint;
 
 #[test]
 fn when_there_are_no_pieces_around() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
-    let knight = board.add_piece(
-        "Knight", Color::White, vec![], vec![], Point::new(3, 3)
-    );
+    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
+    println!("{}", board.pp());
     compare(
-        &board,
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -30,21 +29,18 @@ fn when_there_are_no_pieces_around() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
-    let knight = board.add_piece(
-        "Knight", Color::White, vec![], vec![], Point::new(3, 3)
-    );
-    board.add_piece(
-        "Bishop", Color::Black, vec![], vec![], Point::new(4, 5)
-    );
+    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
 
+    println!("{}", board.pp());
     compare(
-        &board,
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -56,21 +52,18 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn when_there_is_an_ally_piece_on_an_attack_point() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
-    let knight = board.add_piece(
-        "Knight", Color::White, vec![], vec![], Point::new(3, 3)
-    );
-    board.add_piece(
-        "Bishop", Color::White, vec![], vec![], Point::new(4, 5)
-    );
+    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 5));
 
+    println!("{}", board.pp());
     compare(
-        &board,
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -81,15 +74,14 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
-    let knight = board.add_piece(
-        "Knight", Color::White, vec![], vec![], Point::new(3, 3)
-    );
+    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
     // A box of bishops around the knight
     create_box_of(
@@ -98,11 +90,11 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
         Color::White,
         vec![],
         vec![],
-        Dimension::new(Point::new(2,2), Point::new(4, 4)),
+        Dimension::new(Point::new(2, 2), Point::new(4, 4)),
     );
 
+    println!("{}", board.pp());
     compare(
-        &board,
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -114,25 +106,21 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn when_knight_is_pinned() {
     let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
-    let knight = board.add_piece(
-        "Knight", Color::White, vec![], vec![], Point::new(2, 2)
-    );
-    board.add_piece(
-        "King", Color::White, vec![], vec![], Point::new(2, 1)
-    );
-    board.add_piece(
-        "Rook", Color::Black, vec![], vec![], Point::new(2, 3)
-    );
+    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(2, 2));
+    board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
+    board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
+    println!("{}", board.pp());
     compare(
-        &board,
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![],
-    );
+    )
+    .unwrap();
 }

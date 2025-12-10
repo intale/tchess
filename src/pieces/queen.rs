@@ -54,7 +54,7 @@ impl Queen {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
                     points.push(point)
                 }
                 if !board.can_look_through(&point, self.color()) {
@@ -76,10 +76,10 @@ impl Queen {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_cell(&point, &self.color) {
+                if board.is_ally_square(&point, &self.color) {
                     points.push(point)
                 }
-                if !board.is_empty_cell(&point) {
+                if !board.is_empty_square(&point) {
                     break;
                 }
             }
@@ -111,11 +111,11 @@ impl Queen {
             );
             for point in vector_points {
                 let piece_move = PieceMove::Point(point);
-                if board.is_empty_cell(&point) ||
-                    board.is_capturable_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) ||
+                    board.is_capturable_enemy_square(&point, &self.color) {
                     moves.push(piece_move)
                 }
-                if !board.is_empty_cell(&point) {
+                if !board.is_empty_square(&point) {
                     break;
                 }
             }

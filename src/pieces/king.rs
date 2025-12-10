@@ -57,7 +57,7 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -77,7 +77,7 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_cell(&point, &self.color) {
+                if board.is_ally_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -98,11 +98,11 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_cell(&point) && !board.is_under_attack(&point, &self.color) {
+                if board.is_empty_square(&point) && !board.is_under_attack(&point, &self.color) {
                     moves.push(PieceMove::Point(point));
                     break;
                 }
-                if board.is_enemy_cell(&point, &self.color) &&
+                if board.is_enemy_square(&point, &self.color) &&
                     !board.is_under_enemy_defense(&point, &self.color) {
                     moves.push(PieceMove::Point(point));
                 }

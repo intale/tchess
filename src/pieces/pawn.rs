@@ -71,7 +71,7 @@ impl Pawn {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_cell(&point) || board.is_enemy_cell(&point, &self.color) {
+                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -104,7 +104,7 @@ impl Pawn {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_cell(&point, &self.color) {
+                if board.is_ally_square(&point, &self.color) {
                     points.push(point)
                 }
                 break;
@@ -168,7 +168,7 @@ impl Pawn {
                             && en_passant == point {
                             moves.push(PieceMove::EnPassant(en_passant, enemy_piece_point));
                         } else {
-                            if board.is_capturable_enemy_cell(&point, &self.color) {
+                            if board.is_capturable_enemy_square(&point, &self.color) {
                                 if pre_promote_position {
                                     for variant in PromotePiece::all_variants() {
                                         moves.push(PieceMove::Promote(point, variant))
@@ -180,7 +180,7 @@ impl Pawn {
                         }
                     },
                     Vector::Line(_) => {
-                        if board.is_empty_cell(&point) {
+                        if board.is_empty_square(&point) {
                             if pre_promote_position {
                                 for variant in PromotePiece::all_variants() {
                                     moves.push(PieceMove::Promote(point, variant))

@@ -4,8 +4,9 @@ use crate::color::Color;
 use crate::pieces::{Piece};
 use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
-use crate::board_cell::{BoardCell};
-use rustc_hash::{FxHashMap, FxHashSet};
+use crate::board_square::{BoardSquare};
+use rustc_hash::{FxHashSet};
+use crate::board_map::{BoardMap};
 use crate::buff::Buff;
 use crate::debuff::Debuff;
 use crate::dimension::Dimension;
@@ -22,11 +23,9 @@ use crate::x_ray_pieces::XRayPieces;
 // background. Debugging purpose only.
 pub const INVERT_COLORS: bool = true;
 
-// https://docs.rs/indexmap/latest/indexmap/
-type BoardMap = FxHashMap<Point, BoardCell>;
 
 pub struct Board {
-    board: BoardMap,
+    board_map: BoardMap,
     dimension: Dimension,
     white_attack_points: PointToPieceAssociation,
     black_attack_points: PointToPieceAssociation,
@@ -38,8 +37,6 @@ pub struct Board {
     black_defensive_points: PointToPieceAssociation,
     white_moves: MovesMap,
     black_moves: MovesMap,
-    white_king: Option<Rc<Piece>>,
-    black_king: Option<Rc<Piece>>,
     next_piece_id: usize,
     current_turn: Color,
     // Determines board's point of view. Debugging purpose only.
@@ -135,17 +132,15 @@ impl Board {
                 };
             }
         }
-        board.white_king = board.get_board().get(&Point::new(5, 1)).unwrap().get_piece_rc();
-        board.black_king = board.get_board().get(&Point::new(5, 8)).unwrap().get_piece_rc();
         board
     }
 
-    pub fn get_board(&self) -> &BoardMap {
-        &self.board
+    pub fn board_map(&self) -> &BoardMap {
+        &self.board_map
     }
 
-    pub fn get_board_mut(&mut self) -> &mut BoardMap {
-        &mut self.board
+    fn board_map_mut(&mut self) -> &mut BoardMap {
+        &mut self.board_map
     }
 
     pub fn dimension(&self) -> &Dimension {
@@ -209,10 +204,7 @@ impl Board {
     }
 
     pub fn king(&self, color: &Color) -> Option<&Rc<Piece>> {
-        match color {
-            Color::White => self.white_king.as_ref(),
-            Color::Black => self.black_king.as_ref(),
-        }
+        self.board_map.king(color)
     }
 
     pub fn pawns_with_en_passant(&self, color: &Color) -> &FxHashSet<Rc<Piece>> {
@@ -229,15 +221,9 @@ impl Board {
         }
     }
 
-    fn cell_mut(&mut self, point: &Point) -> &mut BoardCell {
-        self.get_board_mut().get_mut(point).unwrap()
-    }
-
     pub fn empty(min_point: Point, max_point: Point) -> Self {
         let mut board = Self {
-            board: FxHashMap::default(),
-            white_king: None,
-            black_king: None,
+            board_map: BoardMap::empty(),
             dimension: Dimension::new(min_point, max_point),
             white_attack_points: PointToPieceAssociation::empty(),
             black_attack_points: PointToPieceAssociation::empty(),
@@ -263,7 +249,7 @@ impl Board {
                     }
                 };
                 let point = Point::new(x, y);
-                board.get_board_mut().insert(point, BoardCell::new(color, None));
+                board.board_map_mut().init_square(point, color);
             }
         }
         board
@@ -471,7 +457,7 @@ impl Board {
         self.current_turn = *color;
     }
 
-    pub fn is_empty_cell(&self, point: &Point) -> bool {
+    pub fn is_empty_square(&self, point: &Point) -> bool {
         self.piece_at(point).is_none()
     }
 
@@ -491,19 +477,19 @@ impl Board {
                 _ => false
             }
         } else {
-            // Empty cell
+            // Empty square
             true
         }
     }
 
-    pub fn is_enemy_cell(&self, point: &Point, color: &Color) -> bool {
+    pub fn is_enemy_square(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.piece_at(point){
             return !piece.is_ally(color);
         }
         false
     }
 
-    pub fn is_capturable_enemy_cell(&self, point: &Point, color: &Color) -> bool {
+    pub fn is_capturable_enemy_square(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.piece_at(point) {
             if piece.is_ally(color) {
                 return false
@@ -516,7 +502,7 @@ impl Board {
         false
     }
 
-    pub fn is_ally_cell(&self, point: &Point, color: &Color) -> bool {
+    pub fn is_ally_square(&self, point: &Point, color: &Color) -> bool {
         if let Some(piece) = self.piece_at(point) {
             return piece.is_ally(color);
         }
@@ -524,12 +510,10 @@ impl Board {
     }
 
     pub fn piece_at(&self, point: &Point) -> Option<&Rc<Piece>> {
-        if let Some(cell) = self.board.get(point) {
-            if let Some(piece) = cell.get_piece() {
-                return Some(piece);
-            }
+        match self.board_map.board_square(point) {
+            BoardSquare::Square(square) => square.get_piece().as_ref(),
+            BoardSquare::VoidSquare => None
         }
-        None
     }
 
     pub fn is_under_attack(&self, point: &Point, color: &Color) -> bool {
@@ -596,7 +580,7 @@ impl Board {
 
     pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                      position: Point) -> Rc<Piece> {
-        if !self.is_empty_cell(&position) {
+        if !self.is_empty_square(&position) {
             panic!("Can't add {} piece. Position {:?} is not empty!", name, position)
         }
         self.add_piece_unchecked(name, color, buffs, debuffs, position, true)
@@ -609,13 +593,7 @@ impl Board {
                 name, color, buffs, debuffs, position, self.get_next_piece_id()
             )
         );
-        self.cell_mut(&position).set_piece_rc(&piece);
-        match &*piece {
-            Piece::King(_) => {
-                self.set_king(&position)
-            },
-            _ => (),
-        }
+        self.board_map.place_piece(&position, &piece, true);
         if calculate_mechanics {
             self.recalculate_connected_positions(&position, &color, true);
             self.recalculate_connected_positions(&position, &color.inverse(), false);
@@ -625,7 +603,22 @@ impl Board {
         piece
     }
 
-    pub fn move_piece_unchecked(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove,
+    pub fn move_piece(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) -> bool {
+        if &self.current_turn != piece.color() {
+            return false;
+        }
+
+        if let Some(moves) = self.moves(piece.color()).moves_of(piece)
+            && moves.contains(piece_move) {
+            self.move_piece_unchecked(piece, piece_move, true);
+            self.pass_turn(&piece.color().inverse());
+            true
+        } else {
+            false
+        }
+    }
+
+    fn move_piece_unchecked(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove,
                                 calculate_king: bool) {
         self.clear_en_passant();
         match &**piece {
@@ -663,11 +656,16 @@ impl Board {
             PieceMove::Castle(castle_points) => {
                 let king = Rc::clone(self.piece_at(castle_points.initial_king_point()).unwrap());
                 let rook = Rc::clone(self.piece_at(castle_points.initial_rook_point()).unwrap());
-                self.move_piece_unchecked(&rook, &PieceMove::Point(*castle_points.rook_point()), false);
-                self.move_piece_unchecked(&king, &PieceMove::Point(*castle_points.king_point()), false);
+                // In chess960 king or rook may keep staying on their places during the castling
+                if &rook.current_position() != castle_points.rook_point() {
+                    self.move_piece_unchecked(&rook, &PieceMove::Point(*castle_points.rook_point()), false);
+                }
+                if &king.current_position() != castle_points.king_point() {
+                    self.move_piece_unchecked(&king, &PieceMove::Point(*castle_points.king_point()), false);
+                }
             },
             PieceMove::Promote(point, promote_piece) => {
-                self.cell_mut(&piece.current_position()).remove_piece();
+                self.remove_piece(piece);
                 let promoted_piece = self.add_piece_unchecked(
                     &promote_piece.name(),
                     *piece.color(),
@@ -676,7 +674,6 @@ impl Board {
                     piece.current_position(),
                     false,
                 );
-                self.remove_piece(piece);
                 self.move_piece_unchecked(&promoted_piece, &PieceMove::Point(*point), false);
             },
             PieceMove::UnreachablePoint => panic!("Unreachable point!"),
@@ -692,29 +689,13 @@ impl Board {
         if let Some(piece) = enemy_piece {
             self.capture_piece(&piece);
         }
-        self.cell_mut(&old_position).remove_piece();
-        self.cell_mut(&new_position).set_piece_rc(piece_to_move);
-        piece_to_move.set_current_position(*new_position);
+        self.board_map.take_off_piece(&old_position, false);
+        self.board_map.place_piece(&new_position, piece_to_move, false);
         self.recalculate_connected_positions(&old_position, piece_to_move.color(), false);
         self.recalculate_connected_positions(&new_position, piece_to_move.color(), true);
         self.recalculate_connected_positions(
             &new_position, &piece_to_move.color().inverse(), false
         );
-    }
-
-    pub fn move_piece(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) -> bool {
-        if &self.current_turn != piece.color() {
-            return false;
-        }
-
-        if let Some(moves) = self.moves(piece.color()).moves_of(piece)
-            && moves.contains(piece_move) {
-            self.move_piece_unchecked(piece, piece_move, true);
-            self.pass_turn(&piece.color().inverse());
-            true
-        } else {
-            false
-        }
     }
 
     fn capture_piece(&mut self, piece: &Rc<Piece>) {
@@ -727,7 +708,7 @@ impl Board {
         self.attack_points_mut(piece.color()).remove_piece(piece);
         self.defensive_points_mut(piece.color()).remove_piece(piece);
         self.moves_mut(piece.color()).remove_piece(piece);
-        self.cell_mut(&piece.current_position()).remove_piece();
+        self.board_map.take_off_piece(&piece.current_position(), true);
         self.remove_x_ray_piece(piece);
     }
 
@@ -796,27 +777,12 @@ impl Board {
         }
     }
 
-    fn set_king(&mut self, position: &Point) {
-        let king = self.piece_at(position);
-        if let Some(king) = king {
-            match &**king {
-                Piece::King(_) => {
-                    match king.color() {
-                        Color::White => {
-                            self.white_king = Some(Rc::clone(king));
-                        },
-                        Color::Black => {
-                            self.black_king = Some(Rc::clone(king));
-                        },
-                    }
-                },
-                _ => panic!("Can't assign {} as {:?} king!", king.pp(), king.color())
-            }
-        }
-    }
-
     pub fn set_pov(&mut self, color: Color) {
         self.pov = color;
+    }
+
+    pub fn current_turn(&self) -> &Color {
+        &self.current_turn
     }
 
     fn x_ray_direction(piece: &Rc<Piece>, opposite_king: &Rc<Piece>) -> Option<Vector> {
@@ -889,13 +855,13 @@ impl PrettyPrint for Board {
         for y in y_range {
             for x in x_range.clone() {
                 let point = Point::new(x, y);
-                if let Some(cell) = self.board.get(&point) {
+                if let BoardSquare::Square(square) = self.board_map.board_square(&point) {
                     if (self.pov == Color::White && point.x() == self.dimension.min_point().x())
                         || (self.pov == Color::Black && point.x() == self.dimension.max_point().x()) {
                         output.push_str(point.y().pp().as_str());
                         output.push_str(" ");
                     }
-                    output.push_str(cell.pp().as_str());
+                    output.push_str(square.pp().as_str());
                     output.push(' ');
                     if (self.pov == Color::White && point.x() == self.dimension.max_point().x())
                         || (self.pov == Color::Black && point.x() == self.dimension.min_point().x()) {
