@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use super::{expect::Expect, compare};
 
 pub trait ExpectNotToChange<TT> {
@@ -10,7 +10,7 @@ pub trait ExpectNotToChange<TT> {
         F: Fn(&mut TT) -> Self::Item + 'static;
 }
 
-impl<T: PartialEq + Debug, TT> ExpectNotToChange<TT> for Expect<Vec<T>, TT> {
+impl<T: PartialEq + Debug + Display, TT> ExpectNotToChange<TT> for Expect<Vec<T>, TT> {
     type Item = Vec<T>;
 
     fn not_to_change<F>(&mut self, change_fn: F)

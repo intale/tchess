@@ -1,7 +1,7 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare;
+use support::*;
 use support::create_box_of;
 use support::traits::ToVecRef;
 use tchess::board::Board;
@@ -17,7 +17,7 @@ fn when_there_are_no_pieces_around() {
     let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -29,8 +29,7 @@ fn when_there_are_no_pieces_around() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -40,7 +39,7 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -52,8 +51,7 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -63,7 +61,7 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -74,8 +72,7 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -94,7 +91,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
     );
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
@@ -106,8 +103,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
             &PieceMove::Point(Point::new(5, 2)),
             &PieceMove::Point(Point::new(4, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -118,9 +114,8 @@ fn when_knight_is_pinned() {
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&knight).to_vec(),
         &vec![],
-    )
-    .unwrap();
+    );
 }

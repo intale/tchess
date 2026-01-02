@@ -3,7 +3,8 @@ pub mod expect;
 pub mod expect_to_change_to;
 pub mod expect_not_to_change_to;
 
-use std::fmt::Debug;
+use std::env;
+use std::fmt::{Debug, Display};
 use tchess::board::*;
 use tchess::buff::Buff;
 use tchess::color::Color;
@@ -17,7 +18,7 @@ use tchess::vector_points::VectorPoints;
 #[allow(unused)]
 pub fn compare<T>(vec1: &Vec<T>, vec2: &Vec<T>) -> Result<String, String>
 where
-    T: Debug + PartialEq,
+    T: Display + Debug + PartialEq,
 {
     let lh_rest = vec1
         .iter()
@@ -31,28 +32,69 @@ where
         return Ok("Empty arrays".to_string());
     }
 
+    let formatter = |obj: &Vec<T>| {
+        let debug = env::var("DEBUG").is_ok();
+        if debug {
+            format!("{:#?}", obj)
+        } else {
+            let str_vec = obj.iter().map(|item| format!("{}", item)).collect::<Vec<_>>();
+            format!("{:?}", str_vec)
+        }
+    };
+    let ref_formatter = |obj: Vec<&T>| {
+        let debug = env::var("DEBUG").is_ok();
+        if debug {
+            format!("{:#?}", obj)
+        } else {
+            let str_vec = obj.iter().map(|item| format!("{}", item)).collect::<Vec<_>>();
+            format!("{:?}", str_vec)
+        }
+    };
     if lh_rest.len() > 0 && rh_rest.len() > 0 {
         let err = format!(
             r#"
-              Expected {vec1:?} to match {vec2:?}. Missing elements: {rh_rest:?}.
-              Extra elements: {lh_rest:?}.
-            "#
+              Expected {} to match {}. Missing elements: {}.
+              Extra elements: {}.
+            "#,
+            formatter(vec1), formatter(vec2), ref_formatter(rh_rest), ref_formatter(lh_rest)
         );
         return Err(err);
     }
     if lh_rest.len() > 0 {
-        let err = format!("Expected {vec1:?} to match {vec2:?}. Extra elements: {lh_rest:?}.");
+        let err = format!(
+            "Expected {} to match {}. Extra elements: {}.",
+            formatter(vec1), formatter(vec2), ref_formatter(lh_rest)
+        );
         return Err(err);
     }
     if rh_rest.len() > 0 {
-        let err = format!("Expected {vec1:?} to match {vec2:?}. Missing elements: {rh_rest:?}.");
+        let err = format!(
+            "Expected {} to match {}. Missing elements: {}.",
+            formatter(vec1), formatter(vec2), ref_formatter(rh_rest)
+        );
         return Err(err);
     }
     if vec1.len() != vec2.len() {
-        let err = format!("Expected {vec1:?} to match {vec2:?}.");
+        let err = format!(
+            "Expected {} to match {}.",
+            formatter(vec1), formatter(vec2)
+        );
         return Err(err);
     }
     Ok("Arrays match".to_string())
+}
+
+pub fn compare_and_assert<T>(vec1: &Vec<T>, vec2: &Vec<T>)
+where
+    T: Display + Debug + PartialEq,
+{
+    let result = compare::<T>(vec1, vec2);
+    match result {
+        Ok(_) => (),
+        Err(msg) => {
+            panic!("{}", msg);
+        },
+    };
 }
 
 #[allow(unused)]

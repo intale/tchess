@@ -1,7 +1,7 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare;
+use support::compare_and_assert;
 use support::create_box_of;
 use support::traits::ToVecRef;
 use tchess::board::Board;
@@ -16,7 +16,7 @@ fn when_there_are_no_pieces_around() {
     let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .attack_points(&Color::White)
             .get_points(&knight)
@@ -31,8 +31,7 @@ fn when_there_are_no_pieces_around() {
             &Point::new(5, 2),
             &Point::new(4, 1),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -42,7 +41,7 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .attack_points(&Color::White)
             .get_points(&knight)
@@ -57,8 +56,7 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
             &Point::new(5, 2),
             &Point::new(4, 1),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -68,7 +66,7 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .attack_points(&Color::White)
             .get_points(&knight)
@@ -82,8 +80,7 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
             &Point::new(5, 2),
             &Point::new(4, 1),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -104,7 +101,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .attack_points(&Color::White)
             .get_points(&knight)
@@ -119,6 +116,5 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
             &Point::new(5, 2),
             &Point::new(4, 1),
         ],
-    )
-    .unwrap();
+    );
 }

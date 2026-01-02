@@ -1,7 +1,7 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare;
+use support::*;
 use support::create_box_of;
 use support::traits::ToVecRef;
 use tchess::board::Board;
@@ -16,14 +16,13 @@ fn when_there_are_no_pieces_around() {
     let rook = board.add_piece("Rook", Color::White, vec![], vec![], Point::new(2, 2));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
             .to_vec(),
         &vec![],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -33,14 +32,13 @@ fn when_there_is_an_enemy_piece_around() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
             .to_vec(),
         &vec![],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -50,14 +48,13 @@ fn when_there_is_an_ally_piece_around() {
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 2));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
             .to_vec(),
         &vec![&Point::new(3, 2)],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -76,7 +73,7 @@ fn when_there_are_ally_pieces_around() {
     );
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
@@ -87,8 +84,7 @@ fn when_there_are_ally_pieces_around() {
             &Point::new(5, 3),
             &Point::new(3, 1),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -99,14 +95,13 @@ fn when_there_is_an_enemy_piece_between_ally_pieces() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 1));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
             .to_vec(),
         &vec![],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -117,12 +112,11 @@ fn when_there_is_an_ally_piece_between_ally_pieces() {
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board
             .defensive_points(&Color::White)
             .get_points(&rook)
             .to_vec(),
         &vec![&Point::new(3, 1)],
-    )
-    .unwrap();
+    );
 }

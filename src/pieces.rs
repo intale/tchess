@@ -5,6 +5,7 @@ pub mod bishop;
 pub mod queen;
 pub mod king;
 
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use pawn::*;
 use rook::*;
@@ -186,6 +187,19 @@ impl PrettyPrint for Piece {
             Piece::Bishop(p) => p.pp(),
             Piece::Queen(p) => p.pp(),
             Piece::King(p) => p.pp(),
+        }
+    }
+}
+
+impl Display for Piece {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Piece::Pawn(p) => write!(f, "{}{}", p.pp(), p.current_position()),
+            Piece::Rook(p) => write!(f, "{}{}", p.pp(), p.current_position()),
+            Piece::Knight(p) => write!(f, "{}{}", p.pp(), p.current_position()),
+            Piece::Bishop(p) => write!(f, "{}{}", p.pp(), p.current_position()),
+            Piece::Queen(p) => write!(f, "{}{}", p.pp(), p.current_position()),
+            Piece::King(p) => write!(f, "{}{}", p.pp(), p.current_position()),
         }
     }
 }

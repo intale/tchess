@@ -1,6 +1,7 @@
 mod x_point_t;
 mod y_point_t;
 
+use std::fmt::{Display, Formatter};
 use x_point_t::XPointT;
 use y_point_t::YPointT;
 use crate::utils::pretty_print::PrettyPrint;
@@ -37,5 +38,11 @@ impl PrettyPrint for Point {
         output.push_str(self.x.pp().as_str());
         output.push_str(self.y.pp().as_str());
         output
+    }
+}
+
+impl Display for Point {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", *self.x, *self.y)
     }
 }

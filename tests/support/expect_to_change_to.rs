@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use tchess::point::Point;
-use super::{expect::Expect, compare};
+use super::{expect::Expect, compare, compare_and_assert};
 
 pub trait ExpectToChangeTo<TT> {
     type Item;
@@ -11,7 +11,7 @@ pub trait ExpectToChangeTo<TT> {
         ExpF: Fn(&mut TT) -> Self::Item;
 }
 
-impl<T: PartialEq + Debug, TT> ExpectToChangeTo<TT> for Expect<Vec<T>, TT> {
+impl<T: Display + PartialEq + Debug, TT> ExpectToChangeTo<TT> for Expect<Vec<T>, TT> {
     type Item = Vec<T>;
     #[allow(unused)]
     fn to<ExpF>(&mut self, expectation: ExpF)
@@ -29,7 +29,7 @@ impl<T: PartialEq + Debug, TT> ExpectToChangeTo<TT> for Expect<Vec<T>, TT> {
             println!("{:?}", final_value);
             panic!("Expect subject to change {:?}, but didn't.", initial_value);
         }
-        compare(&final_value, &expectation(&mut setup)).unwrap();
+        compare_and_assert(&final_value, &expectation(&mut setup));
     }
 }
 

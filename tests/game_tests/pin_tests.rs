@@ -3,7 +3,12 @@ mod support;
 
 use std::rc::Rc;
 use support::traits::{CloneMoves, ToVecRef};
-use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, expect_not_to_change_to::ExpectNotToChange};
+use support::{
+    expect::Expect,
+    expect_to_change_to::ExpectToChangeTo,
+    expect_not_to_change_to::ExpectNotToChange,
+    compare_and_assert
+};
 use tchess::board::Board;
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
@@ -244,7 +249,6 @@ mod an_inability_to_cover_with_pinned_piece {
 
 mod an_inability_to_en_passant_with_pinned_pawn {
     use super::*;
-    use crate::game_tests::pin_tests::support::compare;
     use std::fmt::Debug;
     use tchess::buff::Buff;
 
@@ -303,7 +307,7 @@ mod an_inability_to_en_passant_with_pinned_pawn {
         let white_pawn = board.piece_at(&Point::new(4, 3)).unwrap();
 
         println!("{}", board.pp());
-        let _ = compare(
+        let _ = compare_and_assert(
             &board
                 .moves(&Color::White)
                 .moves_of(white_pawn)

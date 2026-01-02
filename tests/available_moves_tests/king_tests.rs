@@ -1,7 +1,7 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare;
+use support::*;
 use support::traits::ToVecRef;
 use tchess::board::Board;
 use tchess::buff::Buff;
@@ -17,7 +17,7 @@ fn when_there_are_no_pieces_around() {
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
@@ -29,8 +29,7 @@ fn when_there_are_no_pieces_around() {
             &PieceMove::Point(Point::new(4, 2)),
             &PieceMove::Point(Point::new(3, 2)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -40,7 +39,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
     board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
@@ -52,8 +51,7 @@ fn when_there_is_an_enemy_piece_on_the_way() {
             &PieceMove::Point(Point::new(4, 2)),
             &PieceMove::Point(Point::new(3, 2)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -64,7 +62,7 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
@@ -75,8 +73,7 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
             &PieceMove::Point(Point::new(4, 2)),
             &PieceMove::Point(Point::new(3, 2)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -86,7 +83,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
@@ -97,8 +94,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
             &PieceMove::Point(Point::new(4, 2)),
             &PieceMove::Point(Point::new(3, 2)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -108,7 +104,7 @@ fn when_move_points_are_under_attack() {
     board.add_piece("King", Color::Black, vec![], vec![], Point::new(2, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
@@ -117,8 +113,7 @@ fn when_move_points_are_under_attack() {
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(3, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -128,7 +123,7 @@ fn when_king_is_on_the_diagonal_under_attack() {
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
@@ -138,8 +133,7 @@ fn when_king_is_on_the_diagonal_under_attack() {
             &PieceMove::Point(Point::new(3, 1)),
             &PieceMove::Point(Point::new(2, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -149,7 +143,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
@@ -160,8 +154,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
             &PieceMove::Point(Point::new(3, 1)),
             &PieceMove::Point(Point::new(2, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -171,7 +164,7 @@ fn when_king_is_on_the_line_under_attack() {
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 4));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
@@ -181,8 +174,7 @@ fn when_king_is_on_the_line_under_attack() {
             &PieceMove::Point(Point::new(3, 2)),
             &PieceMove::Point(Point::new(3, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 #[test]
@@ -192,7 +184,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
     println!("{}", board.pp());
-    compare(
+    compare_and_assert(
         &board.moves(&Color::White).moves_of(&king).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
@@ -201,8 +193,7 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
             &PieceMove::Point(Point::new(3, 2)),
             &PieceMove::Point(Point::new(3, 1)),
         ],
-    )
-    .unwrap();
+    );
 }
 
 mod castle_tests {
@@ -230,7 +221,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(1, 8));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
@@ -239,10 +230,9 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 2)),
                 &PieceMove::Point(Point::new(6, 1)),
             ],
-        )
-        .unwrap();
+        );
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 8)),
@@ -251,8 +241,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 7)),
                 &PieceMove::Point(Point::new(6, 8)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -289,7 +278,7 @@ mod castle_tests {
         );
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -304,10 +293,9 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 2)),
                 &PieceMove::Point(Point::new(6, 1)),
             ],
-        )
-        .unwrap();
+        );
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -322,8 +310,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 7)),
                 &PieceMove::Point(Point::new(6, 8)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -374,7 +361,7 @@ mod castle_tests {
         );
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -395,10 +382,9 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 2)),
                 &PieceMove::Point(Point::new(6, 1)),
             ],
-        )
-        .unwrap();
+        );
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -419,8 +405,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 7)),
                 &PieceMove::Point(Point::new(6, 8)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -486,7 +471,7 @@ mod castle_tests {
         );
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&white_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -503,10 +488,9 @@ mod castle_tests {
                 )),
                 &PieceMove::Point(Point::new(4, 2)),
             ],
-        )
-        .unwrap();
+        );
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::Black).moves_of(&black_king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -525,8 +509,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(4, 7)),
                 &PieceMove::Point(Point::new(5, 7)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -550,7 +533,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
@@ -559,8 +542,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(6, 2)),
                 &PieceMove::Point(Point::new(6, 1)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -584,7 +566,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(5, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
@@ -593,8 +575,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(8, 2)),
                 &PieceMove::Point(Point::new(8, 1)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -618,7 +599,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
@@ -633,8 +614,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(8, 2)),
                 &PieceMove::Point(Point::new(8, 1)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -658,7 +638,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(7, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
@@ -666,8 +646,7 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(8, 2)),
                 &PieceMove::Point(Point::new(8, 1)),
             ],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -691,7 +670,7 @@ mod castle_tests {
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(1, 1));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board.moves(&Color::White).moves_of(&king).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
@@ -699,7 +678,6 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(4, 2)),
                 &PieceMove::Point(Point::new(4, 1)),
             ],
-        )
-        .unwrap();
+        );
     }
 }

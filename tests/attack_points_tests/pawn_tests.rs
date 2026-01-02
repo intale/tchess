@@ -1,7 +1,7 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare;
+use support::compare_and_assert;
 use support::traits::ToVecRef;
 use tchess::board::Board;
 use tchess::color::Color;
@@ -18,14 +18,13 @@ mod white_pawn {
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::White)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(1, 3), &Point::new(3, 3)],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -35,14 +34,13 @@ mod white_pawn {
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::White)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(1, 3), &Point::new(3, 3)],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -52,14 +50,13 @@ mod white_pawn {
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::White)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(1, 3)],
-        )
-        .unwrap();
+        );
     }
 }
 
@@ -75,14 +72,13 @@ mod black_pawn {
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::Black)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(1, 1), &Point::new(3, 1)],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -93,14 +89,13 @@ mod black_pawn {
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::Black)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(1, 1), &Point::new(3, 1)],
-        )
-        .unwrap();
+        );
     }
 
     #[test]
@@ -111,13 +106,12 @@ mod black_pawn {
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
-        compare(
+        compare_and_assert(
             &board
                 .attack_points(&Color::Black)
                 .get_points(&pawn)
                 .to_vec(),
             &vec![&Point::new(4, 2)],
-        )
-        .unwrap();
+        );
     }
 }

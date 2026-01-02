@@ -3,7 +3,7 @@ mod support;
 
 use std::rc::Rc;
 use support::traits::{ClonePieces, FindPiece, ToVecRef};
-use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, compare};
+use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, compare_and_assert};
 use tchess::board::Board;
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
@@ -62,14 +62,13 @@ mod promote_via_move {
             let board = expectation::<usize>().run_expectation();
             let bishop = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&bishop).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(3, 2)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -120,14 +119,13 @@ mod promote_via_move {
             let board = expectation::<usize>().run_expectation();
             let knight = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&knight).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 1)),
                     &PieceMove::Point(Point::new(3, 1)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -178,7 +176,7 @@ mod promote_via_move {
             let board = expectation::<usize>().run_expectation();
             let queen = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&queen).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
@@ -188,8 +186,7 @@ mod promote_via_move {
                     &PieceMove::Point(Point::new(3, 3)),
                     &PieceMove::Point(Point::new(3, 2)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -240,7 +237,7 @@ mod promote_via_move {
             let board = expectation::<usize>().run_expectation();
             let rook = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&rook).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
@@ -248,8 +245,7 @@ mod promote_via_move {
                     &PieceMove::Point(Point::new(2, 2)),
                     &PieceMove::Point(Point::new(2, 1)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 }
@@ -305,14 +301,13 @@ mod promote_via_capturing {
             let board = expectation::<usize>().run_expectation();
             let bishop = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&bishop).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(3, 2)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -364,14 +359,13 @@ mod promote_via_capturing {
             let board = expectation::<usize>().run_expectation();
             let knight = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&knight).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 1)),
                     &PieceMove::Point(Point::new(3, 1)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -423,7 +417,7 @@ mod promote_via_capturing {
             let board = expectation::<usize>().run_expectation();
             let queen = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&queen).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
@@ -433,8 +427,7 @@ mod promote_via_capturing {
                     &PieceMove::Point(Point::new(3, 3)),
                     &PieceMove::Point(Point::new(3, 2)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -486,7 +479,7 @@ mod promote_via_capturing {
             let board = expectation::<usize>().run_expectation();
             let rook = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
-            compare(
+            compare_and_assert(
                 &board.moves(&Color::White).moves_of(&rook).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
@@ -494,8 +487,7 @@ mod promote_via_capturing {
                     &PieceMove::Point(Point::new(2, 2)),
                     &PieceMove::Point(Point::new(2, 1)),
                 ],
-            )
-            .unwrap();
+            );
         }
     }
 }
