@@ -4,12 +4,13 @@ mod support;
 use std::rc::Rc;
 use support::traits::{CloneMoves, ToVecRef};
 use support::{
-    expect::Expect,
+    compare_and_assert, expect::Expect, expect_not_to_change_to::ExpectNotToChange,
     expect_to_change_to::ExpectToChangeTo,
-    expect_not_to_change_to::ExpectNotToChange,
-    compare_and_assert
 };
 use tchess::board::Board;
+use tchess::board_square_builders::{
+    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
+};
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::point::Point;
@@ -20,7 +21,11 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 1));
         board.add_piece("Queen", Color::White, vec![], vec![], Point::new(4, 2));
@@ -87,7 +92,11 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin_by_pinned_piece {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(4, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(4, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Rook", Color::White, vec![], vec![], Point::new(2, 1));
 
@@ -137,7 +146,11 @@ mod breaking_the_pin_by_covering_attack_points_of_the_piece_caused_the_pin {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 1));
         board.add_piece("Queen", Color::White, vec![], vec![], Point::new(4, 2));
@@ -207,7 +220,11 @@ mod an_inability_to_cover_with_pinned_piece {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(4, 4),
+            DefaultSquareBuilder::init(),
+        );
         board.pass_turn(&Color::Black);
         board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 4));
         board.add_piece("Rook", Color::White, vec![], vec![], Point::new(3, 3));
@@ -253,7 +270,11 @@ mod an_inability_to_en_passant_with_pinned_pawn {
     use tchess::buff::Buff;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(4, 1));
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(4, 2));
 
@@ -323,7 +344,11 @@ mod reapplying_the_pin_to_the_same_piece_by_pinning_with_another_piece {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 1));
 
@@ -369,7 +394,11 @@ mod blocking_pin_path_after_reapplying_the_pin {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 1));
         board.add_piece("Queen", Color::White, vec![], vec![], Point::new(3, 2));
@@ -432,7 +461,11 @@ mod applying_pin_to_the_ally_piece_by_moving_another_ally_piece {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 1));
         board.add_piece("Queen", Color::White, vec![], vec![], Point::new(3, 1));

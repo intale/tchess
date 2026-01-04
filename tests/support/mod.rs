@@ -2,10 +2,12 @@ pub mod traits;
 pub mod expect;
 pub mod expect_to_change_to;
 pub mod expect_not_to_change_to;
+pub mod test_square_builder;
 
 use std::env;
 use std::fmt::{Debug, Display};
 use tchess::board::*;
+use tchess::board_square_builders::BoardSquareBuilder;
 use tchess::buff::Buff;
 use tchess::color::Color;
 use tchess::debuff::Debuff;
@@ -14,6 +16,7 @@ use tchess::point::Point;
 use tchess::vector::Vector;
 use tchess::vector::line_vector::LineVector;
 use tchess::vector_points::VectorPoints;
+use test_square_builder::TestSquareBuilder;
 
 #[allow(unused)]
 pub fn compare<T>(vec1: &Vec<T>, vec2: &Vec<T>) -> Result<String, String>
@@ -145,4 +148,26 @@ pub fn create_box_of(
         let debuffs = debuffs.iter().map(|debuff| *debuff).collect::<Vec<_>>();
         board.add_piece(name, color, buffs, debuffs, point);
     }
+}
+
+#[allow(unused)]
+pub fn init_square_builder_from(chars_map: Vec<Vec<char>>, pov: &Color) -> TestSquareBuilder {
+    let mut square_map = vec![];
+    for row in chars_map {
+        let mut square_row = vec![];
+        for square_notation in row {
+            let color = match square_notation {
+                '▓' => Some(Color::White),
+                '░' => Some(Color::Black),
+                '¤' => None,
+                _ => panic!("Unhandled square notation: {}", square_notation),
+            };
+            square_row.push(color);
+        }
+        square_map.push(square_row);
+    }
+    let mut square_builder = TestSquareBuilder::init();
+    square_builder.set_pov(pov);
+    square_builder.set_map(square_map);
+    square_builder
 }

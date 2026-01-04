@@ -54,7 +54,12 @@ impl Knight {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
                 break;
@@ -74,7 +79,12 @@ impl Knight {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
                 break;
@@ -101,9 +111,16 @@ impl Knight {
                 direction,
             );
             for point in vector_points {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+
                 let piece_move = PieceMove::Point(point);
-                if board.is_empty_square(&point) ||
-                    board.is_capturable_enemy_square(&point, &self.color) {
+
+                if square.is_empty_square() ||
+                    square.is_capturable_enemy_square(&self.color) {
                     moves.push(piece_move)
                 }
                 break;

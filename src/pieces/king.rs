@@ -57,7 +57,12 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
                 break;
@@ -77,7 +82,12 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
                 break;
@@ -98,11 +108,16 @@ impl King {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_square(&point) && !board.is_under_attack(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_empty_square() && !board.is_under_attack(&point, &self.color) {
                     moves.push(PieceMove::Point(point));
                     break;
                 }
-                if board.is_enemy_square(&point, &self.color) &&
+                if square.is_enemy_square(&self.color) &&
                     !board.is_under_enemy_defense(&point, &self.color) {
                     moves.push(PieceMove::Point(point));
                 }
@@ -136,7 +151,12 @@ impl King {
                 let direction = LineVector::calc_direction(
                     &current_position,
                     &king_point,
-                ).unwrap();
+                ).unwrap_or_else(|| {
+                    panic!(
+                        "King at {:#?} is not on the same line with its castle point {:#?}",
+                        current_position, king_point
+                    );
+                });
                 let direction = Vector::Line(direction);
                 let points = VectorPoints::without_initial(
                     current_position,
@@ -145,10 +165,15 @@ impl King {
                 );
 
                 for point in points {
+                    let square = board.board_square(&point);
+
+                    if square.is_void_square() {
+                        break;
+                    }
                     if board.is_under_attack(&point, &self.color) {
                         break
                     }
-                    if let Some(piece) = board.piece_at(&point) {
+                    if let Some(piece) = square.get_piece() {
                         if piece.is_enemy(self.color()) {
                             break
                         }
@@ -229,7 +254,12 @@ impl King {
                         );
 
                         for point in points {
-                            if let Some(piece) = board.piece_at(&point) {
+                            let square = board.board_square(&point);
+
+                            if square.is_void_square() {
+                                break;
+                            }
+                            if let Some(piece) = square.get_piece() {
                                 if piece.is_enemy(self.color()) {
                                     break
                                 }

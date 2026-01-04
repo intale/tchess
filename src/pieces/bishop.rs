@@ -8,6 +8,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::board_square::BoardSquare;
 use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
@@ -46,17 +47,23 @@ impl Bishop {
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
+        let bishop_color = self.bishop_color(board);
         for direction in Vector::diagonal_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() || &bishop_color != square.color() {
+                    break;
+                }
+                if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
-                if !board.can_look_through(&point, self.color()) {
+                if !square.can_look_through(self.color()) {
                     break;
                 }
             }
@@ -66,17 +73,23 @@ impl Bishop {
 
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
+        let bishop_color = self.bishop_color(board);
         for direction in Vector::diagonal_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() || &bishop_color != square.color() {
+                    break;
+                }
+                if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
-                if !board.is_empty_square(&point) {
+                if !square.is_empty_square() {
                     break;
                 }
             }
@@ -99,26 +112,45 @@ impl Bishop {
                     .collect::<Vec<_>>()
             };
         let mut moves: Vec<PieceMove> = vec![];
+        let bishop_color = self.bishop_color(board);
 
         for direction in available_directions {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() || &bishop_color != square.color() {
+                    break;
+                }
+
                 let piece_move = PieceMove::Point(point);
-                if board.is_empty_square(&point) ||
-                    board.is_capturable_enemy_square(&point, &self.color) {
+
+                if square.is_empty_square() ||
+                    square.is_capturable_enemy_square(&self.color) {
                     moves.push(piece_move)
                 }
-                if !board.is_empty_square(&point) {
+                if !square.is_empty_square() {
                     break;
                 }
             }
         }
 
         moves
+    }
+
+    fn bishop_color(&self, board: &Board) -> Color {
+        match board.board_square(&self.current_position()) {
+            BoardSquare::Square(square) => {
+                *square.color()
+            },
+            BoardSquare::VoidSquare => {
+                panic!("Logical error. Bishop {:#?} is placed on void square!", self)
+            }
+        }
     }
 }
 

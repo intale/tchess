@@ -5,6 +5,9 @@ use std::rc::Rc;
 use support::traits::{CloneMoves, ToVecRef};
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
+use tchess::board_square_builders::{
+    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
+};
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::point::Point;
@@ -18,7 +21,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(4, 4),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
 
             board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(1, 3));
@@ -61,7 +68,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(6, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(6, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
             board.add_piece("Knight", Color::Black, vec![], vec![], Point::new(4, 1));
             board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 1));
@@ -109,7 +120,11 @@ mod single_piece_check {
         use tchess::buff::Buff;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(4, 4),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 1));
             board.add_piece(
                 "Pawn",
@@ -166,7 +181,11 @@ mod single_piece_check {
         use tchess::buff::Buff;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 2));
             board.add_piece(
                 "Pawn",
@@ -223,7 +242,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(6, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(6, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
 
             board.add_piece("Queen", Color::Black, vec![], vec![], Point::new(3, 1));
@@ -272,7 +295,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(6, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(6, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
 
             board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 2));
@@ -321,7 +348,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                DefaultSquareBuilder::init(),
+            );
             board.pass_turn(&Color::Black);
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
             board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
@@ -367,7 +398,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                DefaultSquareBuilder::init(),
+            );
             board.pass_turn(&Color::Black);
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
             board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
@@ -430,7 +465,11 @@ mod single_piece_check {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                DefaultSquareBuilder::init(),
+            );
             board.pass_turn(&Color::Black);
             board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
             board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
@@ -493,7 +532,11 @@ mod multiple_pieces_check {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(4, 4),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
         board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
 

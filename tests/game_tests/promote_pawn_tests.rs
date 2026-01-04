@@ -3,8 +3,11 @@ mod support;
 
 use std::rc::Rc;
 use support::traits::{ClonePieces, FindPiece, ToVecRef};
-use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, compare_and_assert};
+use support::{compare_and_assert, expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
+use tchess::board_square_builders::{
+    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
+};
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::pieces::Piece;
@@ -20,7 +23,11 @@ mod promote_via_move {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
             println!("{}", board.pp());
             board
@@ -77,7 +84,11 @@ mod promote_via_move {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
             println!("{}", board.pp());
             board
@@ -134,7 +145,11 @@ mod promote_via_move {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
             println!("{}", board.pp());
             board
@@ -195,7 +210,11 @@ mod promote_via_move {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
             println!("{}", board.pp());
             board
@@ -258,7 +277,11 @@ mod promote_via_capturing {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(1, 2));
             board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 3));
             println!("{}", board.pp());
@@ -316,7 +339,11 @@ mod promote_via_capturing {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(1, 2));
             board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 3));
             println!("{}", board.pp());
@@ -374,7 +401,11 @@ mod promote_via_capturing {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(1, 2));
             board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 3));
             println!("{}", board.pp());
@@ -436,7 +467,11 @@ mod promote_via_capturing {
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
-            let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(3, 3),
+                DefaultSquareBuilder::init(),
+            );
             board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(1, 2));
             board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 3));
             println!("{}", board.pp());

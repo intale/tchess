@@ -54,10 +54,15 @@ impl Rook {
                 direction,
             );
             for point in vector_points {
-                if board.is_empty_square(&point) || board.is_enemy_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
-                if !board.can_look_through(&point, self.color()) {
+                if !square.can_look_through(self.color()) {
                     break;
                 }
             }
@@ -76,10 +81,15 @@ impl Rook {
                 direction,
             );
             for point in vector_points {
-                if board.is_ally_square(&point, &self.color) {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+                if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
-                if !board.is_empty_square(&point) {
+                if !square.is_empty_square() {
                     break;
                 }
             }
@@ -109,12 +119,19 @@ impl Rook {
                 direction,
             );
             for point in vector_points {
+                let square = board.board_square(&point);
+
+                if square.is_void_square() {
+                    break;
+                }
+
                 let piece_move = PieceMove::Point(point);
-                if board.is_empty_square(&point) ||
-                    board.is_capturable_enemy_square(&point, &self.color) {
+
+                if square.is_empty_square() ||
+                    square.is_capturable_enemy_square(&self.color) {
                     moves.push(piece_move)
                 }
-                if !board.is_empty_square(&point) {
+                if !square.is_empty_square() {
                     break;
                 }
             }

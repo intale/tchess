@@ -18,6 +18,7 @@ use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
+use crate::board_square_builders::{BoardSquareBuilder, default_square_builder::DefaultSquareBuilder};
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -48,6 +49,7 @@ impl Board {
         let mut board = Self::empty(
             Point::new(1, 1),
             Point::new(8, 8),
+            DefaultSquareBuilder::init(),
         );
 
         for y in board.dimension().get_rows_range() {
@@ -221,7 +223,7 @@ impl Board {
         }
     }
 
-    pub fn empty(min_point: Point, max_point: Point) -> Self {
+    pub fn empty<T: BoardSquareBuilder>(min_point: Point, max_point: Point, square_builder: T) -> Self {
         let mut board = Self {
             board_map: BoardMap::empty(),
             dimension: Dimension::new(min_point, max_point),
@@ -241,15 +243,10 @@ impl Board {
         };
         for y in board.dimension().get_rows_range() {
             for x in board.dimension().get_columns_range() {
-                let color = {
-                    if (x + y) % 2 == 0 {
-                        Color::Black
-                    } else {
-                        Color::White
-                    }
-                };
                 let point = Point::new(x, y);
-                board.board_map_mut().init_square(point, color);
+                if let Some(square) = square_builder.build(&point) {
+                    board.board_map_mut().add_square(point, square);
+                }
             }
         }
         board
@@ -457,63 +454,15 @@ impl Board {
         self.current_turn = *color;
     }
 
-    pub fn is_empty_square(&self, point: &Point) -> bool {
-        self.piece_at(point).is_none()
-    }
-
-    // This method is used by x-ray capable pieces to calculate their attack points. This allows
-    // properly calculate king's move points when it gets checked. So, for example if ally king is
-    // on b2 and enemy bishop is on d4 - ally king is not able to move to a1 because a1 is on the
-    // bishop's attack diagonal.
-    // 4 ▓▓▓ ░░░ ▓▓▓ ░♗░
-    // 3 ░░░ ▓▓▓ ░░░ ▓▓▓
-    // 2 ▓▓▓ ░♚░ ▓▓▓ ░░░
-    // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
-    //    a   b   c   d
-    pub fn can_look_through(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.piece_at(point) {
-            match &**piece {
-                Piece::King(_) => piece.color() != color,
-                _ => false
-            }
-        } else {
-            // Empty square
-            true
-        }
-    }
-
-    pub fn is_enemy_square(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.piece_at(point){
-            return !piece.is_ally(color);
-        }
-        false
-    }
-
-    pub fn is_capturable_enemy_square(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.piece_at(point) {
-            if piece.is_ally(color) {
-                return false
-            }
-            return match &**piece {
-                Piece::King(_) => false,
-                _ => true,
-            }
-        }
-        false
-    }
-
-    pub fn is_ally_square(&self, point: &Point, color: &Color) -> bool {
-        if let Some(piece) = self.piece_at(point) {
-            return piece.is_ally(color);
-        }
-        false
-    }
-
     pub fn piece_at(&self, point: &Point) -> Option<&Rc<Piece>> {
-        match self.board_map.board_square(point) {
-            BoardSquare::Square(square) => square.get_piece().as_ref(),
+        match self.board_square(point) {
+            BoardSquare::Square(square) => square.get_piece(),
             BoardSquare::VoidSquare => None
         }
+    }
+
+    pub fn board_square(&self, point: &Point) -> &BoardSquare {
+        self.board_map.board_square(point)
     }
 
     pub fn is_under_attack(&self, point: &Point, color: &Color) -> bool {
@@ -580,7 +529,7 @@ impl Board {
 
     pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
                      position: Point) -> Rc<Piece> {
-        if !self.is_empty_square(&position) {
+        if !self.board_square(&position).is_empty_square() {
             panic!("Can't add {} piece. Position {:?} is not empty!", name, position)
         }
         self.add_piece_unchecked(name, color, buffs, debuffs, position, true)
@@ -855,20 +804,19 @@ impl PrettyPrint for Board {
         for y in y_range {
             for x in x_range.clone() {
                 let point = Point::new(x, y);
-                if let BoardSquare::Square(square) = self.board_map.board_square(&point) {
-                    if (self.pov == Color::White && point.x() == self.dimension.min_point().x())
-                        || (self.pov == Color::Black && point.x() == self.dimension.max_point().x()) {
-                        output.push_str(point.y().pp().as_str());
-                        output.push_str(" ");
-                    }
-                    output.push_str(square.pp().as_str());
-                    output.push(' ');
-                    if (self.pov == Color::White && point.x() == self.dimension.max_point().x())
-                        || (self.pov == Color::Black && point.x() == self.dimension.min_point().x()) {
-                        output.push_str("\n");
-                        buf.push(output.clone());
-                        output = String::new();
-                    }
+                let square = self.board_square(&point);
+                if (self.pov == Color::White && point.x() == self.dimension.min_point().x())
+                    || (self.pov == Color::Black && point.x() == self.dimension.max_point().x()) {
+                    output.push_str(point.y().pp().as_str());
+                    output.push_str(" ");
+                }
+                output.push_str(square.pp().as_str());
+                output.push(' ');
+                if (self.pov == Color::White && point.x() == self.dimension.max_point().x())
+                    || (self.pov == Color::Black && point.x() == self.dimension.min_point().x()) {
+                    output.push_str("\n");
+                    buf.push(output.clone());
+                    output = String::new();
                 }
             }
         }

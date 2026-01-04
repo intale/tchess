@@ -1,9 +1,12 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::*;
 use support::traits::ToVecRef;
+use support::*;
 use tchess::board::Board;
+use tchess::board_square_builders::{
+    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
+};
 use tchess::buff::Buff;
 use tchess::castle_points::CastlePoints;
 use tchess::color::Color;
@@ -13,7 +16,11 @@ use tchess::utils::pretty_print::PrettyPrint;
 
 #[test]
 fn when_there_are_no_pieces_around() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(5, 5),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
@@ -34,7 +41,11 @@ fn when_there_are_no_pieces_around() {
 
 #[test]
 fn when_there_is_an_enemy_piece_on_the_way() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(5, 5),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
 
@@ -56,7 +67,11 @@ fn when_there_is_an_enemy_piece_on_the_way() {
 
 #[test]
 fn when_there_is_a_protected_enemy_piece_on_the_way() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(5, 5),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
@@ -78,7 +93,11 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
 
 #[test]
 fn when_there_is_an_ally_piece_on_the_way() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(5, 5));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(5, 5),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
 
@@ -99,7 +118,11 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
 #[test]
 fn when_move_points_are_under_attack() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(4, 4),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("King", Color::Black, vec![], vec![], Point::new(2, 4));
 
@@ -118,7 +141,11 @@ fn when_move_points_are_under_attack() {
 
 #[test]
 fn when_king_is_on_the_diagonal_under_attack() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(4, 4),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
 
@@ -138,7 +165,11 @@ fn when_king_is_on_the_diagonal_under_attack() {
 
 #[test]
 fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(3, 3),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
@@ -159,7 +190,11 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
 
 #[test]
 fn when_king_is_on_the_line_under_attack() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(4, 4));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(4, 4),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 4));
 
@@ -179,7 +214,11 @@ fn when_king_is_on_the_line_under_attack() {
 
 #[test]
 fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
-    let mut board = Board::empty(Point::new(1, 1), Point::new(3, 3));
+    let mut board = Board::empty(
+        Point::new(1, 1),
+        Point::new(3, 3),
+        DefaultSquareBuilder::init(),
+    );
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
@@ -196,12 +235,58 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
     );
 }
 
+mod when_there_are_void_squares_on_the_way {
+    use super::*;
+    use support::init_square_builder_from;
+
+    #[test]
+    fn it_does_not_include_them() {
+        let builder = init_square_builder_from(
+            vec![
+                vec!['▓', '░', '▓', '░', '▓'],
+                vec!['░', '▓', '░', '¤', '░'],
+                vec!['▓', '░', '▓', '░', '▓'],
+                vec!['░', '¤', '░', '▓', '░'],
+                vec!['▓', '░', '▓', '░', '▓'],
+            ],
+            &Color::White
+        );
+
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(5, 5),
+            builder,
+        );
+        let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
+
+        println!("{}", board.pp());
+        compare_and_assert(
+            &board
+                .moves(&Color::White)
+                .moves_of(&king)
+                .to_vec(),
+            &vec![
+                &PieceMove::Point(Point::new(2, 3)),
+                &PieceMove::Point(Point::new(2, 4)),
+                &PieceMove::Point(Point::new(3, 4)),
+                &PieceMove::Point(Point::new(4, 3)),
+                &PieceMove::Point(Point::new(4, 2)),
+                &PieceMove::Point(Point::new(3, 2)),
+            ],
+        );
+    }
+}
+
 mod castle_tests {
     use super::*;
 
     #[test]
     fn when_castle_is_available_for_king_only() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let white_king = board.add_piece(
             "King",
             Color::White,
@@ -246,7 +331,11 @@ mod castle_tests {
 
     #[test]
     fn when_castle_is_available_for_king_and_one_rook() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let white_king = board.add_piece(
             "King",
             Color::White,
@@ -315,7 +404,11 @@ mod castle_tests {
 
     #[test]
     fn when_castle_is_available_for_king_and_two_rooks() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let white_king = board.add_piece(
             "King",
             Color::White,
@@ -410,7 +503,11 @@ mod castle_tests {
 
     #[test]
     fn when_castle_is_available_for_king_and_two_rooks_for_non_classic_position() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let white_king = board.add_piece(
             "King",
             Color::White,
@@ -514,7 +611,11 @@ mod castle_tests {
 
     #[test]
     fn when_king_castle_point_is_under_attack() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let king = board.add_piece(
             "King",
             Color::White,
@@ -547,7 +648,11 @@ mod castle_tests {
 
     #[test]
     fn when_king_castle_way_is_under_attack() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let king = board.add_piece(
             "King",
             Color::White,
@@ -580,7 +685,11 @@ mod castle_tests {
 
     #[test]
     fn when_rook_castle_way_is_under_attack() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let king = board.add_piece(
             "King",
             Color::White,
@@ -619,7 +728,11 @@ mod castle_tests {
 
     #[test]
     fn when_king_is_under_check() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 8));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 8),
+            DefaultSquareBuilder::init(),
+        );
         let king = board.add_piece(
             "King",
             Color::White,
@@ -651,7 +764,11 @@ mod castle_tests {
 
     #[test]
     fn when_rook_is_pinned() {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         let king = board.add_piece(
             "King",
             Color::White,
@@ -679,5 +796,134 @@ mod castle_tests {
                 &PieceMove::Point(Point::new(4, 1)),
             ],
         );
+    }
+
+    mod when_there_are_void_squares_on_the_king_way {
+        use super::*;
+        use support::init_square_builder_from;
+
+        #[test]
+        fn it_does_allow_castling() {
+            let builder = init_square_builder_from(
+                vec![
+                    vec!['▓', '░', '▓', '░', '▓'],
+                    vec!['░', '▓', '░', '▓', '░'],
+                    vec!['▓', '░', '▓', '░', '▓'],
+                    vec!['░', '▓', '░', '▓', '░'],
+                    vec!['▓', '░', '▓', '¤', '▓'],
+                ],
+                &Color::White
+            );
+
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                builder,
+            );
+            let king = board.add_piece(
+                "King",
+                Color::White,
+                vec![Buff::Castle],
+                vec![],
+                Point::new(5, 1),
+            );
+            let rook = board.add_piece(
+                "Rook",
+                Color::White,
+                vec![Buff::Castle],
+                vec![],
+                Point::new(1, 1),
+            );
+
+            println!("{}", board.pp());
+            compare_and_assert(
+                &board
+                    .moves(&Color::White)
+                    .moves_of(&king)
+                    .to_vec(),
+                &vec![
+                    &PieceMove::Point(Point::new(4, 2)),
+                    &PieceMove::Point(Point::new(5, 2)),
+                ],
+            );
+            compare_and_assert(
+                &board
+                    .moves(&Color::White)
+                    .moves_of(&rook)
+                    .to_vec(),
+                &vec![
+                    &PieceMove::Point(Point::new(1, 2)),
+                    &PieceMove::Point(Point::new(1, 3)),
+                    &PieceMove::Point(Point::new(1, 4)),
+                    &PieceMove::Point(Point::new(1, 5)),
+                    &PieceMove::Point(Point::new(2, 1)),
+                    &PieceMove::Point(Point::new(3, 1)),
+                ],
+            );
+        }
+    }
+
+    mod when_there_are_void_squares_on_the_rook_way {
+        use super::*;
+        use support::init_square_builder_from;
+
+        #[test]
+        fn it_does_allow_castling() {
+            let builder = init_square_builder_from(
+                vec![
+                    vec!['▓', '░', '▓', '░', '▓'],
+                    vec!['░', '▓', '░', '▓', '░'],
+                    vec!['▓', '░', '▓', '░', '▓'],
+                    vec!['░', '▓', '░', '▓', '░'],
+                    vec!['▓', '¤', '▓', '░', '▓'],
+                ],
+                &Color::White
+            );
+
+            let mut board = Board::empty(
+                Point::new(1, 1),
+                Point::new(5, 5),
+                builder,
+            );
+            let king = board.add_piece(
+                "King",
+                Color::White,
+                vec![Buff::Castle],
+                vec![],
+                Point::new(5, 1),
+            );
+            let rook = board.add_piece(
+                "Rook",
+                Color::White,
+                vec![Buff::Castle],
+                vec![],
+                Point::new(1, 1),
+            );
+
+            println!("{}", board.pp());
+            compare_and_assert(
+                &board
+                    .moves(&Color::White)
+                    .moves_of(&king)
+                    .to_vec(),
+                &vec![
+                    &PieceMove::Point(Point::new(4, 1)),
+                    &PieceMove::Point(Point::new(4, 2)),
+                    &PieceMove::Point(Point::new(5, 2)),
+                ],
+            );
+            compare_and_assert(
+                &board
+                    .moves(&Color::White)
+                    .moves_of(&rook)
+                    .to_vec(),
+                &vec![
+                    &PieceMove::Point(Point::new(1, 2)),
+                    &PieceMove::Point(Point::new(1, 3)),
+                    &PieceMove::Point(Point::new(1, 4)),
+                    &PieceMove::Point(Point::new(1, 5)),
+                ],
+            );
+        }
     }
 }

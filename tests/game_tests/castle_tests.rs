@@ -5,6 +5,9 @@ use std::rc::Rc;
 use support::traits::{CloneMoves, ToVecRef};
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
+use tchess::board_square_builders::{
+    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
+};
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::point::Point;
@@ -16,7 +19,11 @@ mod rook_gets_pinned {
     use tchess::buff::Buff;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         board.add_piece(
             "King",
             Color::White,
@@ -83,7 +90,11 @@ mod castle_is_possible {
     use tchess::castle_points::CastlePoints;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(Point::new(1, 1), Point::new(8, 3));
+        let mut board = Board::empty(
+            Point::new(1, 1),
+            Point::new(8, 3),
+            DefaultSquareBuilder::init(),
+        );
         // ID#1
         board.add_piece(
             "King",

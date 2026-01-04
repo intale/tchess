@@ -1,9 +1,10 @@
 use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
-use crate::board_square::{BoardSquare, Square};
+use crate::board_square::{BoardSquare};
 use crate::color::Color;
 use crate::pieces::Piece;
 use crate::point::Point;
+use crate::square::Square;
 
 pub struct BoardMap {
     point_to_board_square: FxHashMap<Point, BoardSquare>,
@@ -28,8 +29,8 @@ impl BoardMap {
         self.point_to_board_square.get(point).unwrap_or(&BoardSquare::VoidSquare)
     }
 
-    pub fn init_square(&mut self, point: Point, color: Color) {
-        self.point_to_board_square.insert(point, BoardSquare::Square(Square::new(color, None)));
+    pub fn add_square(&mut self, point: Point, square: BoardSquare) {
+        self.point_to_board_square.insert(point, square);
     }
 
     pub fn place_piece(&mut self, point: &Point, piece: &Rc<Piece>, add_to_active_pieces: bool) {
