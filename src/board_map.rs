@@ -4,7 +4,6 @@ use crate::board_square::{BoardSquare};
 use crate::color::Color;
 use crate::pieces::Piece;
 use crate::point::Point;
-use crate::square::Square;
 
 pub struct BoardMap {
     point_to_board_square: FxHashMap<Point, BoardSquare>,
