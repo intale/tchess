@@ -17,4 +17,4 @@ pub mod promote_piece;
 mod x_ray_pieces;
 mod board_map;
 mod square;
-pub mod board_square_builders;
+pub mod board_square_builder;

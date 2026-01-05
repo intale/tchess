@@ -5,7 +5,7 @@ use support::compare_and_assert;
 use support::create_box_of;
 use support::traits::ToVecRef;
 use tchess::board::Board;
-use tchess::board_square_builders::{
+use tchess::board_square_builder::{
     BoardSquareBuilder,
     default_square_builder::DefaultSquareBuilder,
 };

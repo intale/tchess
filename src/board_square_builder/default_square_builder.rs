@@ -1,5 +1,5 @@
 use crate::board_square::BoardSquare;
-use crate::board_square_builders::BoardSquareBuilder;
+use super::BoardSquareBuilder;
 use crate::color::Color;
 use crate::point::Point;
 use crate::square::Square;

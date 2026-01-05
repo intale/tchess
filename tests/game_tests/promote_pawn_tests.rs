@@ -5,7 +5,7 @@ use std::rc::Rc;
 use support::traits::{ClonePieces, FindPiece, ToVecRef};
 use support::{compare_and_assert, expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
-use tchess::board_square_builders::{
+use tchess::board_square_builder::{
     BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
 };
 use tchess::color::Color;

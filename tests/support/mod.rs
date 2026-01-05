@@ -7,7 +7,7 @@ pub mod test_square_builder;
 use std::env;
 use std::fmt::{Debug, Display};
 use tchess::board::*;
-use tchess::board_square_builders::BoardSquareBuilder;
+use tchess::board_square_builder::BoardSquareBuilder;
 use tchess::buff::Buff;
 use tchess::color::Color;
 use tchess::debuff::Debuff;

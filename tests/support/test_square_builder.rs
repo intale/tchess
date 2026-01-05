@@ -1,5 +1,5 @@
 use tchess::board_square::{BoardSquare, Square};
-use tchess::board_square_builders::BoardSquareBuilder;
+use tchess::board_square_builder::BoardSquareBuilder;
 use tchess::color::Color;
 use tchess::point::Point;
 

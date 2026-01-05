@@ -18,7 +18,7 @@ use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
-use crate::board_square_builders::{BoardSquareBuilder, default_square_builder::DefaultSquareBuilder};
+use crate::board_square_builder::{BoardSquareBuilder, default_square_builder::DefaultSquareBuilder};
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
