@@ -2,7 +2,7 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{PieceInit};
+use crate::piece::{PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
@@ -11,7 +11,7 @@ use std::cell::Cell;
 use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
-pub struct Queen {
+pub struct Rook {
     color: Color,
     buffs: BuffsCollection,
     debuffs: DebuffsCollection,
@@ -19,7 +19,7 @@ pub struct Queen {
     id: usize,
 }
 
-impl Queen {
+impl Rook {
     pub fn id(&self) -> usize {
         self.id
     }
@@ -47,7 +47,7 @@ impl Queen {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::diagonal_and_line_vectors() {
+        for direction in Vector::line_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -74,7 +74,7 @@ impl Queen {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::diagonal_and_line_vectors() {
+        for direction in Vector::line_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -100,12 +100,11 @@ impl Queen {
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
         let pin = self.debuffs.pin();
-        let available_directions =
-            if pin.is_none() {
-                Vector::diagonal_and_line_vectors()
+        let available_directions =if pin.is_none() {
+                Vector::line_vectors()
             } else {
                 let pin = pin.unwrap();
-                Vector::diagonal_and_line_vectors()
+                Vector::line_vectors()
                     .iter()
                     .filter(|&&vec| pin == vec || pin.inverse() == vec)
                     .map(|&vec| vec)
@@ -142,7 +141,7 @@ impl Queen {
     }
 }
 
-impl PieceInit for Queen {
+impl PieceInit for Rook {
     fn from_parts(
         color: Color,
         buffs: Vec<Buff>,
@@ -160,11 +159,11 @@ impl PieceInit for Queen {
     }
 }
 
-impl PrettyPrint for Queen {
+impl PrettyPrint for Rook {
     fn pp(&self) -> String {
         match self.color {
-            Color::White => if INVERT_COLORS { '♛' } else { '♕' }.to_string(),
-            Color::Black => if INVERT_COLORS { '♕' } else { '♛' }.to_string(),
+            Color::White => if INVERT_COLORS { '♜' } else { '♖' }.to_string(),
+            Color::Black => if INVERT_COLORS { '♖' } else { '♜' }.to_string(),
         }
     }
 }

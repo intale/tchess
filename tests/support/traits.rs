@@ -4,7 +4,7 @@ use std::rc::Rc;
 use tchess::board::Board;
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
-use tchess::pieces::Piece;
+use tchess::piece::Piece;
 
 #[allow(unused)]
 pub trait ClonePieces {

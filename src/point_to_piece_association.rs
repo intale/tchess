@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
-use crate::pieces::{Piece};
+use crate::piece::{Piece};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 

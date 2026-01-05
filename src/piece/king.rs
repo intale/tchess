@@ -2,7 +2,7 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{Piece, PieceInit};
+use crate::piece::{Piece, PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;

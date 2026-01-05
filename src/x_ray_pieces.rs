@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use rustc_hash::{FxHashMap};
-use crate::pieces::Piece;
+use crate::piece::Piece;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;

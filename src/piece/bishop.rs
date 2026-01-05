@@ -2,16 +2,17 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{PieceInit};
+use crate::piece::PieceInit;
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::board_square::BoardSquare;
 use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
-pub struct Knight {
+pub struct Bishop {
     color: Color,
     buffs: BuffsCollection,
     debuffs: DebuffsCollection,
@@ -19,7 +20,7 @@ pub struct Knight {
     id: usize,
 }
 
-impl Knight {
+impl Bishop {
     pub fn id(&self) -> usize {
         self.id
     }
@@ -46,48 +47,51 @@ impl Knight {
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
-
-        for direction in Vector::jump_vectors() {
+        let bishop_color = self.bishop_color(board);
+        for direction in Vector::diagonal_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
                 let square = board.board_square(&point);
 
-                if square.is_void_square() {
+                if square.is_void_square() || &bishop_color != square.color() {
                     break;
                 }
                 if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
-                break;
+                if !square.can_look_through(self.color()) {
+                    break;
+                }
             }
         }
-
         points
     }
 
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
-
-        for direction in Vector::jump_vectors() {
+        let bishop_color = self.bishop_color(board);
+        for direction in Vector::diagonal_vectors() {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
                 let square = board.board_square(&point);
 
-                if square.is_void_square() {
+                if square.is_void_square() || &bishop_color != square.color() {
                     break;
                 }
                 if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
-                break;
+                if !square.is_empty_square() {
+                    break;
+                }
             }
         }
 
@@ -95,25 +99,31 @@ impl Knight {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        if self.debuffs.pin().is_some() {
-            // Pinned knight has no legal moves as there is no other mechanics that pins using jump
-            // vectors. Thus, there can't be any other non-pinned jump vector that would allow some
-            // moves.
-            return vec![];
-        }
-
+        let pin = self.debuffs.pin();
+        let available_directions =
+            if pin.is_none() {
+                Vector::diagonal_vectors()
+            } else {
+                let pin = pin.unwrap();
+                Vector::diagonal_vectors()
+                    .iter()
+                    .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                    .map(|&vec| vec)
+                    .collect::<Vec<_>>()
+            };
         let mut moves: Vec<PieceMove> = vec![];
+        let bishop_color = self.bishop_color(board);
 
-        for direction in Vector::jump_vectors() {
+        for direction in available_directions {
             let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
+                self.current_position(),
                 *board.dimension(),
                 direction,
             );
             for point in vector_points {
                 let square = board.board_square(&point);
 
-                if square.is_void_square() {
+                if square.is_void_square() || &bishop_color != square.color() {
                     break;
                 }
 
@@ -123,15 +133,28 @@ impl Knight {
                     square.is_capturable_enemy_square(&self.color) {
                     moves.push(piece_move)
                 }
-                break;
+                if !square.is_empty_square() {
+                    break;
+                }
             }
         }
 
         moves
     }
+
+    fn bishop_color(&self, board: &Board) -> Color {
+        match board.board_square(&self.current_position()) {
+            BoardSquare::Square(square) => {
+                *square.color()
+            },
+            BoardSquare::VoidSquare => {
+                panic!("Logical error. Bishop {:#?} is placed on void square!", self)
+            }
+        }
+    }
 }
 
-impl PieceInit for Knight {
+impl PieceInit for Bishop {
     fn from_parts(
         color: Color,
         buffs: Vec<Buff>,
@@ -149,11 +172,11 @@ impl PieceInit for Knight {
     }
 }
 
-impl PrettyPrint for Knight {
+impl PrettyPrint for Bishop {
     fn pp(&self) -> String {
         match self.color {
-            Color::White => if INVERT_COLORS { '♞' } else { '♘' }.to_string(),
-            Color::Black => if INVERT_COLORS { '♘' } else { '♞' }.to_string(),
+            Color::White => if INVERT_COLORS { '♝' } else { '♗' }.to_string(),
+            Color::Black => if INVERT_COLORS { '♗' } else { '♝' }.to_string(),
         }
     }
 }

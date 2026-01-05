@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use crate::color::Color;
-use crate::pieces::Piece;
+use crate::piece::Piece;
 pub use crate::square::Square;
 use crate::utils::pretty_print::PrettyPrint;
 

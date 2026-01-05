@@ -2,7 +2,7 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 use crate::board_square::{BoardSquare};
 use crate::color::Color;
-use crate::pieces::Piece;
+use crate::piece::Piece;
 use crate::point::Point;
 
 pub struct BoardMap {

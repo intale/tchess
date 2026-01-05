@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use crate::board::INVERT_COLORS;
 use crate::color::Color;
-use crate::pieces::Piece;
+use crate::piece::Piece;
 use crate::utils::pretty_print::PrettyPrint;
 
 #[derive(Debug)]

@@ -2,7 +2,7 @@ use crate::board::{Board, INVERT_COLORS};
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
-use crate::pieces::{PieceInit};
+use crate::piece::{PieceInit};
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
@@ -11,7 +11,7 @@ use std::cell::Cell;
 use crate::piece_move::PieceMove;
 
 #[derive(Debug)]
-pub struct Rook {
+pub struct Knight {
     color: Color,
     buffs: BuffsCollection,
     debuffs: DebuffsCollection,
@@ -19,7 +19,7 @@ pub struct Rook {
     id: usize,
 }
 
-impl Rook {
+impl Knight {
     pub fn id(&self) -> usize {
         self.id
     }
@@ -47,7 +47,7 @@ impl Rook {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::line_vectors() {
+        for direction in Vector::jump_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -62,9 +62,7 @@ impl Rook {
                 if square.is_empty_square() || square.is_enemy_square(&self.color) {
                     points.push(point)
                 }
-                if !square.can_look_through(self.color()) {
-                    break;
-                }
+                break;
             }
         }
 
@@ -74,7 +72,7 @@ impl Rook {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::line_vectors() {
+        for direction in Vector::jump_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -89,9 +87,7 @@ impl Rook {
                 if square.is_ally_square(&self.color) {
                     points.push(point)
                 }
-                if !square.is_empty_square() {
-                    break;
-                }
+                break;
             }
         }
 
@@ -99,20 +95,16 @@ impl Rook {
     }
 
     pub fn moves(&self, board: &Board) -> Vec<PieceMove> {
-        let pin = self.debuffs.pin();
-        let available_directions =if pin.is_none() {
-                Vector::line_vectors()
-            } else {
-                let pin = pin.unwrap();
-                Vector::line_vectors()
-                    .iter()
-                    .filter(|&&vec| pin == vec || pin.inverse() == vec)
-                    .map(|&vec| vec)
-                    .collect::<Vec<_>>()
-            };
+        if self.debuffs.pin().is_some() {
+            // Pinned knight has no legal moves as there is no other mechanics that pins using jump
+            // vectors. Thus, there can't be any other non-pinned jump vector that would allow some
+            // moves.
+            return vec![];
+        }
+
         let mut moves: Vec<PieceMove> = vec![];
 
-        for direction in available_directions {
+        for direction in Vector::jump_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -131,9 +123,7 @@ impl Rook {
                     square.is_capturable_enemy_square(&self.color) {
                     moves.push(piece_move)
                 }
-                if !square.is_empty_square() {
-                    break;
-                }
+                break;
             }
         }
 
@@ -141,7 +131,7 @@ impl Rook {
     }
 }
 
-impl PieceInit for Rook {
+impl PieceInit for Knight {
     fn from_parts(
         color: Color,
         buffs: Vec<Buff>,
@@ -159,11 +149,11 @@ impl PieceInit for Rook {
     }
 }
 
-impl PrettyPrint for Rook {
+impl PrettyPrint for Knight {
     fn pp(&self) -> String {
         match self.color {
-            Color::White => if INVERT_COLORS { '♜' } else { '♖' }.to_string(),
-            Color::Black => if INVERT_COLORS { '♖' } else { '♜' }.to_string(),
+            Color::White => if INVERT_COLORS { '♞' } else { '♘' }.to_string(),
+            Color::Black => if INVERT_COLORS { '♘' } else { '♞' }.to_string(),
         }
     }
 }

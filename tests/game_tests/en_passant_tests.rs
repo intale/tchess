@@ -14,7 +14,7 @@ use tchess::board_square_builder::{
 use tchess::buff::Buff;
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
-use tchess::pieces::Piece;
+use tchess::piece::Piece;
 use tchess::point::Point;
 use tchess::utils::pretty_print::PrettyPrint;
 

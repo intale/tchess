@@ -10,7 +10,7 @@ use tchess::board_square_builder::{
 };
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
-use tchess::pieces::Piece;
+use tchess::piece::Piece;
 use tchess::point::Point;
 use tchess::promote_piece::PromotePiece;
 use tchess::utils::pretty_print::PrettyPrint;

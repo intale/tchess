@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 use crate::piece_move::PieceMove;
-use crate::pieces::Piece;
+use crate::piece::Piece;
 use crate::point::Point;
 
 type MovesSetT = FxHashSet<PieceMove>;
