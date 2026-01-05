@@ -4,6 +4,6 @@ use crate::board_square::BoardSquare;
 use crate::point::Point;
 
 pub trait BoardSquareBuilder {
-    fn init() -> Self;
+    fn init() -> Self where Self: Sized;
     fn build(&self, point: &Point) -> Option<BoardSquare>;
 }

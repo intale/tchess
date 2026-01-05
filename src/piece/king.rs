@@ -135,12 +135,7 @@ impl King {
         let mut moves: Vec<PieceMove> = vec![];
         let current_position = self.current_position.get();
 
-        let castle_points_set = [
-            CastleSide::Queen.castle_points(**current_position.y()),
-            CastleSide::King.castle_points(**current_position.y()),
-        ];
-
-        for (king_point, rook_point, side) in castle_points_set {
+        for (king_point, rook_point, side) in self.castle_points(board) {
             let mut king_path_is_safe = false;
             let mut rook_path_is_safe = false;
             let mut ally_rook: Option<&Rc<Piece>> = None;
@@ -290,6 +285,23 @@ impl King {
             }
         }
         moves
+    }
+
+    fn castle_points(&self, board: &Board) -> [(Point, Point, CastleSide); 2] {
+        let king_side_points = board.config().king_side_castle_x_points();
+        let queen_side_points = board.config().queen_side_castle_x_points();
+        [
+            (
+                Point::new(*king_side_points.king_x(), *self.current_position().y().value()),
+                Point::new(*king_side_points.rook_x(), *self.current_position().y().value()),
+                CastleSide::King,
+            ),
+            (
+                Point::new(*queen_side_points.king_x(), *self.current_position().y().value()),
+                Point::new(*queen_side_points.rook_x(), *self.current_position().y().value()),
+                CastleSide::Queen,
+            )
+        ]
     }
 }
 

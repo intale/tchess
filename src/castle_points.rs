@@ -2,11 +2,6 @@ use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::point::Point;
 
-const QUEEN_SIDE_KING_CASTLE_X_POS: i16 = 3;
-const QUEEN_SIDE_ROOK_CASTLE_X_POS: i16 = 4;
-const KING_SIDE_KING_CASTLE_X_POS: i16 = 7;
-const KING_SIDE_ROOK_CASTLE_X_POS: i16 = 6;
-
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum CastleSide {
     Queen,
@@ -18,21 +13,6 @@ impl CastleSide {
         match self {
             Self::Queen => Vector::Line(LineVector::Left),
             Self::King => Vector::Line(LineVector::Right),
-        }
-    }
-
-    pub fn castle_points(&self, y: i16) -> (Point, Point, Self) {
-        match self {
-            Self::Queen => {
-                let king_point = Point::new(QUEEN_SIDE_KING_CASTLE_X_POS, y);
-                let rook_point = Point::new(QUEEN_SIDE_ROOK_CASTLE_X_POS, y);
-                (king_point, rook_point, Self::Queen)
-            },
-            Self::King => {
-                let king_point = Point::new(KING_SIDE_KING_CASTLE_X_POS, y);
-                let rook_point = Point::new(KING_SIDE_ROOK_CASTLE_X_POS, y);
-                (king_point, rook_point, Self::King)
-            },
         }
     }
 }

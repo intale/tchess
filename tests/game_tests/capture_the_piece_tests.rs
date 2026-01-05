@@ -2,15 +2,15 @@
 mod support;
 
 use std::rc::Rc;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::{ClonePieces, ToVecRef};
+use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
-use tchess::board_square_builder::{
-    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
-};
 use tchess::color::Color;
-use tchess::piece_move::PieceMove;
+use tchess::dimension::Dimension;
 use tchess::piece::Piece;
+use tchess::piece_move::PieceMove;
 use tchess::point::Point;
 use tchess::utils::pretty_print::PrettyPrint;
 
@@ -19,11 +19,9 @@ use tchess::utils::pretty_print::PrettyPrint;
 // 2 ▓▓▓ ░♝░ ▓▓▓ ░░░
 // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
 fn setup_board() -> Board {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(4, 4),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
 

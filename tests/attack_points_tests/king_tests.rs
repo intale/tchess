@@ -1,13 +1,10 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare_and_assert;
-use support::create_box_of;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::ToVecRef;
+use support::*;
 use tchess::board::Board;
-use tchess::board_square_builder::{
-    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
-};
 use tchess::color::Color;
 use tchess::dimension::Dimension;
 use tchess::point::Point;
@@ -15,11 +12,9 @@ use tchess::utils::pretty_print::PrettyPrint;
 
 #[test]
 fn when_there_are_no_pieces_around() {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(5, 5),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
@@ -43,11 +38,9 @@ fn when_there_are_no_pieces_around() {
 
 #[test]
 fn when_there_is_an_enemy_piece_on_the_way() {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(5, 5),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
 
@@ -72,11 +65,9 @@ fn when_there_is_an_enemy_piece_on_the_way() {
 
 #[test]
 fn when_there_is_a_protected_enemy_piece_on_the_way() {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(5, 5),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
@@ -102,11 +93,9 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
 
 #[test]
 fn when_there_is_an_ally_piece_on_the_way() {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(5, 5),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
 
@@ -130,11 +119,9 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
 #[test]
 fn when_there_are_enemy_pieces_around() {
-    let mut board = Board::empty(
-        Point::new(1, 1),
-        Point::new(3, 3),
-        DefaultSquareBuilder::init(),
-    );
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
+    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+    let mut board = Board::empty(config);
     let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
 
     // A box of enemy knights around the king
@@ -168,11 +155,10 @@ fn when_there_are_enemy_pieces_around() {
 
 mod when_there_are_void_squares_on_the_way {
     use super::*;
-    use support::init_square_builder_from;
 
     #[test]
     fn it_does_not_include_them() {
-        let builder = init_square_builder_from(
+        let squares_map = TestSquaresMap::from_chars(
             vec![
                 vec!['▓', '░', '▓', '░', '▓'],
                 vec!['░', '▓', '░', '¤', '░'],
@@ -180,14 +166,13 @@ mod when_there_are_void_squares_on_the_way {
                 vec!['░', '¤', '░', '▓', '░'],
                 vec!['▓', '░', '▓', '░', '▓'],
             ],
-            &Color::White
+            &Color::White,
         );
-
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(5, 5),
-            builder,
+        let config = board_config(
+            Dimension::new(Point::new(1, 1), Point::new(5, 5)),
+            squares_map,
         );
+        let mut board = Board::empty(config);
         let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());

@@ -2,12 +2,13 @@ pub mod traits;
 pub mod expect;
 pub mod expect_to_change_to;
 pub mod expect_not_to_change_to;
-pub mod test_square_builder;
+pub mod test_squares_map;
+pub mod test_heat_map;
 
 use std::env;
 use std::fmt::{Debug, Display};
 use tchess::board::*;
-use tchess::board_square_builder::BoardSquareBuilder;
+use tchess::board_config::{BoardConfig, CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use tchess::buff::Buff;
 use tchess::color::Color;
 use tchess::debuff::Debuff;
@@ -16,7 +17,8 @@ use tchess::point::Point;
 use tchess::vector::Vector;
 use tchess::vector::line_vector::LineVector;
 use tchess::vector_points::VectorPoints;
-use test_square_builder::TestSquareBuilder;
+use test_squares_map::TestSquaresMap;
+use test_heat_map::TestHeatMap;
 
 #[allow(unused)]
 pub fn compare<T>(vec1: &Vec<T>, vec2: &Vec<T>) -> Result<String, String>
@@ -151,23 +153,12 @@ pub fn create_box_of(
 }
 
 #[allow(unused)]
-pub fn init_square_builder_from(chars_map: Vec<Vec<char>>, pov: &Color) -> TestSquareBuilder {
-    let mut square_map = vec![];
-    for row in chars_map {
-        let mut square_row = vec![];
-        for square_notation in row {
-            let color = match square_notation {
-                '▓' => Some(Color::White),
-                '░' => Some(Color::Black),
-                '¤' => None,
-                _ => panic!("Unhandled square notation: {}", square_notation),
-            };
-            square_row.push(color);
-        }
-        square_map.push(square_row);
-    }
-    let mut square_builder = TestSquareBuilder::init();
-    square_builder.set_pov(pov);
-    square_builder.set_map(square_map);
-    square_builder
+pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardConfig {
+    BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::empty()),
+        Box::new(squares_map),
+        dimension,
+    )
 }

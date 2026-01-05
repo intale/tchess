@@ -1,27 +1,24 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::compare_and_assert;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::ToVecRef;
+use support::*;
 use tchess::board::Board;
-use tchess::board_square_builder::{
-    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
-};
 use tchess::color::Color;
 use tchess::point::Point;
 
 #[cfg(test)]
 mod white_pawn {
     use super::*;
+    use tchess::dimension::Dimension;
     use tchess::utils::pretty_print::PrettyPrint;
 
     #[test]
     fn when_there_are_no_pieces_around() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(3, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
@@ -36,11 +33,9 @@ mod white_pawn {
 
     #[test]
     fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(3, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
@@ -56,11 +51,9 @@ mod white_pawn {
 
     #[test]
     fn when_there_is_an_ally_piece_on_an_attack_point() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(4, 4),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
@@ -76,11 +69,10 @@ mod white_pawn {
 
     mod when_there_are_void_squares_on_attack_points {
         use super::*;
-        use support::init_square_builder_from;
 
         #[test]
         fn it_does_not_include_them() {
-            let builder = init_square_builder_from(
+            let squares_map = TestSquaresMap::from_chars(
                 vec![
                     vec!['▓', '░', '▓', '░', '▓'],
                     vec!['░', '▓', '░', '¤', '░'],
@@ -88,14 +80,13 @@ mod white_pawn {
                     vec!['░', '▓', '░', '▓', '░'],
                     vec!['▓', '░', '▓', '░', '▓'],
                 ],
-                &Color::White
+                &Color::White,
             );
-
-            let mut board = Board::empty(
-                Point::new(1, 1),
-                Point::new(5, 5),
-                builder,
+            let config = board_config(
+                Dimension::new(Point::new(1, 1), Point::new(5, 5)),
+                squares_map,
             );
+            let mut board = Board::empty(config);
             let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 3));
 
             println!("{}", board.pp());
@@ -104,9 +95,7 @@ mod white_pawn {
                     .attack_points(&Color::White)
                     .get_points(&pawn)
                     .to_vec(),
-                &vec![
-                    &Point::new(2, 4),
-                ],
+                &vec![&Point::new(2, 4)],
             );
         }
     }
@@ -115,15 +104,14 @@ mod white_pawn {
 #[cfg(test)]
 mod black_pawn {
     use super::*;
+    use tchess::dimension::Dimension;
     use tchess::utils::pretty_print::PrettyPrint;
 
     #[test]
     fn when_there_are_no_pieces_around() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(3, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         board.set_pov(Color::Black);
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
 
@@ -139,11 +127,9 @@ mod black_pawn {
 
     #[test]
     fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(3, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         board.set_pov(Color::Black);
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
@@ -160,11 +146,9 @@ mod black_pawn {
 
     #[test]
     fn when_there_is_an_ally_piece_on_an_attack_point() {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(4, 4),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         board.set_pov(Color::Black);
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 2));
@@ -181,11 +165,10 @@ mod black_pawn {
 
     mod when_there_are_void_squares_on_attack_points {
         use super::*;
-        use support::init_square_builder_from;
 
         #[test]
         fn it_does_not_include_them() {
-            let builder = init_square_builder_from(
+            let squares_map = TestSquaresMap::from_chars(
                 vec![
                     vec!['▓', '░', '▓', '░', '▓'],
                     vec!['░', '¤', '░', '▓', '░'],
@@ -193,14 +176,13 @@ mod black_pawn {
                     vec!['░', '▓', '░', '▓', '░'],
                     vec!['▓', '░', '▓', '░', '▓'],
                 ],
-                &Color::Black
+                &Color::Black,
             );
-
-            let mut board = Board::empty(
-                Point::new(1, 1),
-                Point::new(5, 5),
-                builder,
+            let config = board_config(
+                Dimension::new(Point::new(1, 1), Point::new(5, 5)),
+                squares_map,
             );
+            let mut board = Board::empty(config);
             board.set_pov(Color::Black);
             let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
 
@@ -210,9 +192,7 @@ mod black_pawn {
                     .attack_points(&Color::Black)
                     .get_points(&pawn)
                     .to_vec(),
-                &vec![
-                    &Point::new(2, 2),
-                ],
+                &vec![&Point::new(2, 2)],
             );
         }
     }

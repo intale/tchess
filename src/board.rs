@@ -6,6 +6,7 @@ use crate::utils::pretty_print::PrettyPrint;
 use crate::point::{Point};
 use crate::board_square::{BoardSquare};
 use rustc_hash::{FxHashSet};
+use crate::board_config::BoardConfig;
 use crate::board_map::{BoardMap};
 use crate::buff::Buff;
 use crate::debuff::Debuff;
@@ -18,7 +19,6 @@ use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
-use crate::board_square_builder::{BoardSquareBuilder, default_square_builder::DefaultSquareBuilder};
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -27,7 +27,6 @@ pub const INVERT_COLORS: bool = true;
 
 pub struct Board {
     board_map: BoardMap,
-    dimension: Dimension,
     white_attack_points: PointToPieceAssociation,
     black_attack_points: PointToPieceAssociation,
     white_x_ray_pieces: XRayPieces,
@@ -42,111 +41,20 @@ pub struct Board {
     current_turn: Color,
     // Determines board's point of view. Debugging purpose only.
     pov: Color,
+    config: BoardConfig,
 }
 
 impl Board {
-    pub fn classic_chess_board() -> Self {
-        let mut board = Self::empty(
-            Point::new(1, 1),
-            Point::new(8, 8),
-            DefaultSquareBuilder::init(),
-        );
-
-        for y in board.dimension().get_rows_range() {
-            for x in board.dimension().get_columns_range() {
-                let point = Point::new(x, y);
-                match (y, x) {
-                    // White pieces
-                    (1, 1) | (1, 8) => {
-                        board.add_piece(
-                            "Rook", Color::White, vec![Buff::Castle], vec![], point,
-                        );
-                            ()
-                    },
-                    (1, 2) | (1, 7) => {
-                        board.add_piece(
-                            "Knight", Color::White, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (1, 3) | (1, 6) => {
-                        board.add_piece(
-                            "Bishop", Color::White, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (1, 4) => {
-                        board.add_piece(
-                            "Queen", Color::White, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (1, 5) => {
-                        board.add_piece(
-                            "King", Color::White, vec![Buff::Castle], vec![], point,
-                        );
-                        ()
-                    },
-                    (2, _) => {
-                        board.add_piece(
-                            "Pawn", Color::White, vec![Buff::AdditionalPoint], vec![], point,
-                        );
-                        ()
-                    },
-                    // Black pieces
-                    (8, 1) | (8, 8) => {
-                        board.add_piece(
-                            "Rook", Color::Black, vec![Buff::Castle], vec![], point,
-                        );
-                        ()
-                    },
-                    (8, 2) | (8, 7) => {
-                        board.add_piece(
-                            "Knight", Color::Black, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (8, 3) | (8, 6) => {
-                        board.add_piece(
-                            "Bishop", Color::Black, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (8, 5) => {
-                        board.add_piece(
-                            "King", Color::Black, vec![Buff::Castle], vec![], point,
-                        );
-                        ()
-                    },
-                    (8, 4) => {
-                        board.add_piece(
-                            "Queen", Color::Black, vec![], vec![], point,
-                        );
-                        ()
-                    },
-                    (7, _) => {
-                        board.add_piece(
-                            "Pawn", Color::Black, vec![Buff::AdditionalPoint], vec![], point,
-                        );
-                        ()
-                    },
-                    _ => ()
-                };
-            }
-        }
-        board
-    }
-
     pub fn board_map(&self) -> &BoardMap {
         &self.board_map
     }
 
-    fn board_map_mut(&mut self) -> &mut BoardMap {
-        &mut self.board_map
+    pub fn config(&self) -> &BoardConfig {
+        &self.config
     }
 
     pub fn dimension(&self) -> &Dimension {
-        &self.dimension
+        self.config.dimension()
     }
 
     pub fn attack_points(&self, color: &Color) -> &PointToPieceAssociation {
@@ -223,10 +131,9 @@ impl Board {
         }
     }
 
-    pub fn empty<T: BoardSquareBuilder>(min_point: Point, max_point: Point, square_builder: T) -> Self {
+    pub fn empty(config: BoardConfig) -> Self {
         let mut board = Self {
             board_map: BoardMap::empty(),
-            dimension: Dimension::new(min_point, max_point),
             white_attack_points: PointToPieceAssociation::empty(),
             black_attack_points: PointToPieceAssociation::empty(),
             white_x_ray_pieces: XRayPieces::empty(),
@@ -240,16 +147,20 @@ impl Board {
             next_piece_id: 0,
             current_turn: Color::White,
             pov: Color::White,
+            config,
         };
         for y in board.dimension().get_rows_range() {
             for x in board.dimension().get_columns_range() {
-                let point = Point::new(x, y);
-                if let Some(square) = square_builder.build(&point) {
-                    board.board_map_mut().add_square(point, square);
-                }
+                board.init_square(Point::new(x, y));
             }
         }
         board
+    }
+
+    fn init_square(&mut self, point: Point) {
+        if let Some(square) = self.config.squares_map().square(&point) {
+            self.board_map.add_square(point, square);
+        }
     }
 
     // Pins points and castle points are not taken into account here. They require more complex
@@ -393,7 +304,7 @@ impl Board {
                     Vector::Jump(_) => (),
                     _ => {
                         let vector_points = VectorPoints::without_initial(
-                            piece_caused_check.current_position(), self.dimension, direction
+                            piece_caused_check.current_position(), *self.dimension(), direction
                         );
                         for point in vector_points {
                             // Exclude king's position
@@ -791,29 +702,29 @@ impl PrettyPrint for Board {
         let mut buf: Vec<String> = vec![];
 
         let y_range: Vec<i16> = if self.pov == Color::White {
-            (*self.dimension.min_point().y().value()..=*self.dimension.max_point().y().value()).rev().collect()
+            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value()).rev().collect()
         } else {
-            (*self.dimension.min_point().y().value()..=*self.dimension.max_point().y().value()).collect()
+            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value()).collect()
         };
         let x_range: Vec<i16> = if self.pov == Color::White {
-            (*self.dimension.min_point().x().value()..=*self.dimension.max_point().x().value()).collect()
+            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value()).collect()
         } else {
-            (*self.dimension.min_point().x().value()..=*self.dimension.max_point().x().value()).rev().collect()
+            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value()).rev().collect()
         };
 
         for y in y_range {
             for x in x_range.clone() {
                 let point = Point::new(x, y);
                 let square = self.board_square(&point);
-                if (self.pov == Color::White && point.x() == self.dimension.min_point().x())
-                    || (self.pov == Color::Black && point.x() == self.dimension.max_point().x()) {
+                if (self.pov == Color::White && point.x() == self.dimension().min_point().x())
+                    || (self.pov == Color::Black && point.x() == self.dimension().max_point().x()) {
                     output.push_str(point.y().pp().as_str());
                     output.push_str(" ");
                 }
                 output.push_str(square.pp().as_str());
                 output.push(' ');
-                if (self.pov == Color::White && point.x() == self.dimension.max_point().x())
-                    || (self.pov == Color::Black && point.x() == self.dimension.min_point().x()) {
+                if (self.pov == Color::White && point.x() == self.dimension().max_point().x())
+                    || (self.pov == Color::Black && point.x() == self.dimension().min_point().x()) {
                     output.push_str("\n");
                     buf.push(output.clone());
                     output = String::new();
@@ -825,19 +736,19 @@ impl PrettyPrint for Board {
         let vector_points = if self.pov == Color::White {
             VectorPoints::with_initial(
                 Point::new(
-                    *self.dimension.min_point().x().value(),
-                    *self.dimension.max_point().y().value()
+                    *self.dimension().min_point().x().value(),
+                    *self.dimension().max_point().y().value()
                 ),
-                self.dimension,
+                *self.dimension(),
                 Vector::Line(LineVector::Right)
             )
         } else {
             VectorPoints::with_initial(
                 Point::new(
-                    *self.dimension.max_point().x().value(),
-                    *self.dimension.max_point().y().value()
+                    *self.dimension().max_point().x().value(),
+                    *self.dimension().max_point().y().value()
                 ),
-                self.dimension,
+                *self.dimension(),
                 Vector::Line(LineVector::Left)
             )
         };

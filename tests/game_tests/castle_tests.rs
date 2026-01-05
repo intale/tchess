@@ -2,12 +2,11 @@
 mod support;
 
 use std::rc::Rc;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
+use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
-use tchess::board_square_builder::{
-    BoardSquareBuilder, default_square_builder::DefaultSquareBuilder,
-};
 use tchess::color::Color;
 use tchess::piece_move::PieceMove;
 use tchess::point::Point;
@@ -17,13 +16,12 @@ mod rook_gets_pinned {
     use super::*;
     use std::fmt::Debug;
     use tchess::buff::Buff;
+    use tchess::dimension::Dimension;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(8, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         board.add_piece(
             "King",
             Color::White,
@@ -88,13 +86,12 @@ mod castle_is_possible {
     use std::fmt::Debug;
     use tchess::buff::Buff;
     use tchess::castle_points::CastlePoints;
+    use tchess::dimension::Dimension;
 
     fn setup_board() -> Board {
-        let mut board = Board::empty(
-            Point::new(1, 1),
-            Point::new(8, 3),
-            DefaultSquareBuilder::init(),
-        );
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
+        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
+        let mut board = Board::empty(config);
         // ID#1
         board.add_piece(
             "King",

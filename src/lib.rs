@@ -17,4 +17,6 @@ pub mod promote_piece;
 mod x_ray_pieces;
 mod board_map;
 mod square;
-pub mod board_square_builder;
+pub mod board_config;
+pub mod heat_map;
+pub mod squares_map;
