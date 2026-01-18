@@ -38,9 +38,7 @@ fn when_there_are_no_pieces_around() {
 
 #[test]
 fn when_there_is_a_an_enemy_pieces_on_the_way() {
-    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-    let mut board = Board::empty(config);
+    let mut board = board_default_4x4();
     let bishop = board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
@@ -62,9 +60,7 @@ fn when_there_is_a_an_enemy_pieces_on_the_way() {
 
 #[test]
 fn when_there_is_an_ally_piece_on_the_way() {
-    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-    let mut board = Board::empty(config);
+    let mut board = board_default_4x4();
     let bishop = board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 

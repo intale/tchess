@@ -2,13 +2,11 @@
 mod support;
 
 use std::rc::Rc;
-use support::test_squares_map::TestSquaresMap;
 use support::traits::{ClonePieces, ToVecRef};
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 use tchess::board::Board;
 use tchess::color::Color;
-use tchess::dimension::Dimension;
 use tchess::piece::Piece;
 use tchess::piece_move::PieceMove;
 use tchess::point::Point;
@@ -19,9 +17,7 @@ use tchess::utils::pretty_print::PrettyPrint;
 // 2 ▓▓▓ ░♝░ ▓▓▓ ░░░
 // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
 fn setup_board() -> Board {
-    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-    let mut board = Board::empty(config);
+    let mut board = board_default_4x4();
     board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 2));
     board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
 
@@ -55,7 +51,7 @@ fn it_removes_captured_piece_from_x_ray_pieces_list() {
 #[test]
 fn it_removes_captured_piece_from_available_moves_list() {
     expectation()
-        .to_change(|board| board.moves(&Color::Black).all_pieces().clone_pieces())
+        .to_change(|board| board.board_map().active_pieces(&Color::Black).clone_pieces())
         .to(|board| vec![Rc::clone(board.piece_at(&Point::new(4, 4)).unwrap())]);
 }
 

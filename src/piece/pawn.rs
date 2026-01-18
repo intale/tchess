@@ -9,6 +9,7 @@ use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
+use crate::dimension::Dimension;
 use crate::piece_move::PieceMove;
 use crate::promote_piece::PromotePiece;
 use crate::vector::line_vector::LineVector;
@@ -23,8 +24,8 @@ pub struct Pawn {
 }
 
 impl Pawn {
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn id(&self) -> &usize {
+        &self.id
     }
 
     pub fn buffs(&self) -> &BuffsCollection {
@@ -50,21 +51,7 @@ impl Pawn {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        let directions = match self.color {
-            Color::White => {
-                vec![
-                    Vector::Diagonal(DiagonalVector::TopLeft),
-                    Vector::Diagonal(DiagonalVector::TopRight),
-                ]
-            }
-            Color::Black => {
-                vec![
-                    Vector::Diagonal(DiagonalVector::BottomLeft),
-                    Vector::Diagonal(DiagonalVector::BottomRight),
-                ]
-            }
-        };
-        for direction in directions {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -88,21 +75,7 @@ impl Pawn {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        let directions = match self.color {
-            Color::White => {
-                vec![
-                    Vector::Diagonal(DiagonalVector::TopLeft),
-                    Vector::Diagonal(DiagonalVector::TopRight),
-                ]
-            }
-            Color::Black => {
-                vec![
-                    Vector::Diagonal(DiagonalVector::BottomLeft),
-                    Vector::Diagonal(DiagonalVector::BottomRight),
-                ]
-            }
-        };
-        for direction in directions {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -220,6 +193,36 @@ impl Pawn {
         }
 
         moves
+    }
+    
+    pub fn attack_vectors(&self) -> Vec<Vector> {
+        match self.color {
+            Color::White => {
+                vec![
+                    Vector::Diagonal(DiagonalVector::TopLeft),
+                    Vector::Diagonal(DiagonalVector::TopRight),
+                ]
+            }
+            Color::Black => {
+                vec![
+                    Vector::Diagonal(DiagonalVector::BottomLeft),
+                    Vector::Diagonal(DiagonalVector::BottomRight),
+                ]
+            }
+        }
+    }
+
+    pub fn attack_vector(&self, point1: &Point, point2: &Point) -> Option<Vector> {
+        self.attack_vectors().into_iter().find(|v| {
+            let mut vector_points = VectorPoints::with_initial(
+                self.current_position.get(),
+                Dimension::new(*point1, *point2),
+                *v,
+            );
+            // Pawns can't attack more than one square far - no matter how much moves they have.
+            // Thus, we additionally limit the result by distance of 1 square.
+            vector_points.next().is_some()
+        })
     }
 }
 

@@ -4,3 +4,4 @@ mod checking_the_king_tests;
 mod en_passant_tests;
 mod pin_tests;
 mod promote_pawn_tests;
+mod evaluated_moves_tests;

@@ -68,7 +68,7 @@ mod promote_via_move {
             let bishop = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&bishop).to_vec(),
+                &board.moves_of(&bishop).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(3, 2)),
@@ -127,7 +127,7 @@ mod promote_via_move {
             let knight = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&knight).to_vec(),
+                &board.moves_of(&knight).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 1)),
                     &PieceMove::Point(Point::new(3, 1)),
@@ -186,7 +186,7 @@ mod promote_via_move {
             let queen = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&queen).to_vec(),
+                &board.moves_of(&queen).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
                     &PieceMove::Point(Point::new(1, 2)),
@@ -249,7 +249,7 @@ mod promote_via_move {
             let rook = board.find_piece_by_id(2).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&rook).to_vec(),
+                &board.moves_of(&rook).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
                     &PieceMove::Point(Point::new(3, 3)),
@@ -315,7 +315,7 @@ mod promote_via_capturing {
             let bishop = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&bishop).to_vec(),
+                &board.moves_of(&bishop).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(3, 2)),
@@ -375,7 +375,7 @@ mod promote_via_capturing {
             let knight = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&knight).to_vec(),
+                &board.moves_of(&knight).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 1)),
                     &PieceMove::Point(Point::new(3, 1)),
@@ -435,7 +435,7 @@ mod promote_via_capturing {
             let queen = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&queen).to_vec(),
+                &board.moves_of(&queen).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
                     &PieceMove::Point(Point::new(1, 2)),
@@ -499,7 +499,7 @@ mod promote_via_capturing {
             let rook = board.find_piece_by_id(3).unwrap();
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves(&Color::White).moves_of(&rook).to_vec(),
+                &board.moves_of(&rook).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 3)),
                     &PieceMove::Point(Point::new(3, 3)),

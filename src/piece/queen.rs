@@ -9,6 +9,8 @@ use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
 use crate::piece_move::PieceMove;
+use crate::vector::diagonal_vector::DiagonalVector;
+use crate::vector::line_vector::LineVector;
 
 #[derive(Debug)]
 pub struct Queen {
@@ -20,8 +22,8 @@ pub struct Queen {
 }
 
 impl Queen {
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn id(&self) -> &usize {
+        &self.id
     }
 
     pub fn buffs(&self) -> &BuffsCollection {
@@ -47,7 +49,7 @@ impl Queen {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::diagonal_and_line_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -74,7 +76,7 @@ impl Queen {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::diagonal_and_line_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -139,6 +141,20 @@ impl Queen {
         }
 
         moves
+    }
+
+    pub fn attack_vectors(&self) -> Vec<Vector> {
+        Vector::diagonal_and_line_vectors()
+    }
+
+    pub fn attack_vector(&self, point1: &Point, point2: &Point) -> Option<Vector> {
+        if let Some(vector) = DiagonalVector::calc_direction(point1, point2) {
+            Some(Vector::Diagonal(vector))
+        } else if let Some(vector) = LineVector::calc_direction(point1, point2) {
+            Some(Vector::Line(vector))
+        } else {
+            None
+        }
     }
 }
 

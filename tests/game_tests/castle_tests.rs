@@ -64,7 +64,6 @@ mod rook_gets_pinned {
             .to_change(|board| {
                 let white_king = board.piece_at(&Point::new(4, 1)).unwrap();
                 board
-                    .moves(&Color::White)
                     .moves_of(white_king)
                     .to_vec()
                     .clone_moves()
@@ -159,7 +158,6 @@ mod castle_is_possible {
                 println!("{:?}", board.to_vec());
                 let king = board.find_piece_by_id(1).unwrap();
                 board
-                    .moves(&Color::White)
                     .moves_of(&king)
                     .to_vec()
                     .clone_moves()

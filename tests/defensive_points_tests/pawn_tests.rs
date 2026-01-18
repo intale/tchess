@@ -86,9 +86,7 @@ mod white_pawn {
 
     #[test]
     fn when_there_is_an_enemy_piece_between_ally_pieces() {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
@@ -105,9 +103,7 @@ mod white_pawn {
 
     #[test]
     fn when_there_is_an_ally_piece_between_ally_pieces() {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 3));
@@ -204,9 +200,7 @@ mod black_pawn {
 
     #[test]
     fn when_there_is_an_enemy_piece_between_ally_pieces() {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.set_pov(Color::Black);
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(1, 1));
@@ -224,9 +218,7 @@ mod black_pawn {
 
     #[test]
     fn when_there_is_an_ally_piece_between_ally_pieces() {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.set_pov(Color::Black);
         let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
         board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(1, 1));

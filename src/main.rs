@@ -1,14 +1,17 @@
 use std::rc::Rc;
 use tchess::board::*;
-use tchess::board_config::{BoardConfig, CastleXPoints, KingCastleXPoint, RookCastleXPoint};
+use tchess::board_config::{BoardConfig};
 use tchess::board_square::{BoardSquare, Square};
 use tchess::buff::Buff;
+use tchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use tchess::color::Color;
 use tchess::dimension::Dimension;
 use tchess::heat_map::HeatMap;
+use tchess::player::Player;
 use tchess::piece::Piece;
 use tchess::point::Point;
 use tchess::squares_map::SquaresMap;
+use tchess::static_piece_weights::StaticPieceWeights;
 use tchess::utils::pretty_print::PrettyPrint;
 
 fn main() {
@@ -71,12 +74,23 @@ impl HeatMap for HeatMapStub {
 
 fn classic_chess_board() -> Board {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
         Box::new(HeatMapStub::empty()),
         Box::new(ClassicSquaresMap::init()),
         dimension,
+        static_weights,
+        Player::Human,
+        Player::Human,
     );
     let mut board = Board::empty(config);
 

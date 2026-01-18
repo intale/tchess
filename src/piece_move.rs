@@ -1,10 +1,10 @@
-use std::cmp::PartialEq;
+use std::cmp::{PartialEq};
 use std::fmt::{Display, Formatter};
 use crate::castle_points::{CastlePoints, CastleSide};
 use crate::point::Point;
 use crate::promote_piece::PromotePiece;
 
-#[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Hash, Debug, Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
 pub enum PieceMove {
     Point(Point),
     // first point is where a pawn should land and second point is enemy pawn position

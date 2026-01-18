@@ -8,12 +8,15 @@ pub mod test_heat_map;
 use std::env;
 use std::fmt::{Debug, Display};
 use tchess::board::*;
-use tchess::board_config::{BoardConfig, CastleXPoints, KingCastleXPoint, RookCastleXPoint};
+use tchess::board_config::{BoardConfig};
 use tchess::buff::Buff;
+use tchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use tchess::color::Color;
 use tchess::debuff::Debuff;
 use tchess::dimension::Dimension;
+use tchess::player::Player;
 use tchess::point::Point;
+use tchess::static_piece_weights::StaticPieceWeights;
 use tchess::vector::Vector;
 use tchess::vector::line_vector::LineVector;
 use tchess::vector_points::VectorPoints;
@@ -154,11 +157,148 @@ pub fn create_box_of(
 
 #[allow(unused)]
 pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardConfig {
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
     BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::empty()),
+        Box::new(TestHeatMap::init()),
         Box::new(squares_map),
         dimension,
+        static_weights,
+        Player::Human,
+        Player::Human,
     )
+}
+
+#[allow(unused)]
+pub fn board_default_3x3() -> Board {
+    let dimension = Dimension::new(Point::new(1,1), Point::new(3, 3));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::init()),
+        Box::new(squares_map),
+        dimension,
+        static_weights,
+        Player::Human,
+        Player::Human,
+    );
+    Board::empty(config)
+}
+
+#[allow(unused)]
+pub fn board_3x3_white_computer() -> Board {
+    let dimension = Dimension::new(Point::new(1,1), Point::new(3, 3));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::init()),
+        Box::new(squares_map),
+        dimension,
+        static_weights,
+        Player::Computer,
+        Player::Human,
+    );
+    Board::empty(config)
+}
+
+
+#[allow(unused)]
+pub fn board_default_4x4() -> Board {
+    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::init()),
+        Box::new(squares_map),
+        dimension,
+        static_weights,
+        Player::Human,
+        Player::Human,
+    );
+    Board::empty(config)
+}
+
+#[allow(unused)]
+pub fn board_4x4_white_computer() -> Board {
+    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::init()),
+        Box::new(squares_map),
+        dimension,
+        static_weights,
+        Player::Computer,
+        Player::Human,
+    );
+    Board::empty(config)
+}
+
+#[allow(unused)]
+pub fn board_default_5x5() -> Board {
+    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let static_weights = StaticPieceWeights {
+        bishop: 3,
+        king: 0,
+        knight: 3,
+        pawn: 1,
+        queen: 10,
+        rook: 5,
+    };
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        Box::new(TestHeatMap::init()),
+        Box::new(squares_map),
+        dimension,
+        static_weights,
+        Player::Human,
+        Player::Human,
+    );
+    Board::empty(config)
 }

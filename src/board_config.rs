@@ -1,21 +1,10 @@
+use crate::castle_x_points::CastleXPoints;
+use crate::color::Color;
 use crate::dimension::Dimension;
 use crate::heat_map::HeatMap;
+use crate::player::Player;
 use crate::squares_map::SquaresMap;
-
-pub struct KingCastleXPoint(pub i16);
-pub struct RookCastleXPoint(pub i16);
-
-pub struct CastleXPoints(pub KingCastleXPoint, pub RookCastleXPoint);
-
-impl CastleXPoints {
-    pub fn king_x(&self) -> &i16 {
-        &self.0.0
-    }
-
-    pub fn rook_x(&self) -> &i16 {
-        &self.1.0
-    }
-}
+use crate::static_piece_weights::StaticPieceWeights;
 
 pub struct BoardConfig {
     king_side_castle_x_points: CastleXPoints,
@@ -23,6 +12,10 @@ pub struct BoardConfig {
     heat_map: Box<dyn HeatMap>,
     squares_map: Box<dyn SquaresMap>,
     dimension: Dimension,
+    static_piece_weights: StaticPieceWeights,
+    white_side_player: Player,
+    black_side_player: Player,
+    evaluation_required: bool,
 }
 
 impl BoardConfig {
@@ -32,14 +25,28 @@ impl BoardConfig {
         heat_map: Box<dyn HeatMap>,
         squares_map: Box<dyn SquaresMap>,
         dimension: Dimension,
+        static_piece_weights: StaticPieceWeights,
+        white_side_player: Player,
+        black_side_player: Player,
     ) -> Self {
+        let evaluation_required =
+            white_side_player == Player::Computer ||
+                black_side_player == Player::Computer;
         Self {
             king_side_castle_x_points,
             queen_side_castle_x_points,
             heat_map,
             squares_map,
             dimension,
+            static_piece_weights,
+            white_side_player,
+            black_side_player,
+            evaluation_required,
         }
+    }
+
+    pub fn static_piece_weights(&self) -> &StaticPieceWeights {
+        &self.static_piece_weights
     }
 
     pub fn king_side_castle_x_points(&self) -> &CastleXPoints {
@@ -60,5 +67,16 @@ impl BoardConfig {
 
     pub fn dimension(&self) -> &Dimension {
         &self.dimension
+    }
+    
+    pub fn player(&self, color: &Color) -> &Player {
+        match color { 
+            Color::White => &self.white_side_player,
+            Color::Black => &self.black_side_player,
+        }
+    }
+
+    pub fn is_evaluation_required(&self) -> bool {
+        self.evaluation_required
     }
 }

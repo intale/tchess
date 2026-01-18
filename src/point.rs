@@ -6,7 +6,7 @@ use x_point_t::XPointT;
 use y_point_t::YPointT;
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash, Ord, PartialOrd)]
 pub struct Point {
     x: XPointT,
     y: YPointT,

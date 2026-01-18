@@ -23,9 +23,7 @@ mod en_passant_after_long_move {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         // ID#1
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
@@ -88,9 +86,7 @@ mod when_enemy_piece_crosses_attack_point_of_ally_pawn {
     use super::*;
 
     fn setup_board() -> Board {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 4));
@@ -184,9 +180,7 @@ mod when_ally_pawn_does_not_utilize_en_passant_on_ally_turn {
     use super::*;
 
     fn setup_board() -> Board {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
         board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(1, 3));
@@ -255,9 +249,7 @@ mod en_passant_for_two_pawns {
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-        let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-        let mut board = Board::empty(config);
+        let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         // ID#1
         board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));

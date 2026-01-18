@@ -20,6 +20,7 @@ use crate::debuff::{Debuff, DebuffsCollection};
 use crate::piece_move::PieceMove;
 use crate::point::Point;
 use crate::utils::pretty_print::PrettyPrint;
+use crate::vector::Vector;
 
 pub trait PieceInit: Sized {
     fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
@@ -136,7 +137,7 @@ impl Piece {
         }
     }
 
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> &usize {
         match self {
             Piece::Pawn(p) => p.id(),
             Piece::Rook(p) => p.id(),
@@ -175,6 +176,17 @@ impl Piece {
 
     pub fn is_enemy(&self, color: &Color) -> bool {
         !self.is_ally(color)
+    }
+
+    pub fn attack_vector(&self, point1: &Point, point2: &Point) -> Option<Vector> {
+        match self {
+            Piece::Pawn(p) => p.attack_vector(point1, point2),
+            Piece::Rook(p) => p.attack_vector(point1, point2),
+            Piece::Knight(p) => p.attack_vector(point1, point2),
+            Piece::Bishop(p) => p.attack_vector(point1, point2),
+            Piece::Queen(p) => p.attack_vector(point1, point2),
+            Piece::King(p) => p.attack_vector(point1, point2),
+        }
     }
 }
 

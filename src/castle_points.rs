@@ -2,7 +2,7 @@ use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 use crate::point::Point;
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd)]
 pub enum CastleSide {
     Queen,
     King,
@@ -17,7 +17,7 @@ impl CastleSide {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd)]
 pub struct CastlePoints {
     king_point: Point,
     rook_point: Point,

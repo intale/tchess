@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::ops::{Add, Deref, Sub};
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct XPointT(i16);
 
 impl XPointT {

@@ -19,7 +19,7 @@ fn when_there_are_no_pieces_around() {
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves(&Color::White).moves_of(&queen).to_vec(),
+        &board.moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(2, 2)),
@@ -51,7 +51,7 @@ fn when_there_is_a_an_enemy_piece_on_the_way() {
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves(&Color::White).moves_of(&queen).to_vec(),
+        &board.moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -72,7 +72,7 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves(&Color::White).moves_of(&queen).to_vec(),
+        &board.moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -84,16 +84,14 @@ fn when_there_is_an_ally_piece_on_the_way() {
 
 #[test]
 fn when_queen_is_pinned_by_one_of_its_diagonals() {
-    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-    let mut board = Board::empty(config);
+    let mut board = board_default_4x4();
     let queen = board.add_piece("Queen", Color::White, vec![], vec![], Point::new(3, 3));
     board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
     board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves(&Color::White).moves_of(&queen).to_vec(),
+        &board.moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(4, 4)),
@@ -103,16 +101,14 @@ fn when_queen_is_pinned_by_one_of_its_diagonals() {
 
 #[test]
 fn when_queen_is_pinned_by_line() {
-    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
-    let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
-    let mut board = Board::empty(config);
+    let mut board = board_default_4x4();
     let queen = board.add_piece("Queen", Color::White, vec![], vec![], Point::new(2, 3));
     board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
     board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves(&Color::White).moves_of(&queen).to_vec(),
+        &board.moves_of(&queen).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 4)),
             &PieceMove::Point(Point::new(2, 2)),
@@ -144,7 +140,7 @@ mod when_there_are_void_squares_on_the_way {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves(&Color::White).moves_of(&queen).to_vec(),
+            &board.moves_of(&queen).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(1, 3)),
                 &PieceMove::Point(Point::new(1, 5)),

@@ -10,6 +10,7 @@ use crate::vector_points::VectorPoints;
 use std::cell::Cell;
 use crate::board_square::BoardSquare;
 use crate::piece_move::PieceMove;
+use crate::vector::diagonal_vector::DiagonalVector;
 
 #[derive(Debug)]
 pub struct Bishop {
@@ -21,8 +22,8 @@ pub struct Bishop {
 }
 
 impl Bishop {
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn id(&self) -> &usize {
+        &self.id
     }
 
     pub fn buffs(&self) -> &BuffsCollection {
@@ -48,7 +49,7 @@ impl Bishop {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
         let bishop_color = self.bishop_color(board);
-        for direction in Vector::diagonal_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position(),
                 *board.dimension(),
@@ -74,7 +75,7 @@ impl Bishop {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
         let bishop_color = self.bishop_color(board);
-        for direction in Vector::diagonal_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position(),
                 *board.dimension(),
@@ -150,6 +151,18 @@ impl Bishop {
             BoardSquare::VoidSquare => {
                 panic!("Logical error. Bishop {:#?} is placed on void square!", self)
             }
+        }
+    }
+    
+    pub fn attack_vectors(&self) -> Vec<Vector> {
+        Vector::diagonal_vectors()
+    }
+
+    pub fn attack_vector(&self, point1: &Point, point2: &Point) -> Option<Vector> {
+        if let Some(vector) = DiagonalVector::calc_direction(point1, point2) {
+            Some(Vector::Diagonal(vector))
+        } else {
+            None
         }
     }
 }

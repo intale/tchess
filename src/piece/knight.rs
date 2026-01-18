@@ -9,6 +9,7 @@ use crate::vector::Vector;
 use crate::vector_points::VectorPoints;
 use std::cell::Cell;
 use crate::piece_move::PieceMove;
+use crate::vector::jump_vector::JumpVector;
 
 #[derive(Debug)]
 pub struct Knight {
@@ -20,8 +21,8 @@ pub struct Knight {
 }
 
 impl Knight {
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn id(&self) -> &usize {
+        &self.id
     }
 
     pub fn buffs(&self) -> &BuffsCollection {
@@ -47,7 +48,7 @@ impl Knight {
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::jump_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -72,7 +73,7 @@ impl Knight {
     pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
         let mut points: Vec<Point> = vec![];
 
-        for direction in Vector::jump_vectors() {
+        for direction in self.attack_vectors() {
             let vector_points = VectorPoints::without_initial(
                 self.current_position.get(),
                 *board.dimension(),
@@ -128,6 +129,18 @@ impl Knight {
         }
 
         moves
+    }
+
+    pub fn attack_vectors(&self) -> Vec<Vector> {
+        Vector::jump_vectors()
+    }
+
+    pub fn attack_vector(&self, point1: &Point, point2: &Point) -> Option<Vector> {
+        if let Some(vector) = JumpVector::calc_direction(point1, point2) {
+            Some(Vector::Jump(vector))
+        } else {
+            None
+        }
     }
 }
 

@@ -25,8 +25,6 @@ impl<T: Display + PartialEq + Debug, TT> ExpectToChangeTo<TT> for Expect<Vec<T>,
         let final_value = change_fn(&mut setup);
 
         if let Ok(_) = compare(&initial_value, &final_value) {
-            println!("{:?}", initial_value);
-            println!("{:?}", final_value);
             panic!("Expect subject to change {:?}, but didn't.", initial_value);
         }
         compare_and_assert(&final_value, &expectation(&mut setup));
