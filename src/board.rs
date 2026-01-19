@@ -1,31 +1,31 @@
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-use crate::color::Color;
-use crate::piece::{Piece};
-use crate::utils::pretty_print::PrettyPrint;
-use crate::point::{Point};
-use crate::board_square::{BoardSquare};
-use rustc_hash::{FxHashSet};
 use crate::board_config::BoardConfig;
-use crate::board_map::{BoardMap};
+use crate::board_map::BoardMap;
+use crate::board_square::BoardSquare;
 use crate::buff::Buff;
+use crate::color::Color;
 use crate::colored_property::ColoredProperty;
 use crate::debuff::Debuff;
 use crate::dimension::Dimension;
 use crate::evaluated_move::EvaluatedMove;
 use crate::evaluated_move_constraints::EvaluatedMoveConstraints;
-use crate::evaluated_moves_map::{EvaluatedMovesMap};
+use crate::evaluated_moves_map::EvaluatedMovesMap;
 use crate::move_constraints::MoveConstraints;
 use crate::move_score::MoveScore;
 use crate::moves_map::{MovesMap, MovesSetT};
+use crate::piece::Piece;
 use crate::piece_move::PieceMove;
-use crate::point_to_piece_association::{PointToPieceAssociation};
+use crate::point::Point;
+use crate::point_to_piece_association::PointToPieceAssociation;
 use crate::scoped_evaluated_move::ScopedEvaluatedMove;
-use crate::vector::line_vector::LineVector;
+use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
+use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
+use rustc_hash::FxHashSet;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -77,12 +77,14 @@ impl Board {
         &self.x_ray_pieces[color]
     }
 
-    fn evaluate_move(config: &BoardConfig,
-                     board_map: &BoardMap,
-                     attack_points: &PointToPieceAssociation,
-                     opposite_attack_points: &PointToPieceAssociation,
-                     piece_move: &PieceMove,
-                     piece: &Rc<Piece>) -> Option<EvaluatedMove> {
+    fn evaluate_move(
+        config: &BoardConfig,
+        board_map: &BoardMap,
+        attack_points: &PointToPieceAssociation,
+        opposite_attack_points: &PointToPieceAssociation,
+        piece_move: &PieceMove,
+        piece: &Rc<Piece>,
+    ) -> Option<EvaluatedMove> {
         if !config.is_evaluation_required() {
             return None;
         }
@@ -93,29 +95,32 @@ impl Board {
         let destination_point = piece_move.destination().unwrap();
         let mut new_position_score = match piece_move {
             PieceMove::Promote(_, promote_piece) => {
-                let theoretically_promoted_piece = Rc::new(
-                    Piece::init_piece_by_name(
-                        &promote_piece.name(),
-                        *piece.color(),
-                        vec![],
-                        vec![],
-                        destination_point,
-                        0,
-                    )
-                );
+                let theoretically_promoted_piece = Rc::new(Piece::init_piece_by_name(
+                    &promote_piece.name(),
+                    *piece.color(),
+                    vec![],
+                    vec![],
+                    destination_point,
+                    0,
+                ));
                 // Calculate promote move value based on the promoted piece instead of a value of
                 // a pawn to promote
-                config.heat_map().positional_value(&theoretically_promoted_piece, &destination_point)
-            },
-            _ => {
-                config.heat_map().positional_value(piece, &destination_point)
+                config
+                    .heat_map()
+                    .positional_value(&theoretically_promoted_piece, &destination_point)
             }
+            _ => config
+                .heat_map()
+                .positional_value(piece, &destination_point),
         };
 
         // Add some additional reward for moves that line up the piece with the opposite king, thus,
         // preparing an attack on the opposite king.
         if let Some(opposite_king) = board_map.king(&piece.color().inverse()) {
-            if piece.attack_vector(&destination_point, &opposite_king.current_position()).is_some() {
+            if piece
+                .attack_vector(&destination_point, &opposite_king.current_position())
+                .is_some()
+            {
                 new_position_score += LINEUP_WITH_THE_OPPOSITE_KING_REWARD;
             }
         }
@@ -124,14 +129,15 @@ impl Board {
         // can't be protected with the alliance side - consider this move as a mistake. Later,
         // during more precious evaluation, we can calculate whether it is a smart sacrifice or
         // a blunder.
-        if !attack_points.has_pieces(&destination_point) &&
-            opposite_attack_points.has_pieces(&destination_point) {
+        if !attack_points.has_pieces(&destination_point)
+            && opposite_attack_points.has_pieces(&destination_point)
+        {
             new_position_score = -new_position_score;
         }
 
-        let current_position_score = config.heat_map().positional_value(
-            piece, &piece.current_position()
-        );
+        let current_position_score = config
+            .heat_map()
+            .positional_value(piece, &piece.current_position());
         let mut delta = new_position_score - current_position_score;
 
         // Add positional value of the opposite piece. This will allow the engine to prioritize
@@ -140,13 +146,16 @@ impl Board {
         // contain only a piece of the opposite color. This is guaranteed by the moves calculation
         // logic of the given piece.
         if let Some(opposite_piece) = Self::_piece_at(board_map, &destination_point) {
-            let opposite_piece_value = config.heat_map().positional_value(
-                opposite_piece, &opposite_piece.current_position()
-            );
+            let opposite_piece_value = config
+                .heat_map()
+                .positional_value(opposite_piece, &opposite_piece.current_position());
             delta += opposite_piece_value;
         }
 
-        Some(EvaluatedMove::new(MoveScore::WeightDelta(delta), *piece_move))
+        Some(EvaluatedMove::new(
+            MoveScore::WeightDelta(delta),
+            *piece_move,
+        ))
     }
 
     pub fn king(&self, color: &Color) -> Option<&Rc<Piece>> {
@@ -161,28 +170,27 @@ impl Board {
         let mut board = Self {
             board_map: BoardMap::empty(),
             attack_points: ColoredProperty([
-                PointToPieceAssociation::empty(), PointToPieceAssociation::empty()
+                PointToPieceAssociation::empty(),
+                PointToPieceAssociation::empty(),
             ]),
-            x_ray_pieces: ColoredProperty([
-                XRayPieces::empty(), XRayPieces::empty()
-            ]),
-            pawns_with_en_passant: ColoredProperty([
-                FxHashSet::default(), FxHashSet::default()
-            ]),
+            x_ray_pieces: ColoredProperty([XRayPieces::empty(), XRayPieces::empty()]),
+            pawns_with_en_passant: ColoredProperty([FxHashSet::default(), FxHashSet::default()]),
             defensive_points: ColoredProperty([
-                PointToPieceAssociation::empty(), PointToPieceAssociation::empty()
+                PointToPieceAssociation::empty(),
+                PointToPieceAssociation::empty(),
             ]),
-            moves_map: ColoredProperty([
-                MovesMap::empty(), MovesMap::empty()
-            ]),
+            moves_map: ColoredProperty([MovesMap::empty(), MovesMap::empty()]),
             general_constraints: ColoredProperty([
-                MoveConstraints::empty(), MoveConstraints::empty()
+                MoveConstraints::empty(),
+                MoveConstraints::empty(),
             ]),
             evaluated_moves: ColoredProperty([
-                EvaluatedMovesMap::empty(), EvaluatedMovesMap::empty()
+                EvaluatedMovesMap::empty(),
+                EvaluatedMovesMap::empty(),
             ]),
             evaluated_move_constraints: ColoredProperty([
-                EvaluatedMoveConstraints::empty(), EvaluatedMoveConstraints::empty()
+                EvaluatedMoveConstraints::empty(),
+                EvaluatedMoveConstraints::empty(),
             ]),
             next_piece_id: 0,
             current_turn: Color::White,
@@ -205,17 +213,21 @@ impl Board {
 
     // Pins points and castle points are not taken into account here. They require more complex
     // computations than a simple look up.
-    fn pieces_to_recalculate(&mut self, point: &Point, caused_by_color: &Color) -> FxHashSet<Rc<Piece>> {
+    fn pieces_to_recalculate(
+        &mut self,
+        point: &Point,
+        caused_by_color: &Color,
+    ) -> FxHashSet<Rc<Piece>> {
         let mut pieces: FxHashSet<Rc<Piece>> = FxHashSet::default();
         if let Some(attack_pieces) =
-            self.attack_points[&caused_by_color.inverse()].get_pieces(point) {
+            self.attack_points[&caused_by_color.inverse()].get_pieces(point)
+        {
             for piece in attack_pieces.iter() {
                 pieces.insert(Rc::clone(piece));
             }
         }
 
-        if let Some(defense_pieces) =
-            self.defensive_points[caused_by_color].get_pieces(point) {
+        if let Some(defense_pieces) = self.defensive_points[caused_by_color].get_pieces(point) {
             for piece in defense_pieces.iter() {
                 pieces.insert(Rc::clone(piece));
             }
@@ -225,11 +237,15 @@ impl Board {
         }
         // Since the pawn is the only piece whose move points do not match its attack points, we
         // need to look at the moves map to see if we need to recalculate the pawn's moves as well.
-        if let Some(pieces_at_point) = self.moves_map[&caused_by_color.inverse()].pieces_to_move_onto(&point) {
+        if let Some(pieces_at_point) =
+            self.moves_map[&caused_by_color.inverse()].pieces_to_move_onto(&point)
+        {
             for (piece, _) in pieces_at_point {
                 match &**piece {
-                    Piece::Pawn(_) => { pieces.insert(Rc::clone(piece)); },
-                    _ => ()
+                    Piece::Pawn(_) => {
+                        pieces.insert(Rc::clone(piece));
+                    }
+                    _ => (),
                 }
             }
         }
@@ -253,16 +269,16 @@ impl Board {
         };
 
         let attacks = self.attack_points[piece.color()].get_points(piece);
-        if let Some(attacks) = attacks && !attacks.is_empty() {
+        if let Some(attacks) = attacks
+            && !attacks.is_empty()
+        {
             if let Some(direction) = Self::x_ray_direction(piece, &opposite_king) {
                 // Get current piece which occupies this direction
-                let current_piece =
-                    self.x_ray_pieces[piece.color()].piece_by_direction(&direction);
-                let current_piece =
-                    match current_piece {
-                        Some(piece) => Some(Rc::clone(piece)),
-                        None => None,
-                    };
+                let current_piece = self.x_ray_pieces[piece.color()].piece_by_direction(&direction);
+                let current_piece = match current_piece {
+                    Some(piece) => Some(Rc::clone(piece)),
+                    None => None,
+                };
 
                 // Add or try to replace the direction by the given piece
                 let new_piece =
@@ -270,7 +286,9 @@ impl Board {
 
                 // The direction was replaced by the new piece. We have to remove a pin of the old
                 // piece if any.
-                if let Some(current_piece) = current_piece.as_ref() && current_piece != &new_piece {
+                if let Some(current_piece) = current_piece.as_ref()
+                    && current_piece != &new_piece
+                {
                     self.remove_x_ray_piece(&current_piece);
                 }
 
@@ -315,15 +333,14 @@ impl Board {
 
         let moves = piece.moves(&self);
         for piece_move in moves.into_iter() {
-            if let Some(evaluated_move) =
-                Self::evaluate_move(
-                    &self.config,
-                    &self.board_map,
-                    &self.attack_points[&piece.color()],
-                    &self.attack_points[&piece.color().inverse()],
-                    &piece_move,
-                    piece,
-                ) {
+            if let Some(evaluated_move) = Self::evaluate_move(
+                &self.config,
+                &self.board_map,
+                &self.attack_points[&piece.color()],
+                &self.attack_points[&piece.color().inverse()],
+                &piece_move,
+                piece,
+            ) {
                 self.evaluated_moves[piece.color()].add(evaluated_move, piece.id());
             };
             self.moves_map[piece.color()].add(piece, piece_move);
@@ -332,34 +349,37 @@ impl Board {
 
     fn calculate_general_constraints(&mut self, king: &Rc<Piece>) {
         let mut constraints: Vec<PieceMove> = vec![];
-        let pieces_caused_check =
-            self.attack_points[&king.color().inverse()]
-                .get_pieces(&king.current_position())
-                .unwrap();
+        let pieces_caused_check = self.attack_points[&king.color().inverse()]
+            .get_pieces(&king.current_position())
+            .unwrap();
         if pieces_caused_check.len() == 1 {
             let piece_caused_check = pieces_caused_check.iter().next().unwrap();
             // Add the position of the piece caused check.
             constraints.push(PieceMove::Point(piece_caused_check.current_position()));
 
             let direction = Vector::calc_direction(
-                &piece_caused_check.current_position(), &king.current_position()
-            ).unwrap();
+                &piece_caused_check.current_position(),
+                &king.current_position(),
+            )
+            .unwrap();
             match direction {
                 // Jump checks can't be blocked. The only way to remove it is to eliminate the
                 // knight.
                 Vector::Jump(_) => (),
                 _ => {
                     let vector_points = VectorPoints::without_initial(
-                        piece_caused_check.current_position(), *self.dimension(), direction
+                        piece_caused_check.current_position(),
+                        *self.dimension(),
+                        direction,
                     );
                     for point in vector_points {
                         // Exclude king's position
                         if point == king.current_position() {
-                            break
+                            break;
                         }
                         constraints.push(PieceMove::Point(point));
                     }
-                },
+                }
             }
         } else {
             // When the king is in check by more than one piece, no legal moves can be made by
@@ -377,15 +397,14 @@ impl Board {
             for piece_move in moves.iter() {
                 self.general_constraints[king.color()].add_move(&king, piece_move);
 
-                if let Some(evaluated_move) =
-                    Self::evaluate_move(
-                        &self.config,
-                        &self.board_map,
-                        &self.attack_points[&king.color()],
-                        &self.attack_points[&king.color().inverse()],
-                        piece_move,
-                        king,
-                    ) {
+                if let Some(evaluated_move) = Self::evaluate_move(
+                    &self.config,
+                    &self.board_map,
+                    &self.attack_points[&king.color()],
+                    &self.attack_points[&king.color().inverse()],
+                    piece_move,
+                    king,
+                ) {
                     self.evaluated_move_constraints[king.color()].add(evaluated_move, king.id());
                 }
             }
@@ -407,7 +426,7 @@ impl Board {
             self.moves_map[piece.color()].moves_of(piece)
         }
     }
-    
+
     pub fn evaluated_moves_collection(&self, color: &Color) -> &BTreeSet<ScopedEvaluatedMove> {
         if self.evaluated_move_constraints[color].is_enabled() {
             self.evaluated_move_constraints[color].collection()
@@ -422,15 +441,14 @@ impl Board {
                 for (piece, piece_moves) in pieces {
                     for piece_move in piece_moves.into_iter() {
                         self.general_constraints[color].add_move(&piece, &piece_move);
-                        if let Some(evaluated_move) =
-                            Self::evaluate_move(
-                                &self.config,
-                                &self.board_map,
-                                &self.attack_points[&piece.color()],
-                                &self.attack_points[&piece.color().inverse()],
-                                piece_move,
-                                piece,
-                            ) {
+                        if let Some(evaluated_move) = Self::evaluate_move(
+                            &self.config,
+                            &self.board_map,
+                            &self.attack_points[&piece.color()],
+                            &self.attack_points[&piece.color().inverse()],
+                            piece_move,
+                            piece,
+                        ) {
                             self.evaluated_move_constraints[color].add(evaluated_move, piece.id());
                         }
                     }
@@ -440,22 +458,24 @@ impl Board {
     }
 
     fn calc_en_passant(&mut self, position: &Point, caused_by_color: &Color) {
-        let en_passant_position =
-            match caused_by_color {
-                Color::White => Point::new(*position.x().value(), *position.y().value() - 1),
-                Color::Black => Point::new(*position.x().value(), *position.y().value() + 1),
-            };
+        let en_passant_position = match caused_by_color {
+            Color::White => Point::new(*position.x().value(), *position.y().value() - 1),
+            Color::Black => Point::new(*position.x().value(), *position.y().value() + 1),
+        };
 
         let mut pawns: Vec<Rc<Piece>> = vec![];
         if let Some(pieces) =
-            self.attack_points[&caused_by_color.inverse()].get_pieces(&en_passant_position) {
+            self.attack_points[&caused_by_color.inverse()].get_pieces(&en_passant_position)
+        {
             for piece in pieces {
                 match &**piece {
                     Piece::Pawn(_) => {
-                        piece.buffs().add(Buff::EnPassant(en_passant_position, *position));
+                        piece
+                            .buffs()
+                            .add(Buff::EnPassant(en_passant_position, *position));
                         pawns.push(Rc::clone(piece));
-                    },
-                    _ => ()
+                    }
+                    _ => (),
                 }
             }
         }
@@ -480,7 +500,7 @@ impl Board {
     fn _piece_at<'a>(board_map: &'a BoardMap, point: &Point) -> Option<&'a Rc<Piece>> {
         match board_map.board_square(point) {
             BoardSquare::Square(square) => square.get_piece(),
-            BoardSquare::VoidSquare => None
+            BoardSquare::VoidSquare => None,
         }
     }
 
@@ -522,14 +542,14 @@ impl Board {
         let vector_points = VectorPoints::without_initial(
             pinned_by.current_position(),
             *self.dimension(),
-            x_ray_direction
+            x_ray_direction,
         );
         for point in vector_points {
             if let Some(piece) = Self::_piece_at(&self.board_map, &point) {
                 let piece = Rc::clone(piece);
                 // Enemy piece meets his ally
                 if piece.color() == enemy_color {
-                    break
+                    break;
                 }
                 match current_piece_on_the_way {
                     Some(p) => {
@@ -540,9 +560,9 @@ impl Board {
                             self.x_ray_pieces[pinned_by.color()].add_pin(&p, pinned_by);
                             return true;
                         }
-                        break
-                    },
-                    None => { current_piece_on_the_way = Some(piece) }
+                        break;
+                    }
+                    None => current_piece_on_the_way = Some(piece),
                 }
             }
         }
@@ -554,21 +574,40 @@ impl Board {
         self.next_piece_id
     }
 
-    pub fn add_piece(&mut self, name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                     position: Point) -> Rc<Piece> {
+    pub fn add_piece(
+        &mut self,
+        name: &str,
+        color: Color,
+        buffs: Vec<Buff>,
+        debuffs: Vec<Debuff>,
+        position: Point,
+    ) -> Rc<Piece> {
         if !self.board_square(&position).is_empty_square() {
-            panic!("Can't add {} piece. Position {:?} is not empty!", name, position)
+            panic!(
+                "Can't add {} piece. Position {:?} is not empty!",
+                name, position
+            )
         }
         self.add_piece_unchecked(name, color, buffs, debuffs, position, true)
     }
 
-    fn add_piece_unchecked(&mut self, name: &str, color: Color, buffs: Vec<Buff>,
-                               debuffs: Vec<Debuff>, position: Point, calculate_mechanics: bool) -> Rc<Piece> {
-        let piece = Rc::new(
-            Piece::init_piece_by_name(
-                name, color, buffs, debuffs, position, self.get_next_piece_id()
-            )
-        );
+    fn add_piece_unchecked(
+        &mut self,
+        name: &str,
+        color: Color,
+        buffs: Vec<Buff>,
+        debuffs: Vec<Debuff>,
+        position: Point,
+        calculate_mechanics: bool,
+    ) -> Rc<Piece> {
+        let piece = Rc::new(Piece::init_piece_by_name(
+            name,
+            color,
+            buffs,
+            debuffs,
+            position,
+            self.get_next_piece_id(),
+        ));
         self.board_map.place_piece(&position, &piece, true);
         if calculate_mechanics {
             self.recalculate_connected_positions(&position, &color, true);
@@ -585,7 +624,8 @@ impl Board {
         }
 
         if let Some(moves) = self.moves_of(piece)
-            && moves.contains(piece_move) {
+            && moves.contains(piece_move)
+        {
             self.move_piece_unchecked(piece, piece_move, true);
             self.pass_turn(&piece.color().inverse());
             true
@@ -594,8 +634,12 @@ impl Board {
         }
     }
 
-    fn move_piece_unchecked(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove,
-                                calculate_king: bool) {
+    fn move_piece_unchecked(
+        &mut self,
+        piece: &Rc<Piece>,
+        piece_move: &PieceMove,
+        calculate_king: bool,
+    ) {
         self.clear_en_passant();
         match &**piece {
             Piece::King(_) | Piece::Rook(_) => piece.buffs().remove_castle(),
@@ -604,10 +648,10 @@ impl Board {
                 match piece_move {
                     PieceMove::LongMove(new_position) => {
                         self.calc_en_passant(new_position, &piece.color());
-                    },
+                    }
                     _ => (),
                 }
-            },
+            }
             _ => (),
         };
         match piece_move {
@@ -619,27 +663,48 @@ impl Board {
                         None
                     };
                 self.perform_move(piece, &piece.current_position(), &new_position, enemy_piece);
-            },
+            }
             PieceMove::EnPassant(new_position, enemy_position) => {
-                let captured_pawn = Some(Rc::clone(Self::_piece_at(&self.board_map, enemy_position).unwrap_or_else(|| {
-                    panic!(
-                        "Logical mistake: enemy pawn should be present at {:?} during en passant",
-                        enemy_position
-                    );
-                })));
-                self.perform_move(piece, &piece.current_position(), &new_position, captured_pawn);
-            },
+                let captured_pawn = Some(
+                    Rc::clone(
+                        Self::_piece_at(&self.board_map, enemy_position).unwrap_or_else(|| {
+                            panic!(
+                                "Logical mistake: enemy pawn should be present at {:?} during en passant",
+                                enemy_position
+                            );
+                        })
+                    )
+                );
+                self.perform_move(
+                    piece,
+                    &piece.current_position(),
+                    &new_position,
+                    captured_pawn,
+                );
+            }
             PieceMove::Castle(castle_points) => {
-                let king = Rc::clone(Self::_piece_at(&self.board_map, castle_points.initial_king_point()).unwrap());
-                let rook = Rc::clone(Self::_piece_at(&self.board_map, castle_points.initial_rook_point()).unwrap());
+                let king = Rc::clone(
+                    Self::_piece_at(&self.board_map, castle_points.initial_king_point()).unwrap(),
+                );
+                let rook = Rc::clone(
+                    Self::_piece_at(&self.board_map, castle_points.initial_rook_point()).unwrap(),
+                );
                 // In chess960 king or rook may keep staying on their places during the castling
                 if &rook.current_position() != castle_points.rook_point() {
-                    self.move_piece_unchecked(&rook, &PieceMove::Point(*castle_points.rook_point()), false);
+                    self.move_piece_unchecked(
+                        &rook,
+                        &PieceMove::Point(*castle_points.rook_point()),
+                        false,
+                    );
                 }
                 if &king.current_position() != castle_points.king_point() {
-                    self.move_piece_unchecked(&king, &PieceMove::Point(*castle_points.king_point()), false);
+                    self.move_piece_unchecked(
+                        &king,
+                        &PieceMove::Point(*castle_points.king_point()),
+                        false,
+                    );
                 }
-            },
+            }
             PieceMove::Promote(point, promote_piece) => {
                 self.remove_piece(piece);
                 let promoted_piece = self.add_piece_unchecked(
@@ -651,7 +716,7 @@ impl Board {
                     false,
                 );
                 self.move_piece_unchecked(&promoted_piece, &PieceMove::Point(*point), false);
-            },
+            }
             PieceMove::UnreachablePoint => panic!("Unreachable point!"),
         }
         if calculate_king {
@@ -660,17 +725,25 @@ impl Board {
         }
     }
 
-    fn perform_move(&mut self, piece_to_move: &Rc<Piece>, old_position: &Point,
-                    new_position: &Point, enemy_piece: Option<Rc<Piece>>) {
+    fn perform_move(
+        &mut self,
+        piece_to_move: &Rc<Piece>,
+        old_position: &Point,
+        new_position: &Point,
+        enemy_piece: Option<Rc<Piece>>,
+    ) {
         if let Some(piece) = enemy_piece {
             self.capture_piece(&piece);
         }
         self.board_map.take_off_piece(&old_position, false);
-        self.board_map.place_piece(&new_position, piece_to_move, false);
+        self.board_map
+            .place_piece(&new_position, piece_to_move, false);
         self.recalculate_connected_positions(&old_position, piece_to_move.color(), false);
         self.recalculate_connected_positions(&new_position, piece_to_move.color(), true);
         self.recalculate_connected_positions(
-            &new_position, &piece_to_move.color().inverse(), false
+            &new_position,
+            &piece_to_move.color().inverse(),
+            false,
         );
     }
 
@@ -685,12 +758,17 @@ impl Board {
         self.defensive_points[piece.color()].remove_piece(piece);
         self.moves_map[piece.color()].remove_piece(piece);
         self.evaluated_moves[piece.color()].remove_all_for(piece.id());
-        self.board_map.take_off_piece(&piece.current_position(), true);
+        self.board_map
+            .take_off_piece(&piece.current_position(), true);
         self.remove_x_ray_piece(piece);
     }
 
-    fn recalculate_connected_positions(&mut self, point: &Point, caused_by_color: &Color,
-                                       include_piece_at_position: bool) {
+    fn recalculate_connected_positions(
+        &mut self,
+        point: &Point,
+        caused_by_color: &Color,
+        include_piece_at_position: bool,
+    ) {
         let mut pieces_to_recalculate = self.pieces_to_recalculate(point, caused_by_color);
 
         if include_piece_at_position && let Some(piece) = Self::_piece_at(&self.board_map, point) {
@@ -706,7 +784,7 @@ impl Board {
             match &**piece {
                 Piece::King(_) => {
                     // King moves are calculated separately
-                },
+                }
                 _ => {
                     self.calculate_moves_for(&piece);
                 }
@@ -726,7 +804,10 @@ impl Board {
         // 1 ░♚░ ▓▓▓ ░♛░ ▓▓▓ ░░░ ▓▓▓ ░♖░ ▓♔▓
         //    a   b   c   d   e   f   g   h
         for piece in self.x_ray_pieces(&caused_by_color.inverse()).pieces_owned() {
-            if let Some(x_ray_direction) = self.x_ray_pieces(&caused_by_color.inverse()).direction(&piece) {
+            if let Some(x_ray_direction) = self
+                .x_ray_pieces(&caused_by_color.inverse())
+                .direction(&piece)
+            {
                 if let Some(direction) = Vector::calc_direction(&piece.current_position(), point) {
                     if x_ray_direction == &direction {
                         self.calculate_x_ray(&piece);
@@ -740,8 +821,8 @@ impl Board {
             match &*piece {
                 Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
                     self.calculate_x_ray(&piece);
-                },
-                _ => ()
+                }
+                _ => (),
             }
         }
     }
@@ -778,7 +859,7 @@ impl Board {
         match &**piece {
             Piece::Bishop(_) | Piece::Rook(_) | Piece::Queen(_) => {
                 piece.attack_vector(&piece.current_position(), &opposite_king.current_position())
-            },
+            }
             _ => None,
         }
     }
@@ -803,14 +884,20 @@ impl PrettyPrint for Board {
         let mut buf: Vec<String> = vec![];
 
         let y_range: Vec<i16> = if self.pov == Color::White {
-            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value()).rev().collect()
+            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value())
+                .rev()
+                .collect()
         } else {
-            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value()).collect()
+            (*self.dimension().min_point().y().value()..=*self.dimension().max_point().y().value())
+                .collect()
         };
         let x_range: Vec<i16> = if self.pov == Color::White {
-            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value()).collect()
+            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value())
+                .collect()
         } else {
-            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value()).rev().collect()
+            (*self.dimension().min_point().x().value()..=*self.dimension().max_point().x().value())
+                .rev()
+                .collect()
         };
 
         for y in y_range {
@@ -818,14 +905,16 @@ impl PrettyPrint for Board {
                 let point = Point::new(x, y);
                 let square = self.board_square(&point);
                 if (self.pov == Color::White && point.x() == self.dimension().min_point().x())
-                    || (self.pov == Color::Black && point.x() == self.dimension().max_point().x()) {
+                    || (self.pov == Color::Black && point.x() == self.dimension().max_point().x())
+                {
                     output.push_str(point.y().pp().as_str());
                     output.push_str(" ");
                 }
                 output.push_str(square.pp().as_str());
                 output.push(' ');
                 if (self.pov == Color::White && point.x() == self.dimension().max_point().x())
-                    || (self.pov == Color::Black && point.x() == self.dimension().min_point().x()) {
+                    || (self.pov == Color::Black && point.x() == self.dimension().min_point().x())
+                {
                     output.push_str("\n");
                     buf.push(output.clone());
                     output = String::new();
@@ -838,19 +927,19 @@ impl PrettyPrint for Board {
             VectorPoints::with_initial(
                 Point::new(
                     *self.dimension().min_point().x().value(),
-                    *self.dimension().max_point().y().value()
+                    *self.dimension().max_point().y().value(),
                 ),
                 *self.dimension(),
-                Vector::Line(LineVector::Right)
+                Vector::Line(LineVector::Right),
             )
         } else {
             VectorPoints::with_initial(
                 Point::new(
                     *self.dimension().max_point().x().value(),
-                    *self.dimension().max_point().y().value()
+                    *self.dimension().max_point().y().value(),
                 ),
                 *self.dimension(),
-                Vector::Line(LineVector::Left)
+                Vector::Line(LineVector::Left),
             )
         };
         for point in vector_points {
@@ -864,6 +953,4 @@ impl PrettyPrint for Board {
 }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}
