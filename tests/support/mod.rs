@@ -4,9 +4,11 @@ pub mod expect_to_change_to;
 pub mod expect_not_to_change_to;
 pub mod test_squares_map;
 pub mod test_heat_map;
+pub mod scored_moves;
 
 use std::env;
 use std::fmt::{Debug, Display};
+use std::rc::Rc;
 use tchess::board::*;
 use tchess::board_config::{BoardConfig};
 use tchess::buff::Buff;
@@ -14,6 +16,7 @@ use tchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint}
 use tchess::color::Color;
 use tchess::debuff::Debuff;
 use tchess::dimension::Dimension;
+use tchess::piece::Piece;
 use tchess::player::Player;
 use tchess::point::Point;
 use tchess::static_piece_weights::StaticPieceWeights;
@@ -22,6 +25,8 @@ use tchess::vector::line_vector::LineVector;
 use tchess::vector_points::VectorPoints;
 use test_squares_map::TestSquaresMap;
 use test_heat_map::TestHeatMap;
+use super::scored_moves::ScoredMoves;
+use super::traits::{CloneMoves, ToVecRef};
 
 #[allow(unused)]
 pub fn compare<T>(vec1: &Vec<T>, vec2: &Vec<T>) -> Result<String, String>
@@ -301,4 +306,27 @@ pub fn board_default_5x5() -> Board {
         Player::Human,
     );
     Board::empty(config)
+}
+
+#[allow(unused)]
+pub fn scored_moves_of(board: &Board, pieces: Vec<&Rc<Piece>>) -> Vec<ScoredMoves> {
+    let mut res = vec![];
+
+    for piece in pieces.iter() {
+        let scores = board.move_scores(piece.color());
+        for score in scores {
+            if board.moves_by_score(piece, score).is_none() {
+                continue
+            }
+            res.push(
+                ScoredMoves::new(
+                    piece.name(),
+                    piece.current_position(),
+                    *score,
+                    board.moves_by_score(piece, score).to_vec().clone_moves(),
+                )
+            )
+        }
+    }
+    res
 }

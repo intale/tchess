@@ -14,21 +14,18 @@ pub enum PieceMove {
     // of one. We later use it to calculate EnPassant moves for the opposite color.
     LongMove(Point),
     Promote(Point, PromotePiece),
-    // This variant indicates a move not possible to complete.
-    UnreachablePoint,
 }
 
 impl PieceMove {
-    pub fn destination(&self) -> Option<Point> {
+    pub fn destination(&self) -> &Point {
         match self {
             Self::Point(point) |
             Self::EnPassant(point, _) |
             Self::LongMove(point) | 
-            Self::Promote(point, _) => { Some(*point) },
+            Self::Promote(point, _) => { &point },
             Self::Castle(castle_points) => {
-                Some(*castle_points.king_point())
+                castle_points.king_point()
             },
-            Self::UnreachablePoint => { None },
         }
     }
 }
@@ -52,7 +49,6 @@ impl Display for PieceMove {
             Self::Promote(point, promote_piece) => {
                 write!(f, "PieceMove::Promote({} on {})", promote_piece.name(), point)
             },
-            Self::UnreachablePoint => write!(f, "PieceMove::UnreachablePoint"),
         }
     }
 }

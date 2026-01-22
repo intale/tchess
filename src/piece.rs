@@ -70,6 +70,17 @@ impl Piece {
             _ => panic!("Unknown piece: {name}")
         }
     }
+    
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Pawn(_) => "Pawn",
+            Self::Rook(_) => "Rook",
+            Self::Knight(_) => "Knight",
+            Self::Bishop(_) => "Bishop",
+            Self::Queen(_) => "Queen",
+            Self::King(_) => "King",
+        }
+    }
 
     pub fn attack_points(&self, board: &Board) -> Vec<Point> {
         match self {
