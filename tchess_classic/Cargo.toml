@@ -1,0 +1,10 @@
+[package]
+name = "tchess_classic"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+libtchess = { path = '../libtchess' }
+rustc-hash = "2.1.1"
+rand_xoshiro = "0.7.0"

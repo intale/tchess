@@ -1,0 +1,8 @@
+[package]
+name = "libtchess"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+rustc-hash = "2.1.1"
