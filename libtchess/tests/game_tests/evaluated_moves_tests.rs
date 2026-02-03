@@ -8,6 +8,8 @@ use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
+use support::test_heat_map::TestHeatMap;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::ToVecCopy;
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, scored_moves::ScoredMoves};
@@ -15,8 +17,10 @@ use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, scored_move
 mod when_adding_new_pieces {
     use super::*;
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(board_4x4_white_computer);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(board_4x4_white_computer);
         expectation.expect(|mut board| {
             add_piece(
                 &mut board,
@@ -62,7 +66,7 @@ mod when_adding_new_pieces {
 mod when_moving_a_piece {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_4x4_white_computer();
         add_piece(
             &mut board,
@@ -75,8 +79,10 @@ mod when_moving_a_piece {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -119,7 +125,7 @@ mod when_moving_a_piece {
 mod when_capturing_a_piece {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_3x3_white_computer();
         add_piece(
             &mut board,
@@ -141,8 +147,10 @@ mod when_capturing_a_piece {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -215,7 +223,7 @@ mod when_capturing_a_piece {
 mod when_pinning_a_piece {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_4x4_white_computer();
         add_piece(
             &mut board,
@@ -245,8 +253,10 @@ mod when_pinning_a_piece {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -329,7 +339,7 @@ mod when_pinning_a_piece {
 mod when_unpinning_a_piece {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_4x4_white_computer();
         add_piece(
             &mut board,
@@ -359,8 +369,10 @@ mod when_unpinning_a_piece {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -438,7 +450,7 @@ mod when_unpinning_a_piece {
 mod when_checking_the_king {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_4x4_white_computer();
         add_piece(
             &mut board,
@@ -468,8 +480,10 @@ mod when_checking_the_king {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -555,7 +569,7 @@ mod when_checking_the_king {
 mod when_capturing_the_piece_caused_the_check {
     use super::*;
 
-    fn setup() -> Board {
+    fn setup() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_4x4_white_computer();
         add_piece(
             &mut board,
@@ -585,8 +599,10 @@ mod when_capturing_the_piece_caused_the_check {
         board
     }
 
-    fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
-        let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
+    fn expectation<T: std::fmt::Debug + PartialEq>()
+    -> Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<Vec<T>, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup);
         expectation.expect(|board| {
             move_piece(
                 board,

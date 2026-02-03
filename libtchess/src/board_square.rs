@@ -3,7 +3,7 @@ use crate::piece_id::PieceId;
 use crate::square::Square;
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BoardSquare {
     Square(Square),
     VoidSquare,

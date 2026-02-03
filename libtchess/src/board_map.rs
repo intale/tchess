@@ -1,23 +1,25 @@
+use im_rc::HashMap;
 use crate::board_square::{BoardSquare};
 use crate::color::Color;
 use crate::colored_property::ColoredProperty;
 use crate::piece::Piece;
 use crate::piece_id::PieceId;
 use crate::point::Point;
-use rustc_hash::{FxHashMap};
+use rustc_hash::{FxBuildHasher};
 use crate::square::Square;
 
+#[derive(Clone)]
 pub struct BoardMap {
-    point_to_board_square: FxHashMap<Point, BoardSquare>,
-    active_pieces: ColoredProperty<FxHashMap<PieceId, Piece>>,
+    point_to_board_square: HashMap<Point, BoardSquare, FxBuildHasher>,
+    active_pieces: ColoredProperty<HashMap<PieceId, Piece, FxBuildHasher>>,
     king: ColoredProperty<Option<PieceId>>,
 }
 
 impl BoardMap {
     pub fn empty() -> Self {
         Self {
-            point_to_board_square: FxHashMap::default(),
-            active_pieces: ColoredProperty([FxHashMap::default(), FxHashMap::default()]),
+            point_to_board_square: HashMap::default(),
+            active_pieces: ColoredProperty([HashMap::default(), HashMap::default()]),
             king: ColoredProperty([None, None]),
         }
     }
@@ -89,7 +91,7 @@ impl BoardMap {
 
     fn get_square_mut<'a>(
         point: &Point,
-        point_to_board_square: &'a mut FxHashMap<Point, BoardSquare>,
+        point_to_board_square: &'a mut HashMap<Point, BoardSquare, FxBuildHasher>,
     ) -> &'a mut Square {
         match point_to_board_square.get_mut(&point) {
             Some(board_square) => match board_square {
@@ -115,7 +117,7 @@ impl BoardMap {
         self.king[color].as_ref()
     }
 
-    pub fn active_pieces(&self, color: &Color) -> &FxHashMap<PieceId, Piece> {
+    pub fn active_pieces(&self, color: &Color) -> &HashMap<PieceId, Piece, FxBuildHasher> {
         &self.active_pieces[color]
     }
 

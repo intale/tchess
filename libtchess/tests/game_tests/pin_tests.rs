@@ -11,6 +11,7 @@ use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
 use support::test_squares_map::TestSquaresMap;
+use support::test_heat_map::TestHeatMap;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
 use support::{
@@ -21,7 +22,7 @@ use support::{
 mod breaking_the_pin_by_capturing_the_piece_caused_the_pin {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -79,8 +80,8 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -122,7 +123,7 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin {
 mod breaking_the_pin_by_capturing_the_piece_caused_the_pin_by_pinned_piece {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -163,8 +164,8 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin_by_pinned_piece {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -198,7 +199,7 @@ mod breaking_the_pin_by_capturing_the_piece_caused_the_pin_by_pinned_piece {
 mod breaking_the_pin_by_covering_attack_points_of_the_piece_caused_the_pin {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -247,8 +248,8 @@ mod breaking_the_pin_by_covering_attack_points_of_the_piece_caused_the_pin {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -295,7 +296,7 @@ mod breaking_the_pin_by_covering_attack_points_of_the_piece_caused_the_pin {
 mod an_inability_to_cover_with_pinned_piece {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         add_piece(
@@ -335,8 +336,8 @@ mod an_inability_to_cover_with_pinned_piece {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -362,7 +363,7 @@ mod an_inability_to_cover_with_pinned_piece {
 mod an_inability_to_en_passant_with_pinned_pawn {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -403,8 +404,8 @@ mod an_inability_to_en_passant_with_pinned_pawn {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             board.pass_turn(&Color::Black);
             move_piece(
@@ -447,7 +448,7 @@ mod an_inability_to_en_passant_with_pinned_pawn {
 mod reapplying_the_pin_to_the_same_piece_by_pinning_with_another_piece {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -497,8 +498,8 @@ mod reapplying_the_pin_to_the_same_piece_by_pinning_with_another_piece {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             board.pass_turn(&Color::Black);
             move_piece(
@@ -523,7 +524,7 @@ mod reapplying_the_pin_to_the_same_piece_by_pinning_with_another_piece {
 mod blocking_pin_path_after_reapplying_the_pin {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -581,8 +582,8 @@ mod blocking_pin_path_after_reapplying_the_pin {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             board.pass_turn(&Color::Black);
             move_piece(
@@ -622,7 +623,7 @@ mod blocking_pin_path_after_reapplying_the_pin {
 mod applying_pin_to_the_ally_piece_by_moving_another_ally_piece {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -672,8 +673,8 @@ mod applying_pin_to_the_ally_piece_by_moving_another_ally_piece {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -707,7 +708,7 @@ mod applying_pin_to_the_ally_piece_by_moving_another_ally_piece {
 mod capturing_piece_that_previously_captured_pinned_piece {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         add_piece(
             &mut board,
@@ -795,8 +796,8 @@ mod capturing_piece_that_previously_captured_pinned_piece {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             let piece_moves = [
                 (Point::new(2, 3), PieceMove::Point(Point::new(2, 2))),

@@ -1,5 +1,6 @@
 use std::cell::RefCell;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeSet};
+use im_rc::HashSet;
 use libtchess::piece_move::PieceMove;
 
 #[allow(unused)]

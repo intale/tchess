@@ -8,7 +8,7 @@ pub enum Buff {
     AdditionalPoint, // A pawn buff to allow going one additional point further
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct BuffsList {
     pub castle: Option<Buff>,
     pub en_passant: Option<Buff>,
@@ -33,7 +33,7 @@ impl BuffsList {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BuffsCollection {
     buffs: RefCell<BuffsList>,
 }

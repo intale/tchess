@@ -15,7 +15,7 @@ use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pawn {
     color: Color,
     buffs: BuffsCollection,

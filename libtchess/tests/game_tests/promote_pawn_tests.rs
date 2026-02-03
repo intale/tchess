@@ -11,6 +11,7 @@ use libtchess::point::Point;
 use libtchess::promote_piece::PromotePiece;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::ToVecRef;
 use support::*;
@@ -22,7 +23,7 @@ mod promote_via_move {
     mod promote_to_bishop {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -38,8 +39,8 @@ mod promote_via_move {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -87,7 +88,7 @@ mod promote_via_move {
     mod promote_to_knight {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -103,8 +104,8 @@ mod promote_via_move {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -152,7 +153,7 @@ mod promote_via_move {
     mod promote_to_queen {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -168,8 +169,8 @@ mod promote_via_move {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -221,7 +222,7 @@ mod promote_via_move {
     mod promote_to_rook {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -237,8 +238,8 @@ mod promote_via_move {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -292,7 +293,7 @@ mod promote_via_capturing {
     mod promote_to_bishop {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -316,8 +317,8 @@ mod promote_via_capturing {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -372,7 +373,7 @@ mod promote_via_capturing {
     mod promote_to_knight {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -396,8 +397,8 @@ mod promote_via_capturing {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -452,7 +453,7 @@ mod promote_via_capturing {
     mod promote_to_queen {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -476,8 +477,8 @@ mod promote_via_capturing {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -536,7 +537,7 @@ mod promote_via_capturing {
     mod promote_to_rook {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -560,8 +561,8 @@ mod promote_via_capturing {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,

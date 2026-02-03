@@ -10,6 +10,7 @@ use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
@@ -21,7 +22,7 @@ mod single_piece_check {
     mod defending_with_bishop {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -54,8 +55,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -83,7 +85,7 @@ mod single_piece_check {
     mod defending_with_knight {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -115,8 +117,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -149,7 +152,7 @@ mod single_piece_check {
     mod defending_with_pawn {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -190,8 +193,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -219,7 +223,7 @@ mod single_piece_check {
     mod inability_to_defend_from_discovered_check_using_en_passant {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -260,8 +264,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 board.pass_turn(&Color::Black);
                 move_piece(
@@ -290,7 +295,7 @@ mod single_piece_check {
     mod defending_with_queen {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -324,8 +329,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -358,7 +364,7 @@ mod single_piece_check {
     mod defending_with_rook {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -392,8 +398,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -428,7 +435,7 @@ mod single_piece_check {
         use libtchess::piece_id::PieceId;
         use std::fmt::Debug;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -471,8 +478,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -500,7 +508,7 @@ mod single_piece_check {
     mod multiple_consecutive_checks {
         use super::*;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -543,8 +551,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -588,7 +597,7 @@ mod single_piece_check {
         use libtchess::piece_id::PieceId;
         use std::fmt::Debug;
 
-        fn setup_board() -> Board {
+        fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
@@ -631,8 +640,9 @@ mod single_piece_check {
             board
         }
 
-        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-            let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+        fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+            let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                Expect::setup(setup_board);
             expectation.expect(|board| {
                 move_piece(
                     board,
@@ -677,7 +687,7 @@ mod multiple_pieces_check {
     use libtchess::piece_id::PieceId;
     use std::fmt::Debug;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         add_piece(
             &mut board,
@@ -716,8 +726,9 @@ mod multiple_pieces_check {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+            Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,

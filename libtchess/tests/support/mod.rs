@@ -156,7 +156,7 @@ pub fn draw_box(dimension: Dimension) -> Vec<Point> {
 
 #[allow(unused)]
 pub fn create_box_of(
-    board: &mut Board,
+    board: &mut Board<TestHeatMap, TestSquaresMap>,
     name: &str,
     color: Color,
     buffs: Vec<Buff>,
@@ -171,12 +171,12 @@ pub fn create_box_of(
 }
 
 #[allow(unused)]
-pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardConfig {
+pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardConfig<TestHeatMap, TestSquaresMap> {
     BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Human,
         Player::Human,
@@ -184,14 +184,14 @@ pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardC
 }
 
 #[allow(unused)]
-pub fn board_default_3x3() -> Board {
+pub fn board_default_3x3() -> Board<TestHeatMap, TestSquaresMap> {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Human,
         Player::Human,
@@ -200,14 +200,14 @@ pub fn board_default_3x3() -> Board {
 }
 
 #[allow(unused)]
-pub fn board_3x3_white_computer() -> Board {
+pub fn board_3x3_white_computer() -> Board<TestHeatMap, TestSquaresMap> {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Computer,
         Player::Human,
@@ -216,14 +216,14 @@ pub fn board_3x3_white_computer() -> Board {
 }
 
 #[allow(unused)]
-pub fn board_default_4x4() -> Board {
+pub fn board_default_4x4() -> Board<TestHeatMap, TestSquaresMap> {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Human,
         Player::Human,
@@ -232,14 +232,14 @@ pub fn board_default_4x4() -> Board {
 }
 
 #[allow(unused)]
-pub fn board_4x4_white_computer() -> Board {
+pub fn board_4x4_white_computer() -> Board<TestHeatMap, TestSquaresMap> {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Computer,
         Player::Human,
@@ -248,14 +248,14 @@ pub fn board_4x4_white_computer() -> Board {
 }
 
 #[allow(unused)]
-pub fn board_default_5x5() -> Board {
+pub fn board_default_5x5() -> Board<TestHeatMap, TestSquaresMap> {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
         CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-        Box::new(TestHeatMap::init()),
-        Box::new(squares_map),
+        TestHeatMap::init(),
+        squares_map,
         dimension,
         Player::Human,
         Player::Human,
@@ -264,7 +264,7 @@ pub fn board_default_5x5() -> Board {
 }
 
 #[allow(unused)]
-pub fn scored_moves_of(board: &Board, pieces: Vec<&Piece>) -> Vec<ScoredMoves> {
+pub fn scored_moves_of(board: &Board<TestHeatMap, TestSquaresMap>, pieces: Vec<&Piece>) -> Vec<ScoredMoves> {
     let mut res = vec![];
 
     for &piece in pieces.iter() {
@@ -286,7 +286,7 @@ pub fn scored_moves_of(board: &Board, pieces: Vec<&Piece>) -> Vec<ScoredMoves> {
 }
 
 #[allow(unused)]
-pub fn all_moves(board: &Board, color: &Color) -> Vec<ScoredMoves> {
+pub fn all_moves(board: &Board<TestHeatMap, TestSquaresMap>, color: &Color) -> Vec<ScoredMoves> {
     let mut pieces = vec![];
     for score in board.move_scores(color) {
         pieces.append(
@@ -326,7 +326,7 @@ impl PieceRepr {
 
 #[allow(unused)]
 pub fn add_piece(
-    board: &mut Board,
+    board: &mut Board<TestHeatMap, TestSquaresMap>,
     piece_name: &str,
     color: Color,
     buffs: Vec<Buff>,
@@ -344,7 +344,7 @@ pub fn add_piece(
 }
 
 #[allow(unused)]
-pub fn move_piece(board: &mut Board, piece_id: PieceId, piece_move: PieceMove) {
+pub fn move_piece(board: &mut Board<TestHeatMap, TestSquaresMap>, piece_id: PieceId, piece_move: PieceMove) {
     assert!(
         board.move_piece(&piece_id, &piece_move),
         "Failed to move {} on {} position",

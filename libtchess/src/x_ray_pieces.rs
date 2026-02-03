@@ -1,25 +1,26 @@
-use rustc_hash::{FxHashMap};
+use im_rc::HashMap;
+use rustc_hash::{FxBuildHasher};
 use crate::piece_id::PieceId;
 use crate::piece::{Piece};
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct XRayData {
     direction: Vector,
     pin: Option<PieceId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct XRayPieces {
-    direction_to_piece: FxHashMap<Vector, PieceId>,
-    x_ray_data: FxHashMap<PieceId, XRayData>,
+    direction_to_piece: HashMap<Vector, PieceId, FxBuildHasher>,
+    x_ray_data: HashMap<PieceId, XRayData, FxBuildHasher>,
 }
 
 impl XRayPieces {
     pub fn empty() -> Self {
-        Self { direction_to_piece: FxHashMap::default(), x_ray_data: FxHashMap::default() }
+        Self { direction_to_piece: HashMap::default(), x_ray_data: HashMap::default() }
     }
 
     pub fn add_x_ray_vector<'a>(&mut self, vector: &Vector, current_piece: Option<&'a Piece>, new_piece: &'a Piece) -> &'a Piece {

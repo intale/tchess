@@ -5,30 +5,34 @@ use crate::heat_map::HeatMap;
 use crate::player::Player;
 use crate::squares_map::SquaresMap;
 
-pub struct BoardConfig {
+#[derive(Clone)]
+pub struct BoardConfig<HT, SM> {
     king_side_castle_x_points: CastleXPoints,
     queen_side_castle_x_points: CastleXPoints,
-    heat_map: Box<dyn HeatMap>,
-    squares_map: Box<dyn SquaresMap>,
+    heat_map: HT,
+    squares_map: SM,
     dimension: Dimension,
     white_side_player: Player,
     black_side_player: Player,
     evaluation_required: bool,
 }
 
-impl BoardConfig {
+impl<HT, SM> BoardConfig<HT, SM>
+where
+    HT: HeatMap,
+    SM: SquaresMap,
+{
     pub fn new(
         king_side_castle_x_points: CastleXPoints,
         queen_side_castle_x_points: CastleXPoints,
-        heat_map: Box<dyn HeatMap>,
-        squares_map: Box<dyn SquaresMap>,
+        heat_map: HT,
+        squares_map: SM,
         dimension: Dimension,
         white_side_player: Player,
         black_side_player: Player,
-    ) -> Self {
+    ) -> BoardConfig<HT, SM> {
         let evaluation_required =
-            white_side_player == Player::Computer ||
-                black_side_player == Player::Computer;
+            white_side_player == Player::Computer || black_side_player == Player::Computer;
         Self {
             king_side_castle_x_points,
             queen_side_castle_x_points,
@@ -49,20 +53,20 @@ impl BoardConfig {
         &self.queen_side_castle_x_points
     }
 
-    pub fn heat_map(&self) -> &Box<dyn HeatMap> {
+    pub fn heat_map(&self) -> &HT {
         &self.heat_map
     }
 
-    pub fn squares_map(&self) -> &Box<dyn SquaresMap> {
+    pub fn squares_map(&self) -> &SM {
         &self.squares_map
     }
 
     pub fn dimension(&self) -> &Dimension {
         &self.dimension
     }
-    
+
     pub fn player(&self, color: &Color) -> &Player {
-        match color { 
+        match color {
             Color::White => &self.white_side_player,
             Color::Black => &self.black_side_player,
         }

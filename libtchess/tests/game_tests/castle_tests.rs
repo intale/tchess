@@ -11,6 +11,7 @@ use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
@@ -19,7 +20,7 @@ use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
 mod rook_gets_pinned {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -53,8 +54,8 @@ mod rook_gets_pinned {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             board.pass_turn(&Color::Black);
             move_piece(
@@ -90,7 +91,7 @@ mod rook_gets_pinned {
 mod castle_is_possible {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -126,8 +127,8 @@ mod castle_is_possible {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             let castle_points = CastlePoints::new(
                 Point::new(3, 1),

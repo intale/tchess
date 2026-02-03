@@ -9,7 +9,7 @@ pub enum Debuff {
     Pin(Vector),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct DebuffsList {
     pub captured: Option<Debuff>,
     pub check: Option<Debuff>,
@@ -37,7 +37,7 @@ impl DebuffsList {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DebuffsCollection {
     debuffs: RefCell<DebuffsList>,
 }

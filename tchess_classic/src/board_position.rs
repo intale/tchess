@@ -3,9 +3,9 @@ use libtchess::piece::Piece;
 use libtchess::piece_id::PieceId;
 use libtchess::point::Point;
 use rand_xoshiro::SplitMix64;
-use rand_xoshiro::rand_core::{RngCore, SeedableRng};
+use rand_xoshiro::rand_core::{SeedableRng, TryRng};
 use rustc_hash::FxHashMap;
-use std::hash::{Hash};
+use std::hash::Hash;
 use std::ops::BitXorAssign;
 
 const SEED1: u64 = 0xa7d2c50b1827dd5c;
@@ -74,8 +74,12 @@ impl PieceRepr {
 
     pub fn zobrist_repr(&self) -> u128 {
         let payload = self.pack();
-        let high_bits = SplitMix64::seed_from_u64(SEED1 ^ payload).next_u64() as u128;
-        let low_bits = SplitMix64::seed_from_u64(SEED2 ^ payload).next_u64() as u128;
+        let high_bits = SplitMix64::seed_from_u64(SEED1 ^ payload)
+            .try_next_u64()
+            .unwrap() as u128;
+        let low_bits = SplitMix64::seed_from_u64(SEED2 ^ payload)
+            .try_next_u64()
+            .unwrap() as u128;
         (high_bits << 64) | low_bits
     }
 }

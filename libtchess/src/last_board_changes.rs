@@ -1,6 +1,6 @@
 use crate::piece_id::PieceId;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LastBoardChanges {
     PieceAdded(PieceId),
     PieceRemoved(PieceId),

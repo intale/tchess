@@ -6,10 +6,12 @@ use crate::castle_points::{CastlePoints, CastleSide};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
 use crate::dimension::Dimension;
+use crate::heat_map::HeatMap;
 use crate::piece::{Piece, PieceInit};
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
 use crate::point::Point;
+use crate::squares_map::SquaresMap;
 use crate::strategy_point::StrategyPoint;
 use crate::strategy_points::StrategyPoints;
 use crate::utils::pretty_print::PrettyPrint;
@@ -18,7 +20,7 @@ use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct King {
     color: Color,
     buffs: BuffsCollection,
@@ -79,11 +81,11 @@ impl King {
         }
     }
 
-    pub fn calculate_moves<F: FnMut(PieceMove)>(
+    pub fn calculate_moves<F: FnMut(PieceMove), HT: HeatMap, SQ: SquaresMap>(
         &self,
         board_map: &BoardMap,
         dimension: &Dimension,
-        board_config: &BoardConfig,
+        board_config: &BoardConfig<HT, SQ>,
         opposite_strategy_points: &StrategyPoints,
         mut consumer: F,
     ) {
@@ -122,11 +124,11 @@ impl King {
         }
     }
 
-    fn castle_moves<F: FnMut(PieceMove)>(
+    fn castle_moves<F: FnMut(PieceMove), HT: HeatMap, SQ: SquaresMap>(
         &self,
         board_map: &BoardMap,
         dimension: &Dimension,
-        board_config: &BoardConfig,
+        board_config: &BoardConfig<HT, SQ>,
         opposite_strategy_points: &StrategyPoints,
         mut consumer: F,
     ) {
@@ -270,7 +272,7 @@ impl King {
         }
     }
 
-    fn castle_points(&self, config: &BoardConfig) -> [(Point, Point, CastleSide); 2] {
+    fn castle_points<HT: HeatMap, SQ: SquaresMap>(&self, config: &BoardConfig<HT, SQ>) -> [(Point, Point, CastleSide); 2] {
         let king_side_points = config.king_side_castle_x_points();
         let queen_side_points = config.queen_side_castle_x_points();
         [

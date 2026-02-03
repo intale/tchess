@@ -13,7 +13,7 @@ use crate::vector::Vector;
 use crate::vector::jump_vector::JumpVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Knight {
     color: Color,
     buffs: BuffsCollection,

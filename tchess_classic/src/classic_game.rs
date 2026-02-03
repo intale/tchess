@@ -10,30 +10,32 @@ use libtchess::buff::Buff;
 use libtchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use libtchess::color::Color;
 use libtchess::dimension::Dimension;
+use libtchess::heat_map::HeatMap;
 use libtchess::last_board_changes::LastBoardChanges;
 use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::player::Player;
 use libtchess::point::Point;
+use libtchess::squares_map::SquaresMap;
 
 const FIFTY_MOVE_RULE_TURNS_COUNT: u8 = 100;
 const MAX_NUMBER_OF_EQUAL_POSITIONS: u8 = 3;
 
-pub struct ClassicGame {
+pub struct ClassicGame<HT: HeatMap, SQ: SquaresMap> {
     current_position: BoardPosition,
-    board: Board,
+    board: Board<HT, SQ>,
     game_stats: GameStats,
     game_result: Option<GameResult>,
 }
 
-impl ClassicGame {
-    pub fn default() -> Self {
+impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
+    pub fn classic_board() -> Self {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = BoardConfig::new(
             CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
             CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-            Box::new(ClassicHeatMap::empty()),
-            Box::new(ClassicSquaresMap::init()),
+            ClassicHeatMap::empty(),
+            ClassicSquaresMap::init(),
             dimension,
             Player::Human,
             Player::Human,
@@ -119,7 +121,9 @@ impl ClassicGame {
         classic_board.process_last_board_changes();
         classic_board
     }
+}
 
+impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
     pub fn move_piece_at(&mut self, position: &Point, piece_move: &PieceMove) -> MoveResult {
         let &piece_id = self
             .board
@@ -167,7 +171,7 @@ impl ClassicGame {
         }
     }
 
-    pub fn board(&self) -> &Board {
+    pub fn board(&self) -> &Board<HT, SQ> {
         &self.board
     }
 
@@ -245,7 +249,11 @@ mod tests {
     use libtchess::promote_piece::PromotePiece;
     use libtchess::utils::pretty_print::PrettyPrint;
 
-    fn move_piece(classic_game: &mut ClassicGame, point: Point, piece_move: PieceMove) {
+    fn move_piece(
+        classic_game: &mut ClassicGame<ClassicHeatMap, ClassicSquaresMap>,
+        point: Point,
+        piece_move: PieceMove,
+    ) {
         assert_eq!(
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::PieceMoved
@@ -254,7 +262,7 @@ mod tests {
     }
 
     fn checkmate(
-        classic_game: &mut ClassicGame,
+        classic_game: &mut ClassicGame<ClassicHeatMap, ClassicSquaresMap>,
         point: Point,
         piece_move: PieceMove,
         color: Color,
@@ -266,7 +274,11 @@ mod tests {
         println!("{}", classic_game.board().pp());
     }
 
-    fn draw_by_repetition(classic_game: &mut ClassicGame, point: Point, piece_move: PieceMove) {
+    fn draw_by_repetition(
+        classic_game: &mut ClassicGame<ClassicHeatMap, ClassicSquaresMap>,
+        point: Point,
+        piece_move: PieceMove,
+    ) {
         assert_eq!(
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::GameEnded(GameResult::DrawByRepetition)
@@ -282,7 +294,7 @@ mod tests {
 
             #[test]
             fn game() {
-                let mut classic_game = ClassicGame::default();
+                let mut classic_game = ClassicGame::classic_board();
 
                 // 1. e4 c5 2. d4 d6 3. dxc5 dxc5 4. Qxd8+ Kxd8 5. Be3 e6 6. Bb5 Bd7 7. Nc3 Bxb5 8.
                 // Nxb5 Nc6 9. O-O-O+ Kc8 10. Nf3 Nf6 11. e5 Nd5 12. Nd6+ Bxd6 13. exd6 Kd7 14.
@@ -622,7 +634,7 @@ mod tests {
 
             #[test]
             fn game() {
-                let mut classic_game = ClassicGame::default();
+                let mut classic_game = ClassicGame::classic_board();
 
                 // https://www.chess.com/games/view/765
                 // 1.e4 e5 2.Nf3 d6 3.d4 Bg4 4.dxe5 Bxf3 5.Qxf3 dxe5 6.Bc4 Nf6 7.Qb3 Qe7 8.Nc3 c6
@@ -841,7 +853,7 @@ mod tests {
 
             #[test]
             fn game() {
-                let mut classic_game = ClassicGame::default();
+                let mut classic_game = ClassicGame::classic_board();
                 // https://www.chess.com/games/view/75289
                 // 1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. d4 O-O 5. Bf4 d5 6. Qb3 $6 dxc4 7. Qxc4 c6 8.
                 // e4 Nbd7 $2 9. Rd1 Nb6 $6 10. Qc5 $2 Bg4 11. Bg5 $4 Na4 $3 12. Qa3 Nxc3 13. bxc3 Nxe4
@@ -1358,7 +1370,7 @@ mod tests {
 
             #[test]
             fn game() {
-                let mut classic_game = ClassicGame::default();
+                let mut classic_game = ClassicGame::classic_board();
                 // https://www.chess.com/analysis/collection/immortal-games-uZmNVXMY/2zXEwjhEni
                 // 1. e4 e5 2. Nc3 Nc6 3. f4 exf4 4. d4 Qh4+ 5. Ke2 d5 6. exd5 Bg4+ 7. Nf3 O-O-O 8.
                 // dxc6 Bc5 9. cxb7+ Kb8 10. Nb5 Nf6 11. c3 Rhe8+ 12. Kd3 Bf5+ 13. Kc4 Be6+ 14.

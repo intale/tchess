@@ -1,18 +1,20 @@
-use std::collections::BTreeSet;
-use rustc_hash::{FxHashMap, FxHashSet};
-use crate::piece_id::PieceId;
 use crate::move_score::MoveScore;
+use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
 use crate::point::Point;
+use im_rc::{HashMap, HashSet};
+use rustc_hash::FxBuildHasher;
+use std::collections::BTreeSet;
 
-pub type MovesSetT = FxHashSet<PieceMove>;
-pub type PieceToMovesMapT = FxHashMap<PieceId, MovesSetT>;
-pub type PointToPiecesMapT = FxHashMap<Point, PieceToMovesMapT>;
+pub type MovesSetT = HashSet<PieceMove>;
+pub type PieceToMovesMapT = HashMap<PieceId, MovesSetT, FxBuildHasher>;
+pub type PointToPiecesMapT = HashMap<Point, PieceToMovesMapT, FxBuildHasher>;
 
+#[derive(Clone)]
 pub struct MovesMap {
     scores: BTreeSet<MoveScore>,
-    score_to_piece_moves: FxHashMap<MoveScore, PieceToMovesMapT>,
-    piece_to_scores: FxHashMap<PieceId, FxHashSet<MoveScore>>,
+    score_to_piece_moves: HashMap<MoveScore, PieceToMovesMapT, FxBuildHasher>,
+    piece_to_scores: HashMap<PieceId, HashSet<MoveScore>, FxBuildHasher>,
     piece_to_moves: PieceToMovesMapT,
     // This is Point-to-Pieces-to-Moves structure that allows to fetch all moves for the certain
     // piece in the given point. It is useful because there can be several moves that ends on the
@@ -24,10 +26,10 @@ pub struct MovesMap {
 impl MovesMap {
     pub fn empty() -> Self {
         let scores = BTreeSet::default();
-        let score_to_piece_moves = FxHashMap::default();
-        let piece_to_scores = FxHashMap::default();
-        let piece_to_moves = FxHashMap::default();
-        let point_to_pieces = FxHashMap::default();
+        let score_to_piece_moves = HashMap::default();
+        let piece_to_scores = HashMap::default();
+        let piece_to_moves = HashMap::default();
+        let point_to_pieces = HashMap::default();
         Self {
             scores,
             score_to_piece_moves,
@@ -39,36 +41,36 @@ impl MovesMap {
 
     fn p2m_moves_mut(&mut self, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.piece_to_moves.contains_key(piece_id) {
-            self.piece_to_moves.insert(*piece_id, FxHashSet::default());
+            self.piece_to_moves.insert(*piece_id, HashSet::default());
         }
         self.piece_to_moves.get_mut(piece_id).unwrap()
     }
 
     fn p2p_moves_mut(&mut self, point: Point, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.point_to_pieces.contains_key(&point) {
-            self.point_to_pieces.insert(point, FxHashMap::default());
+            self.point_to_pieces.insert(point, HashMap::default());
         }
         let pieces_hashmap = self.point_to_pieces.get_mut(&point).unwrap();
         if !pieces_hashmap.contains_key(piece_id) {
-            pieces_hashmap.insert(*piece_id, FxHashSet::default());
+            pieces_hashmap.insert(*piece_id, HashSet::default());
         }
         pieces_hashmap.get_mut(piece_id).unwrap()
     }
 
     fn s2p_moves_mut(&mut self, score: MoveScore, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.score_to_piece_moves.contains_key(&score) {
-            self.score_to_piece_moves.insert(score, FxHashMap::default());
+            self.score_to_piece_moves.insert(score, HashMap::default());
         }
         let pieces_hashmap = self.score_to_piece_moves.get_mut(&score).unwrap();
         if !pieces_hashmap.contains_key(piece_id) {
-            pieces_hashmap.insert(*piece_id, FxHashSet::default());
+            pieces_hashmap.insert(*piece_id, HashSet::default());
         }
         pieces_hashmap.get_mut(piece_id).unwrap()
     }
 
-    fn p2s_mut(&mut self, piece_id: &PieceId) -> &mut FxHashSet<MoveScore> {
+    fn p2s_mut(&mut self, piece_id: &PieceId) -> &mut HashSet<MoveScore> {
         if !self.piece_to_scores.contains_key(piece_id) {
-            self.piece_to_scores.insert(*piece_id, FxHashSet::default());
+            self.piece_to_scores.insert(*piece_id, HashSet::default());
         }
         self.piece_to_scores.get_mut(piece_id).unwrap()
     }
@@ -81,12 +83,13 @@ impl MovesMap {
         self.point_to_pieces.get(point)
     }
 
-    pub fn add(&mut self, piece_id: &PieceId, piece_move: PieceMove, score: MoveScore) -> bool {
-        self.p2m_moves_mut(piece_id).insert(piece_move)
-            && self.p2p_moves_mut(*piece_move.destination(), piece_id).insert(piece_move)
-            && self.s2p_moves_mut(score, piece_id).insert(piece_move)
-            && self.scores.insert(score)
-            && self.p2s_mut(piece_id).insert(score)
+    pub fn add(&mut self, piece_id: &PieceId, piece_move: PieceMove, score: MoveScore) {
+        self.p2m_moves_mut(piece_id).insert(piece_move);
+        self.p2p_moves_mut(*piece_move.destination(), piece_id)
+            .insert(piece_move);
+        self.s2p_moves_mut(score, piece_id).insert(piece_move);
+        self.scores.insert(score);
+        self.p2s_mut(piece_id).insert(score);
     }
 
     pub fn remove_piece(&mut self, piece_id: &PieceId) -> Option<MovesSetT> {
@@ -117,11 +120,11 @@ impl MovesMap {
         }
         None
     }
-    
+
     pub fn move_scores(&self) -> &BTreeSet<MoveScore> {
         &self.scores
     }
-    
+
     pub fn moves_by_score(&self, score: &MoveScore) -> Option<&PieceToMovesMapT> {
         self.score_to_piece_moves.get(score)
     }

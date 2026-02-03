@@ -8,6 +8,8 @@ use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
+use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
@@ -21,7 +23,7 @@ mod white_pawn {
         mod when_moving_a_piece_of_the_same_color {
             use super::*;
 
-            fn setup() -> Board {
+            fn setup() -> Board<TestHeatMap, TestSquaresMap> {
                 let mut board = board_default_4x4();
                 add_piece(
                     &mut board,
@@ -42,8 +44,10 @@ mod white_pawn {
                 board
             }
 
-            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-                let mut expectation: Expect<T, Board> = Expect::setup(setup);
+            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>>
+            {
+                let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                    Expect::setup(setup);
                 expectation.expect(|board| {
                     move_piece(
                         board,
@@ -71,7 +75,7 @@ mod white_pawn {
         mod when_moving_a_piece_of_the_opposite_color {
             use super::*;
 
-            fn setup() -> Board {
+            fn setup() -> Board<TestHeatMap, TestSquaresMap> {
                 let mut board = board_default_4x4();
                 add_piece(
                     &mut board,
@@ -93,8 +97,10 @@ mod white_pawn {
                 board
             }
 
-            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-                let mut expectation: Expect<T, Board> = Expect::setup(setup);
+            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>>
+            {
+                let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                    Expect::setup(setup);
                 expectation.expect(|board| {
                     move_piece(
                         board,
@@ -126,7 +132,7 @@ mod white_pawn {
         mod when_moving_a_piece_of_the_same_color {
             use super::*;
 
-            fn setup() -> Board {
+            fn setup() -> Board<TestHeatMap, TestSquaresMap> {
                 let mut board = board_default_4x4();
                 add_piece(
                     &mut board,
@@ -147,8 +153,10 @@ mod white_pawn {
                 board
             }
 
-            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-                let mut expectation: Expect<T, Board> = Expect::setup(setup);
+            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>>
+            {
+                let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                    Expect::setup(setup);
                 expectation.expect(|board| {
                     move_piece(
                         board,
@@ -176,7 +184,7 @@ mod white_pawn {
         mod when_moving_a_piece_of_the_opposite_color {
             use super::*;
 
-            fn setup() -> Board {
+            fn setup() -> Board<TestHeatMap, TestSquaresMap> {
                 let mut board = board_default_4x4();
                 add_piece(
                     &mut board,
@@ -198,8 +206,10 @@ mod white_pawn {
                 board
             }
 
-            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-                let mut expectation: Expect<T, Board> = Expect::setup(setup);
+            fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>>
+            {
+                let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> =
+                    Expect::setup(setup);
                 expectation.expect(|board| {
                     move_piece(
                         board,

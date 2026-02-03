@@ -1,15 +1,16 @@
-use std::collections::BTreeSet;
-use rustc_hash::{FxHashMap, FxHashSet};
-use crate::piece_id::PieceId;
 use crate::move_score::MoveScore;
 use crate::moves_map::{MovesSetT, PieceToMovesMapT};
+use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
+use im_rc::{HashMap, HashSet};
+use rustc_hash::FxBuildHasher;
+use std::collections::BTreeSet;
 
 // Moves map of pieces, used in situations when the king is in check.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MoveConstraints {
     scores: BTreeSet<MoveScore>,
-    score_to_piece_moves: FxHashMap<MoveScore, PieceToMovesMapT>,
+    score_to_piece_moves: HashMap<MoveScore, PieceToMovesMapT, FxBuildHasher>,
     constraints: PieceToMovesMapT,
     has_constraints: bool,
 }
@@ -17,13 +18,13 @@ pub struct MoveConstraints {
 impl MoveConstraints {
     pub fn empty() -> Self {
         let scores = BTreeSet::default();
-        let score_to_piece_moves = FxHashMap::default();
-        let constraints = FxHashMap::default();
+        let score_to_piece_moves = HashMap::default();
+        let constraints = HashMap::default();
         Self {
             scores,
             score_to_piece_moves,
             constraints,
-            has_constraints: false
+            has_constraints: false,
         }
     }
 
@@ -45,21 +46,21 @@ impl MoveConstraints {
     pub fn moves_of(&self, piece_id: &PieceId) -> Option<&MovesSetT> {
         self.constraints.get(piece_id)
     }
-    
+
     fn constraint_moves_mut(&mut self, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.constraints.contains_key(piece_id) {
-            self.constraints.insert(*piece_id, FxHashSet::default());
+            self.constraints.insert(*piece_id, HashSet::default());
         }
         self.constraints.get_mut(piece_id).unwrap()
     }
 
     fn s2p_moves_mut(&mut self, score: MoveScore, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.score_to_piece_moves.contains_key(&score) {
-            self.score_to_piece_moves.insert(score, FxHashMap::default());
+            self.score_to_piece_moves.insert(score, HashMap::default());
         }
         let pieces_hashmap = self.score_to_piece_moves.get_mut(&score).unwrap();
         if !pieces_hashmap.contains_key(piece_id) {
-            pieces_hashmap.insert(*piece_id, FxHashSet::default());
+            pieces_hashmap.insert(*piece_id, HashSet::default());
         }
         pieces_hashmap.get_mut(piece_id).unwrap()
     }
@@ -68,10 +69,10 @@ impl MoveConstraints {
         self.constraints.is_empty()
     }
 
-    pub fn add(&mut self, piece_id: &PieceId, piece_move: &PieceMove, score: MoveScore) -> bool {
-        self.constraint_moves_mut(piece_id).insert(*piece_move) 
-            && self.s2p_moves_mut(score, piece_id).insert(*piece_move) 
-            && self.scores.insert(score)
+    pub fn add(&mut self, piece_id: &PieceId, piece_move: &PieceMove, score: MoveScore) {
+        self.constraint_moves_mut(piece_id).insert(*piece_move);
+        self.s2p_moves_mut(score, piece_id).insert(*piece_move);
+        self.scores.insert(score);
     }
 
     pub fn move_scores(&self) -> &BTreeSet<MoveScore> {

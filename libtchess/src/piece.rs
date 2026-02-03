@@ -45,7 +45,7 @@ pub trait PieceInit: Sized {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Piece {
     Pawn(Pawn),
     Rook(Rook),

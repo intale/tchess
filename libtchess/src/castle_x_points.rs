@@ -1,6 +1,10 @@
+#[derive(Clone)]
 pub struct KingCastleXPoint(pub i16);
+
+#[derive(Clone)]
 pub struct RookCastleXPoint(pub i16);
 
+#[derive(Clone)]
 pub struct CastleXPoints(pub KingCastleXPoint, pub RookCastleXPoint);
 
 impl CastleXPoints {

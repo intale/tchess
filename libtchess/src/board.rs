@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-
+use im_rc::{HashMap, HashSet};
 use crate::board_config::BoardConfig;
 use crate::board_map::BoardMap;
 use crate::board_square::BoardSquare;
@@ -24,33 +24,36 @@ use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher};
+use crate::heat_map::HeatMap;
+use crate::squares_map::SquaresMap;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
 pub const INVERT_COLORS: bool = true;
 
-pub struct Board {
+#[derive(Clone)]
+pub struct Board<HT: HeatMap, SQ: SquaresMap> {
     board_map: BoardMap,
     strategy_points: ColoredProperty<StrategyPoints>,
     x_ray_pieces: ColoredProperty<XRayPieces>,
-    pawns_with_en_passant: ColoredProperty<FxHashSet<PieceId>>,
+    pawns_with_en_passant: ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
     moves_map: ColoredProperty<MovesMap>,
     general_constraints: ColoredProperty<MoveConstraints>,
     ids_generator: ColoredProperty<IdsGenerator>,
     current_turn: Color,
     // Determines board's point of view. Debugging purpose only.
     pov: Color,
-    config: BoardConfig,
+    config: BoardConfig<HT, SQ>,
     last_changes: Vec<LastBoardChanges>,
 }
 
-impl Board {
-    pub fn active_pieces(&self, color: &Color) -> &FxHashMap<PieceId, Piece> {
+impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
+    pub fn active_pieces(&self, color: &Color) -> &HashMap<PieceId, Piece, FxBuildHasher> {
         self.board_map.active_pieces(color)
     }
 
-    pub fn config(&self) -> &BoardConfig {
+    pub fn config(&self) -> &BoardConfig<HT, SQ> {
         &self.config
     }
 
@@ -70,7 +73,7 @@ impl Board {
         &self.x_ray_pieces[color]
     }
 
-    fn evaluate_move(config: &BoardConfig, destination: &Point, piece: &Piece) -> MoveScore {
+    fn evaluate_move(config: &BoardConfig<HT, SQ>, destination: &Point, piece: &Piece) -> MoveScore {
         let new_position_score = config.heat_map().positional_value(piece, destination);
         let current_position_score = config
             .heat_map()
@@ -84,16 +87,16 @@ impl Board {
         self.board_map.king(color)
     }
 
-    pub fn pawns_with_en_passant(&self, color: &Color) -> &FxHashSet<PieceId> {
+    pub fn pawns_with_en_passant(&self, color: &Color) -> &HashSet<PieceId, FxBuildHasher> {
         &self.pawns_with_en_passant[color]
     }
 
-    pub fn empty(config: BoardConfig) -> Self {
+    pub fn empty(config: BoardConfig<HT, SQ>) -> Self {
         let mut board = Self {
             board_map: BoardMap::empty(),
             strategy_points: ColoredProperty([StrategyPoints::empty(), StrategyPoints::empty()]),
             x_ray_pieces: ColoredProperty([XRayPieces::empty(), XRayPieces::empty()]),
-            pawns_with_en_passant: ColoredProperty([FxHashSet::default(), FxHashSet::default()]),
+            pawns_with_en_passant: ColoredProperty([HashSet::default(), HashSet::default()]),
             moves_map: ColoredProperty([MovesMap::empty(), MovesMap::empty()]),
             general_constraints: ColoredProperty([
                 MoveConstraints::empty(),
@@ -125,8 +128,8 @@ impl Board {
         &mut self,
         point: &Point,
         caused_by_color: &Color,
-    ) -> FxHashSet<PieceId> {
-        let mut pieces: FxHashSet<PieceId> = FxHashSet::default();
+    ) -> HashSet<PieceId> {
+        let mut pieces: HashSet<PieceId> = HashSet::default();
         let inverse_color = caused_by_color.inverse();
 
         if let Some(piece_ids) =
@@ -173,7 +176,7 @@ impl Board {
     fn calculate_strategy_points(
         piece: &Piece,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &mut ColoredProperty<StrategyPoints>,
     ) {
         let strategy_points = &mut cstrategy_points[piece.color()];
@@ -188,7 +191,7 @@ impl Board {
     fn calculate_x_ray(
         piece: &Piece,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cx_ray_pieces: &mut ColoredProperty<XRayPieces>,
@@ -276,7 +279,7 @@ impl Board {
     fn calculate_moves_for(
         piece: &Piece,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &mut ColoredProperty<MovesMap>,
     ) {
@@ -308,7 +311,7 @@ impl Board {
     fn calculate_general_constraints(
         king: &Piece,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &ColoredProperty<MovesMap>,
         cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
@@ -366,7 +369,7 @@ impl Board {
     fn add_king_moves_to_general_constraints(
         king: &Piece,
         cmoves_map: &ColoredProperty<MovesMap>,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
     ) {
         if let Some(moves) = cmoves_map[king.color()].moves_of(king.id()) {
@@ -413,7 +416,7 @@ impl Board {
         color: &Color,
         piece_move: PieceMove,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cmoves_map: &ColoredProperty<MovesMap>,
         cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
     ) {
@@ -434,7 +437,7 @@ impl Board {
         board_map: &BoardMap,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         last_changes: &mut Vec<LastBoardChanges>,
-        cpawns_with_en_passant: &mut ColoredProperty<FxHashSet<PieceId>>,
+        cpawns_with_en_passant: &mut ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
     ) {
         let en_passant_position = match caused_by_color {
             Color::White => Point::new(*position.x().value(), *position.y().value() - 1),
@@ -465,18 +468,20 @@ impl Board {
     }
 
     fn clear_en_passant(&mut self) {
-        for pawn_id in self.pawns_with_en_passant[&Color::White].drain() {
-            let pawn = self.board_map.find_piece_by_id(&pawn_id);
+        for pawn_id in self.pawns_with_en_passant[&Color::White].iter() {
+            let pawn = self.board_map.find_piece_by_id(pawn_id);
             pawn.buffs().remove_en_passant();
             self.last_changes
-                .push(LastBoardChanges::EnPassantChanged(pawn_id))
+                .push(LastBoardChanges::EnPassantChanged(*pawn_id))
         }
-        for pawn_id in self.pawns_with_en_passant[&Color::Black].drain() {
-            let pawn = self.board_map.find_piece_by_id(&pawn_id);
+        self.pawns_with_en_passant[&Color::White].clear();
+        for pawn_id in self.pawns_with_en_passant[&Color::Black].iter() {
+            let pawn = self.board_map.find_piece_by_id(pawn_id);
             pawn.buffs().remove_en_passant();
             self.last_changes
-                .push(LastBoardChanges::EnPassantChanged(pawn_id))
+                .push(LastBoardChanges::EnPassantChanged(*pawn_id))
         }
+        self.pawns_with_en_passant[&Color::Black].clear();
     }
 
     pub fn pass_turn(&mut self, color: &Color) {
@@ -499,7 +504,7 @@ impl Board {
         pin_to: &Piece,
         pinned_by: &Piece,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cx_ray_pieces: &mut ColoredProperty<XRayPieces>,
@@ -901,7 +906,7 @@ impl Board {
     fn remove_x_ray_piece(
         piece_id: &PieceId,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cx_ray_pieces: &mut ColoredProperty<XRayPieces>,
@@ -920,7 +925,7 @@ impl Board {
     fn clear_existing_pins(
         piece_id: &PieceId,
         board_map: &BoardMap,
-        config: &BoardConfig,
+        config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cx_ray_pieces: &ColoredProperty<XRayPieces>,
@@ -933,7 +938,7 @@ impl Board {
     }
 }
 
-impl PrettyPrint for Board {
+impl<HT: HeatMap, SQ: SquaresMap> PrettyPrint for Board<HT, SQ> {
     fn pp(&self) -> String {
         let mut output = String::new();
         let mut buf: Vec<String> = vec![];

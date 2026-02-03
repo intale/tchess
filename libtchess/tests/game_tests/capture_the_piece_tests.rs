@@ -1,23 +1,25 @@
 #[path = "../support/mod.rs"]
 mod support;
 
+use im_rc::HashSet;
 use libtchess::board::Board;
 use libtchess::color::Color;
 use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
-use rustc_hash::FxHashSet;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
+use support::test_squares_map::TestSquaresMap;
+use support::traits::{CloneMoves, ToVecRef};
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
-use support::traits::{CloneMoves, ToVecRef};
 
 // 4 ▓▓▓ ░░░ ▓▓▓ ░♔░
 // 3 ░░░ ▓▓▓ ░♗░ ▓▓▓
 // 2 ▓▓▓ ░♝░ ▓▓▓ ░░░
 // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
-fn setup_board() -> Board {
+fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
     let mut board = board_default_4x4();
     add_piece(
         &mut board,
@@ -56,8 +58,8 @@ fn setup_board() -> Board {
     board
 }
 
-fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-    let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+    let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
     expectation.expect(|board| {
         move_piece(
             board,
@@ -96,7 +98,7 @@ fn it_removes_captured_piece_strategy_points_list() {
             board
                 .strategy_points(&Color::Black)
                 .get_points(&PieceId::new(1, &Color::Black))
-                .unwrap_or(&FxHashSet::default())
+                .unwrap_or(&HashSet::default())
                 .iter()
                 .copied()
                 .collect::<Vec<_>>()

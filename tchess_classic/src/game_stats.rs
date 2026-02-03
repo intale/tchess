@@ -3,7 +3,7 @@ use libtchess::color::Color;
 use libtchess::colored_property::ColoredProperty;
 use rustc_hash::FxHashMap;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 struct ActivePiecesStats {
     pub bishop_count: u16,
     pub king_count: u16,

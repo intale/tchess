@@ -13,7 +13,7 @@ use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rook {
     color: Color,
     buffs: BuffsCollection,

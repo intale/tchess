@@ -10,6 +10,6 @@ mod game_result;
 mod move_result;
 
 fn main() {
-    let classic_board = ClassicGame::default();
+    let classic_board = ClassicGame::classic_board();
     println!("{}", classic_board.board().pp());
 }

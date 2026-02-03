@@ -10,6 +10,7 @@ use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::*;
 use support::{
@@ -20,7 +21,7 @@ use support::{
 mod en_passant_after_long_move {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         add_piece(
@@ -43,8 +44,8 @@ mod en_passant_after_long_move {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -92,7 +93,7 @@ mod en_passant_after_long_move {
 mod when_enemy_piece_crosses_attack_point_of_ally_pawn {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         add_piece(
@@ -115,8 +116,8 @@ mod when_enemy_piece_crosses_attack_point_of_ally_pawn {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -147,7 +148,7 @@ mod when_enemy_piece_crosses_attack_point_of_ally_pawn {
 mod when_enemy_pawn_steps_from_attack_point_of_ally_pawn {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
@@ -172,8 +173,8 @@ mod when_enemy_pawn_steps_from_attack_point_of_ally_pawn {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -204,7 +205,7 @@ mod when_enemy_pawn_steps_from_attack_point_of_ally_pawn {
 mod when_ally_pawn_does_not_utilize_en_passant_on_ally_turn {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         add_piece(
@@ -244,8 +245,8 @@ mod when_ally_pawn_does_not_utilize_en_passant_on_ally_turn {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>() -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(|board| {
             move_piece(
                 board,
@@ -290,7 +291,7 @@ mod when_ally_pawn_does_not_utilize_en_passant_on_ally_turn {
 mod en_passant_for_two_pawns {
     use super::*;
 
-    fn setup_board() -> Board {
+    fn setup_board() -> Board<TestHeatMap, TestSquaresMap> {
         let mut board = board_default_4x4();
         board.pass_turn(&Color::Black);
         // ID#1
@@ -325,8 +326,8 @@ mod en_passant_for_two_pawns {
         board
     }
 
-    fn expectation<T: PartialEq + Debug>(piece_id: usize) -> Expect<T, Board> {
-        let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
+    fn expectation<T: PartialEq + Debug>(piece_id: usize) -> Expect<T, Board<TestHeatMap, TestSquaresMap>> {
+        let mut expectation: Expect<T, Board<TestHeatMap, TestSquaresMap>> = Expect::setup(setup_board);
         expectation.expect(move |board| {
             move_piece(
                 board,
