@@ -1,6 +1,7 @@
-use libtchess::board_square::{BoardSquare, Square};
+use libtchess::board_square::{BoardSquare};
 use libtchess::color::Color;
 use libtchess::point::Point;
+use libtchess::square::Square;
 use libtchess::squares_map::SquaresMap;
 
 pub struct ClassicSquaresMap;

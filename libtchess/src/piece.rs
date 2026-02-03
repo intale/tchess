@@ -13,30 +13,27 @@ use knight::*;
 use bishop::*;
 use queen::*;
 use king::*;
-use crate::board::{Board};
-use crate::board_config::BoardConfig;
 use crate::board_map::BoardMap;
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
 use crate::dimension::Dimension;
-use crate::piece_move::PieceMove;
+use crate::piece_id::PieceId;
 use crate::point::Point;
 use crate::strategy_point::StrategyPoint;
-use crate::strategy_points::StrategyPoints;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 
 pub trait PieceInit: Sized {
     fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                  current_position: Point, id: usize) -> Self;
+                  current_position: Point, id: PieceId) -> Self;
 
     fn new(
         color: Color,
         buffs: Vec<Buff>,
         debuffs: Vec<Debuff>,
         current_position: Point,
-        id: usize,
+        id: PieceId,
     ) -> Self {
         Self::from_parts(
             color,
@@ -45,19 +42,6 @@ pub trait PieceInit: Sized {
             current_position,
             id,
         )
-    }
-
-    fn empty(color: Color, current_position: Point, id: usize) -> Self {
-        Self::from_parts(color, Vec::new(), Vec::new(), current_position, id)
-    }
-}
-
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Copy, Clone)]
-pub struct PieceId(pub usize);
-
-impl Display for PieceId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
@@ -74,7 +58,7 @@ pub enum Piece {
 
 impl Piece {
     pub fn init_piece_by_name(name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                              current_position: Point, id: usize) -> Self {
+                              current_position: Point, id: PieceId) -> Self {
         match name {
             "Pawn" => Self::Pawn(Pawn::new(color, buffs, debuffs, current_position, id)),
             "Rook" => Self::Rook(Rook::new(color, buffs, debuffs, current_position, id)),
@@ -110,18 +94,6 @@ impl Piece {
         }
     }
 
-    // pub fn calculate_moves<F: FnMut(PieceMove)>(&self, board_map: &BoardMap, dimension: &Dimension, board_config: &BoardConfig, opposite_strategy_points: &StrategyPoint, mut consumer: F) {
-    //     match self {
-    //         Self::Pawn(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::Rook(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::Knight(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::Bishop(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::Queen(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::King(p) => p.calculate_moves(board_map, dimension, consumer),
-    //         Self::UnknownPiece(_) => panic!("Unknown piece does not have any moves!"),
-    //     }
-    // }
-
     pub fn color(&self) -> &Color {
         match self {
             Self::Pawn(p) => p.color(),
@@ -134,7 +106,7 @@ impl Piece {
         }
     }
 
-    pub fn current_position(&self) -> Point {
+    pub fn current_position(&self) -> &Point {
         match self {
             Self::Pawn(p) => p.current_position(),
             Self::Rook(p) => p.current_position(),
@@ -146,7 +118,7 @@ impl Piece {
         }
     }
 
-    pub fn set_current_position(&self, point: Point) {
+    pub fn set_current_position(&mut self, point: Point) {
         match self {
             Self::Pawn(p) => p.set_current_position(point),
             Self::Rook(p) => p.set_current_position(point),
@@ -238,7 +210,7 @@ impl Display for Piece {
             Self::Bishop(p) => write!(f, "{}{}", p.pp(), p.current_position()),
             Self::Queen(p) => write!(f, "{}{}", p.pp(), p.current_position()),
             Self::King(p) => write!(f, "{}{}", p.pp(), p.current_position()),
-            Self::UnknownPiece(id) => write!(f, "U#{}", id.0),
+            Self::UnknownPiece(piece_id) => write!(f, "U#{}", piece_id.id()),
         }
     }
 }

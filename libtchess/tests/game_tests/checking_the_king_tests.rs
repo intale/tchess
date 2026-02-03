@@ -1,33 +1,55 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use std::rc::Rc;
+use libtchess::board::Board;
+use libtchess::buff::Buff;
+use libtchess::color::Color;
+use libtchess::dimension::Dimension;
+use libtchess::piece_id::PieceId;
+use libtchess::piece_move::PieceMove;
+use libtchess::point::Point;
+use libtchess::utils::pretty_print::PrettyPrint;
+use std::fmt::Debug;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
-use libtchess::board::Board;
-use libtchess::color::Color;
-use libtchess::dimension::Dimension;
-use libtchess::piece_move::PieceMove;
-use libtchess::point::Point;
-use libtchess::utils::pretty_print::PrettyPrint;
 
 mod single_piece_check {
     use super::*;
 
     mod defending_with_bishop {
         use super::*;
-        use std::fmt::Debug;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(4, 2),
+            );
 
-            board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(1, 3));
-            board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 1));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 3),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 1),
+            );
             println!("{}", board.pp());
             board
         }
@@ -35,11 +57,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let ally_bishop = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
-                assert!(
-                    board.move_piece(&ally_bishop, &PieceMove::Point(Point::new(3, 3))),
-                    "Unable to move {:?} on c3",
-                    ally_bishop
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::White),
+                    PieceMove::Point(Point::new(3, 3)),
                 );
                 println!("{}", board.pp());
             });
@@ -50,9 +71,8 @@ mod single_piece_check {
         fn it_limits_moves_of_enemy_bishop() {
             expectation()
                 .to_change(|board| {
-                    let enemy_bishop = board.piece_at(&Point::new(1, 3)).unwrap();
                     board
-                        .moves_of(enemy_bishop)
+                        .moves_of(&PieceId::new(1, &Color::Black))
                         .to_vec()
                         .clone_moves()
                 })
@@ -62,15 +82,35 @@ mod single_piece_check {
 
     mod defending_with_knight {
         use super::*;
-        use std::fmt::Debug;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
-            board.add_piece("Knight", Color::Black, vec![], vec![], Point::new(4, 1));
-            board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 1));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(4, 2),
+            );
+            add_piece(
+                &mut board,
+                "Knight",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(4, 1),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 1),
+            );
             println!("{}", board.pp());
             board
         }
@@ -78,11 +118,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let ally_bishop = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
-                assert!(
-                    board.move_piece(&ally_bishop, &PieceMove::Point(Point::new(3, 3))),
-                    "Unable to move {:?} on c3",
-                    ally_bishop
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::White),
+                    PieceMove::Point(Point::new(3, 3)),
                 );
                 println!("{}", board.pp());
             });
@@ -93,9 +132,8 @@ mod single_piece_check {
         fn it_limits_moves_of_enemy_knight() {
             expectation()
                 .to_change(|board| {
-                    let enemy_knight = board.piece_at(&Point::new(4, 1)).unwrap();
                     board
-                        .moves_of(enemy_knight)
+                        .moves_of(&PieceId::new(1, &Color::Black))
                         .to_vec()
                         .clone_moves()
                 })
@@ -110,15 +148,21 @@ mod single_piece_check {
 
     mod defending_with_pawn {
         use super::*;
-        use std::fmt::Debug;
-        use libtchess::buff::Buff;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 1));
-            board.add_piece(
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(4, 1),
+            );
+            add_piece(
+                &mut board,
                 "Pawn",
                 Color::White,
                 vec![Buff::AdditionalPoint],
@@ -126,14 +170,22 @@ mod single_piece_check {
                 Point::new(3, 2),
             );
 
-            board.add_piece(
+            add_piece(
+                &mut board,
                 "Pawn",
                 Color::Black,
                 vec![Buff::AdditionalPoint],
                 vec![],
                 Point::new(2, 4),
             );
-            board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 4));
+            add_piece(
+                &mut board,
+                "King",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 4),
+            );
             println!("{}", board.pp());
             board
         }
@@ -141,11 +193,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let ally_pawn = Rc::clone(board.piece_at(&Point::new(3, 2)).unwrap());
-                assert!(
-                    board.move_piece(&ally_pawn, &PieceMove::LongMove(Point::new(3, 4))),
-                    "Unable to move {:?} on c4",
-                    ally_pawn
+                move_piece(
+                    board,
+                    PieceId::new(2, &Color::White),
+                    PieceMove::LongMove(Point::new(3, 4)),
                 );
                 println!("{}", board.pp());
             });
@@ -156,9 +207,8 @@ mod single_piece_check {
         fn it_limits_moves_of_enemy_pawn() {
             expectation()
                 .to_change(|board| {
-                    let enemy_pawn = board.piece_at(&Point::new(2, 4)).unwrap();
                     board
-                        .moves_of(enemy_pawn)
+                        .moves_of(&PieceId::new(1, &Color::Black))
                         .to_vec()
                         .clone_moves()
                 })
@@ -168,15 +218,21 @@ mod single_piece_check {
 
     mod inability_to_defend_from_discovered_check_using_en_passant {
         use super::*;
-        use std::fmt::Debug;
-        use libtchess::buff::Buff;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 2));
-            board.add_piece(
+            add_piece(
+                &mut board,
+                "King",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(1, 2),
+            );
+            add_piece(
+                &mut board,
                 "Pawn",
                 Color::White,
                 vec![Buff::AdditionalPoint],
@@ -184,14 +240,22 @@ mod single_piece_check {
                 Point::new(2, 2),
             );
 
-            board.add_piece(
+            add_piece(
+                &mut board,
                 "Pawn",
                 Color::Black,
                 vec![Buff::AdditionalPoint],
                 vec![],
                 Point::new(3, 4),
             );
-            board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(4, 5),
+            );
             println!("{}", board.pp());
             board
         }
@@ -200,11 +264,10 @@ mod single_piece_check {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
                 board.pass_turn(&Color::Black);
-                let black_pawn = Rc::clone(board.piece_at(&Point::new(3, 4)).unwrap());
-                assert!(
-                    board.move_piece(&black_pawn, &PieceMove::LongMove(Point::new(3, 2))),
-                    "Unable to move {:?} on c2",
-                    black_pawn
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::Black),
+                    PieceMove::LongMove(Point::new(3, 2)),
                 );
                 println!("{}", board.pp());
             });
@@ -215,9 +278,8 @@ mod single_piece_check {
         fn it_does_not_allow_to_cover_with_en_passant() {
             expectation()
                 .to_change(|board| {
-                    let white_pawn = board.piece_at(&Point::new(2, 2)).unwrap();
                     board
-                        .moves_of(white_pawn)
+                        .moves_of(&PieceId::new(2, &Color::White))
                         .to_vec()
                         .clone_moves()
                 })
@@ -227,16 +289,36 @@ mod single_piece_check {
 
     mod defending_with_queen {
         use super::*;
-        use std::fmt::Debug;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(4, 2),
+            );
 
-            board.add_piece("Queen", Color::Black, vec![], vec![], Point::new(3, 1));
-            board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 1));
+            add_piece(
+                &mut board,
+                "Queen",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(3, 1),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 1),
+            );
 
             println!("{}", board.pp());
             board
@@ -245,11 +327,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let ally_bishop = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
-                assert!(
-                    board.move_piece(&ally_bishop, &PieceMove::Point(Point::new(3, 3))),
-                    "Unable to move {:?} on c3",
-                    ally_bishop
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::White),
+                    PieceMove::Point(Point::new(3, 3)),
                 );
                 println!("{}", board.pp());
             });
@@ -260,9 +341,8 @@ mod single_piece_check {
         fn it_limits_moves_of_enemy_queen() {
             expectation()
                 .to_change(|board| {
-                    let enemy_queen = board.piece_at(&Point::new(3, 1)).unwrap();
                     board
-                        .moves_of(enemy_queen)
+                        .moves_of(&PieceId::new(1, &Color::Black))
                         .to_vec()
                         .clone_moves()
                 })
@@ -277,16 +357,36 @@ mod single_piece_check {
 
     mod defending_with_rook {
         use super::*;
-        use std::fmt::Debug;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(6, 3));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(4, 2),
+            );
 
-            board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 2));
-            board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 1));
+            add_piece(
+                &mut board,
+                "Rook",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(3, 2),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(1, 1),
+            );
 
             println!("{}", board.pp());
             board
@@ -295,11 +395,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let ally_bishop = Rc::clone(board.piece_at(&Point::new(4, 2)).unwrap());
-                assert!(
-                    board.move_piece(&ally_bishop, &PieceMove::Point(Point::new(3, 3))),
-                    "Unable to move {:?} on c3",
-                    ally_bishop
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::White),
+                    PieceMove::Point(Point::new(3, 3)),
                 );
                 println!("{}", board.pp());
             });
@@ -310,9 +409,8 @@ mod single_piece_check {
         fn it_limits_moves_of_enemy_rook() {
             expectation()
                 .to_change(|board| {
-                    let enemy_rook = board.piece_at(&Point::new(3, 2)).unwrap();
                     board
-                        .moves_of(enemy_rook)
+                        .moves_of(&PieceId::new(1, &Color::Black))
                         .to_vec()
                         .clone_moves()
                 })
@@ -327,6 +425,7 @@ mod single_piece_check {
 
     mod discovered_check {
         use super::*;
+        use libtchess::piece_id::PieceId;
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
@@ -334,11 +433,39 @@ mod single_piece_check {
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
             board.pass_turn(&Color::Black);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
-            board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 4),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(1, 1),
+            );
 
-            board.add_piece("Knight", Color::Black, vec![], vec![], Point::new(3, 3));
-            board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
+            add_piece(
+                &mut board,
+                "Knight",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(3, 3),
+            );
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(5, 5),
+            );
 
             println!("{}", board.pp());
             board
@@ -347,11 +474,10 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let enemy_knight = Rc::clone(board.piece_at(&Point::new(3, 3)).unwrap());
-                assert!(
-                    board.move_piece(&enemy_knight, &PieceMove::Point(Point::new(2, 1))),
-                    "Unable to move {:?} on b1",
-                    enemy_knight
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::Black),
+                    PieceMove::Point(Point::new(2, 1)),
                 );
                 println!("{}", board.pp());
             });
@@ -362,9 +488,8 @@ mod single_piece_check {
         fn it_allows_to_block_with_bishop() {
             expectation()
                 .to_change(|board| {
-                    let white_bishop = board.piece_at(&Point::new(2, 4)).unwrap();
                     board
-                        .moves_of(white_bishop)
+                        .moves_of(&PieceId::new(1, &Color::White))
                         .to_vec()
                         .clone_moves()
                 })
@@ -374,18 +499,45 @@ mod single_piece_check {
 
     mod multiple_consecutive_checks {
         use super::*;
-        use std::fmt::Debug;
 
         fn setup_board() -> Board {
             let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
             board.pass_turn(&Color::Black);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
-            board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 4),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 2),
+            );
 
-            board.add_piece("Knight", Color::Black, vec![], vec![], Point::new(3, 3));
-            board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
+            add_piece(
+                &mut board,
+                "Knight",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(3, 3),
+            );
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(4, 4),
+            );
 
             println!("{}", board.pp());
             board
@@ -394,28 +546,24 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let enemy_knight = Rc::clone(board.piece_at(&Point::new(3, 3)).unwrap());
-                let enemy_bishop = Rc::clone(board.piece_at(&Point::new(4, 4)).unwrap());
-                let ally_king = Rc::clone(board.piece_at(&Point::new(2, 2)).unwrap());
-
-                assert!(
-                    board.move_piece(&enemy_knight, &PieceMove::Point(Point::new(2, 1))),
-                    "Unable to move {:?} on b1",
-                    enemy_knight
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::Black),
+                    PieceMove::Point(Point::new(2, 1)),
                 );
                 println!("{}", board.pp());
 
-                assert!(
-                    board.move_piece(&ally_king, &PieceMove::Point(Point::new(3, 1))),
-                    "Unable to move {:?} on c1",
-                    ally_king
+                move_piece(
+                    board,
+                    PieceId::new(2, &Color::White),
+                    PieceMove::Point(Point::new(3, 1)),
                 );
                 println!("{}", board.pp());
 
-                assert!(
-                    board.move_piece(&enemy_bishop, &PieceMove::Point(Point::new(5, 3))),
-                    "Unable to move {:?} on e3",
-                    enemy_bishop
+                move_piece(
+                    board,
+                    PieceId::new(2, &Color::Black),
+                    PieceMove::Point(Point::new(5, 3)),
                 );
                 println!("{}", board.pp());
             });
@@ -426,9 +574,8 @@ mod single_piece_check {
         fn it_allows_to_cover_with_bishop() {
             expectation()
                 .to_change(|board| {
-                    let white_bishop = board.piece_at(&Point::new(2, 4)).unwrap();
                     board
-                        .moves_of(white_bishop)
+                        .moves_of(&PieceId::new(1, &Color::White))
                         .to_vec()
                         .clone_moves()
                 })
@@ -438,6 +585,7 @@ mod single_piece_check {
 
     mod multiple_consecutive_checks_using_multiple_pieces {
         use super::*;
+        use libtchess::piece_id::PieceId;
         use std::fmt::Debug;
 
         fn setup_board() -> Board {
@@ -445,11 +593,39 @@ mod single_piece_check {
             let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
             let mut board = Board::empty(config);
             board.pass_turn(&Color::Black);
-            board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(2, 4));
-            board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 4),
+            );
+            add_piece(
+                &mut board,
+                "King",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 2),
+            );
 
-            board.add_piece("Knight", Color::Black, vec![], vec![], Point::new(3, 3));
-            board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
+            add_piece(
+                &mut board,
+                "Knight",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(3, 3),
+            );
+            add_piece(
+                &mut board,
+                "Bishop",
+                Color::Black,
+                vec![],
+                vec![],
+                Point::new(4, 4),
+            );
 
             println!("{}", board.pp());
             board
@@ -458,27 +634,24 @@ mod single_piece_check {
         fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
             let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
             expectation.expect(|board| {
-                let enemy_knight = Rc::clone(board.piece_at(&Point::new(3, 3)).unwrap());
-                let ally_king = Rc::clone(board.piece_at(&Point::new(2, 2)).unwrap());
-
-                assert!(
-                    board.move_piece(&enemy_knight, &PieceMove::Point(Point::new(2, 1))),
-                    "Unable to move {:?} on b1",
-                    enemy_knight
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::Black),
+                    PieceMove::Point(Point::new(2, 1)),
                 );
                 println!("{}", board.pp());
 
-                assert!(
-                    board.move_piece(&ally_king, &PieceMove::Point(Point::new(2, 3))),
-                    "Unable to move {:?} on b3",
-                    ally_king
+                move_piece(
+                    board,
+                    PieceId::new(2, &Color::White),
+                    PieceMove::Point(Point::new(2, 3)),
                 );
                 println!("{}", board.pp());
 
-                assert!(
-                    board.move_piece(&enemy_knight, &PieceMove::Point(Point::new(4, 2))),
-                    "Unable to move {:?} on d2",
-                    enemy_knight
+                move_piece(
+                    board,
+                    PieceId::new(1, &Color::Black),
+                    PieceMove::Point(Point::new(4, 2)),
                 );
                 println!("{}", board.pp());
             });
@@ -489,9 +662,8 @@ mod single_piece_check {
         fn it_allows_to_capture_the_attacking_piece() {
             expectation()
                 .to_change(|board| {
-                    let white_bishop = board.piece_at(&Point::new(2, 4)).unwrap();
                     board
-                        .moves_of(white_bishop)
+                        .moves_of(&PieceId::new(1, &Color::White))
                         .to_vec()
                         .clone_moves()
                 })
@@ -502,15 +674,44 @@ mod single_piece_check {
 
 mod multiple_pieces_check {
     use super::*;
+    use libtchess::piece_id::PieceId;
     use std::fmt::Debug;
 
     fn setup_board() -> Board {
         let mut board = board_default_4x4();
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
-        board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+        add_piece(
+            &mut board,
+            "Bishop",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(4, 4),
+        );
+        add_piece(
+            &mut board,
+            "Knight",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(3, 3),
+        );
 
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 4));
-        board.add_piece("King", Color::Black, vec![], vec![], Point::new(2, 2));
+        add_piece(
+            &mut board,
+            "Bishop",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(2, 4),
+        );
+        add_piece(
+            &mut board,
+            "King",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(2, 2),
+        );
         println!("{}", board.pp());
         board
     }
@@ -518,11 +719,10 @@ mod multiple_pieces_check {
     fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
         let mut expectation: Expect<T, Board> = Expect::setup(setup_board);
         expectation.expect(|board| {
-            let ally_knight = Rc::clone(board.piece_at(&Point::new(3, 3)).unwrap());
-            assert!(
-                board.move_piece(&ally_knight, &PieceMove::Point(Point::new(4, 1))),
-                "Unable to move {:?} on d1",
-                ally_knight
+            move_piece(
+                board,
+                PieceId::new(2, &Color::White),
+                PieceMove::Point(Point::new(4, 1)),
             );
             println!("{}", board.pp());
         });
@@ -533,9 +733,8 @@ mod multiple_pieces_check {
     fn it_does_not_allow_to_cover_double_check() {
         expectation()
             .to_change(|board| {
-                let enemy_bishop = board.piece_at(&Point::new(2, 4)).unwrap();
                 board
-                    .moves_of(enemy_bishop)
+                    .moves_of(&PieceId::new(1, &Color::Black))
                     .to_vec()
                     .clone_moves()
             })

@@ -1,16 +1,6 @@
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashSet};
-use std::rc::Rc;
-use rustc_hash::FxHashSet;
-use libtchess::board::Board;
-use libtchess::color::Color;
 use libtchess::piece_move::PieceMove;
-use libtchess::piece::Piece;
-
-#[allow(unused)]
-pub trait ClonePieces {
-    fn clone_pieces(&self) -> Vec<Rc<Piece>>;
-}
 
 #[allow(unused)]
 pub trait CloneMoves {
@@ -28,18 +18,6 @@ pub trait ToVecRef {
     type Item;
 
     fn to_vec(&self) -> Vec<&Self::Item>;
-}
-
-impl ClonePieces for Vec<&Rc<Piece>> {
-    fn clone_pieces(&self) -> Vec<Rc<Piece>> {
-        self.iter().map(|piece| Rc::clone(piece)).collect()
-    }
-}
-
-impl ClonePieces for FxHashSet<Rc<Piece>> {
-    fn clone_pieces(&self) -> Vec<Rc<Piece>> {
-        self.iter().map(|piece| Rc::clone(piece)).collect()
-    }
 }
 
 impl CloneMoves for Vec<&PieceMove> {
@@ -82,14 +60,3 @@ impl<T, B> ToVecRef for Option<&HashSet<T, B>> {
         }
     }
 }
-
-impl ToVecRef for Board {
-    type Item = Rc<Piece>;
-
-    fn to_vec(&self) -> Vec<&Self::Item> {
-        let mut pieces = self.active_pieces(&Color::White).to_vec();
-        pieces.append(&mut self.active_pieces(&Color::Black).to_vec());
-        pieces
-    }
-}
-

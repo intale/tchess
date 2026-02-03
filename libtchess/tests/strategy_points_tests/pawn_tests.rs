@@ -20,7 +20,7 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
+        let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -41,8 +41,8 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
+        let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 2));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -61,8 +61,8 @@ mod white_pawn {
     #[test]
     fn when_there_is_an_ally_piece_on_an_attack_point() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
+        let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 2));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -81,8 +81,8 @@ mod white_pawn {
     #[test]
     fn when_an_ally_piece_is_too_far_from_pawn() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(1, 1));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
+        let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(1, 1));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(4, 4));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -117,7 +117,7 @@ mod white_pawn {
                 squares_map,
             );
             let mut board = Board::empty(config);
-            let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 3));
+            let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(3, 3));
 
             println!("{}", board.pp());
             compare_and_assert(
@@ -153,7 +153,7 @@ mod white_pawn {
                 squares_map,
             );
             let mut board = Board::empty(config);
-            let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 3));
+            let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(3, 3));
 
             println!("{}", board.pp());
             compare_and_assert(
@@ -184,7 +184,7 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
+        let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -206,8 +206,8 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
+        let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(2, 2));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(3, 1));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -227,8 +227,8 @@ mod black_pawn {
     fn when_there_is_an_ally_piece_on_an_attack_point() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 2));
+        let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -248,8 +248,8 @@ mod black_pawn {
     fn when_an_ally_piece_is_too_far_from_pawn() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(1, 4));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 1));
+        let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(1, 4));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(4, 1));
 
         println!("{}", board.pp());
         compare_and_assert(
@@ -285,7 +285,7 @@ mod black_pawn {
             );
             let mut board = Board::empty(config);
             board.set_pov(Color::Black);
-            let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
+            let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
 
             println!("{}", board.pp());
             compare_and_assert(
@@ -322,7 +322,7 @@ mod black_pawn {
             );
             let mut board = Board::empty(config);
             board.set_pov(Color::Black);
-            let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
+            let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
 
             println!("{}", board.pp());
             compare_and_assert(

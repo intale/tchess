@@ -1,7 +1,6 @@
-use crate::piece::PieceId;
 use crate::strategy_point::StrategyPoint;
 use rustc_hash::{FxHashMap, FxHashSet};
-use crate::color::Color;
+use crate::piece_id::PieceId;
 use crate::point::Point;
 
 #[derive(Debug)]

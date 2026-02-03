@@ -1,26 +1,25 @@
-use crate::board::{Board, INVERT_COLORS};
+use crate::board::{INVERT_COLORS};
+use crate::board_map::BoardMap;
 use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
 use crate::debuff::{Debuff, DebuffsCollection};
+use crate::dimension::Dimension;
 use crate::piece::{PieceId, PieceInit};
+use crate::piece_move::PieceMove;
 use crate::point::Point;
+use crate::strategy_point::StrategyPoint;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
-use crate::vector_points::VectorPoints;
-use std::cell::Cell;
-use crate::board_map::BoardMap;
-use crate::dimension::Dimension;
-use crate::piece_move::PieceMove;
-use crate::strategy_point::StrategyPoint;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
+use crate::vector_points::VectorPoints;
 
 #[derive(Debug)]
 pub struct Queen {
     color: Color,
     buffs: BuffsCollection,
     debuffs: DebuffsCollection,
-    current_position: Cell<Point>,
+    current_position: Point,
     id: PieceId,
 }
 
@@ -41,21 +40,24 @@ impl Queen {
         &self.color
     }
 
-    pub fn current_position(&self) -> Point {
-        self.current_position.get()
+    pub fn current_position(&self) -> &Point {
+        &self.current_position
     }
 
-    pub fn set_current_position(&self, point: Point) {
-        self.current_position.set(point)
+    pub fn set_current_position(&mut self, point: Point) {
+        self.current_position = point;
     }
 
-    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(&self, board_map: &BoardMap, dimension: &Dimension, mut consumer: F) {
+    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(
+        &self,
+        board_map: &BoardMap,
+        dimension: &Dimension,
+        mut consumer: F,
+    ) {
+        let opposite_king_id = board_map.king_id(&self.color.inverse());
         for direction in self.attack_vectors() {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *dimension,
-                direction,
-            );
+            let vector_points =
+                VectorPoints::without_initial(self.current_position, *dimension, direction);
             for point in vector_points {
                 let square = board_map.board_square(&point);
 
@@ -69,33 +71,35 @@ impl Queen {
                 if square.is_ally_square(&self.color) {
                     consumer(StrategyPoint::Defense(point));
                 }
-                if !square.can_look_through(self.color()) {
+                if !square.can_look_through(&self.color, opposite_king_id) {
                     break;
                 }
             }
         }
     }
 
-    pub fn calculate_moves<F: FnMut(PieceMove)>(&self, board_map: &BoardMap, dimension: &Dimension, mut consumer: F) {
+    pub fn calculate_moves<F: FnMut(PieceMove)>(
+        &self,
+        board_map: &BoardMap,
+        dimension: &Dimension,
+        mut consumer: F,
+    ) {
         let pin = self.debuffs.pin();
-        let available_directions =
-            if pin.is_none() {
-                Vector::diagonal_and_line_vectors()
-            } else {
-                let pin = pin.unwrap();
-                Vector::diagonal_and_line_vectors()
-                    .iter()
-                    .filter(|&&vec| pin == vec || pin.inverse() == vec)
-                    .map(|&vec| vec)
-                    .collect::<Vec<_>>()
-            };
+        let available_directions = if pin.is_none() {
+            Vector::diagonal_and_line_vectors()
+        } else {
+            let pin = pin.unwrap();
+            Vector::diagonal_and_line_vectors()
+                .iter()
+                .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                .map(|&vec| vec)
+                .collect::<Vec<_>>()
+        };
+        let opposite_king_id = board_map.king_id(&self.color.inverse());
 
         for direction in available_directions {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *dimension,
-                direction,
-            );
+            let vector_points =
+                VectorPoints::without_initial(self.current_position, *dimension, direction);
             for point in vector_points {
                 let square = board_map.board_square(&point);
 
@@ -105,8 +109,9 @@ impl Queen {
 
                 let piece_move = PieceMove::Point(point);
 
-                if square.is_empty_square() ||
-                    square.is_capturable_enemy_square(&self.color) {
+                if square.is_empty_square()
+                    || square.is_capturable_enemy_square(&self.color, opposite_king_id)
+                {
                     consumer(piece_move)
                 }
                 if !square.is_empty_square() {
@@ -137,14 +142,14 @@ impl PieceInit for Queen {
         buffs: Vec<Buff>,
         debuffs: Vec<Debuff>,
         current_position: Point,
-        id: usize,
+        id: PieceId,
     ) -> Self {
         Self {
             color,
             buffs: BuffsCollection::new(buffs),
             debuffs: DebuffsCollection::new(debuffs),
-            current_position: Cell::new(current_position),
-            id: PieceId(id),
+            current_position,
+            id,
         }
     }
 }

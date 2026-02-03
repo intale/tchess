@@ -1,44 +1,35 @@
-use std::rc::Rc;
 use crate::board::INVERT_COLORS;
 use crate::color::Color;
-use crate::piece::Piece;
+use crate::piece_id::PieceId;
 use crate::utils::pretty_print::PrettyPrint;
 
 #[derive(Debug)]
 pub struct Square {
-    piece: Option<Rc<Piece>>,
+    piece_id: Option<PieceId>,
     color: Color,
 }
 
 impl Square {
-    pub fn new(color: Color, piece: Option<Rc<Piece>>) -> Self {
-        Self { color, piece }
+    pub fn new(color: Color, piece_id: Option<PieceId>) -> Self {
+        Self { color, piece_id }
     }
 
-    pub fn get_piece_rc(&self) -> Option<Rc<Piece>> {
-        match &self.piece {
-            Some(piece) => Some(Rc::clone(piece)),
-            _ => None
-        }
+    pub fn get_piece_id(&self) -> Option<&PieceId> {
+        self.piece_id.as_ref()
     }
 
-    pub fn set_piece_rc(&mut self, piece: &Rc<Piece>) {
-        self.piece = Some(Rc::clone(piece));
+    pub fn set_piece_id(&mut self, piece_id: &PieceId) {
+        self.piece_id = Some(*piece_id);
     }
 
-    pub fn remove_piece(&mut self) -> Option<Rc<Piece>> {
-        if let Some(piece) = self.piece.take() {
-            self.piece = None;
-            Some(piece)
+    pub fn remove_piece_id(&mut self) -> Option<PieceId> {
+        if let Some(piece_id) = self.piece_id.take() {
+            Some(piece_id)
         } else {
             None
         }
     }
 
-    pub fn get_piece(&self) -> Option<&Rc<Piece>> {
-        self.piece.as_ref()
-    }
-    
     pub fn color(&self) -> &Color {
         &self.color
     }
@@ -51,10 +42,10 @@ impl PrettyPrint for Square {
             Color::White => if INVERT_COLORS { '▓' } else { '░' },
             Color::Black => if INVERT_COLORS { '░' } else { '▓' },
         };
-        match &self.piece {
-            Some(piece) => {
+        match &self.piece_id {
+            Some(piece_id) => {
                 output.push(base_sym);
-                output.push_str(piece.pp().as_str());
+                output.push_str(format!("{}", piece_id.id()).as_str());
                 output.push(base_sym);
             },
             None => output.push_str(format!("{}{}{}", base_sym, base_sym, base_sym).as_str())

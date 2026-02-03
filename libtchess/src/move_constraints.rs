@@ -1,9 +1,8 @@
 use std::collections::BTreeSet;
-use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
+use crate::piece_id::PieceId;
 use crate::move_score::MoveScore;
 use crate::moves_map::{MovesSetT, PieceToMovesMapT};
-use crate::piece::Piece;
 use crate::piece_move::PieceMove;
 
 // Moves map of pieces, used in situations when the king is in check.
@@ -43,35 +42,35 @@ impl MoveConstraints {
         self.scores.clear();
     }
 
-    pub fn moves_of(&self, piece: &Rc<Piece>) -> Option<&MovesSetT> {
-        self.constraints.get(piece)
+    pub fn moves_of(&self, piece_id: &PieceId) -> Option<&MovesSetT> {
+        self.constraints.get(piece_id)
     }
     
-    fn constraint_moves_mut(&mut self, piece: &Rc<Piece>) -> &mut MovesSetT {
-        if !self.constraints.contains_key(piece) {
-            self.constraints.insert(Rc::clone(piece), FxHashSet::default());
+    fn constraint_moves_mut(&mut self, piece_id: &PieceId) -> &mut MovesSetT {
+        if !self.constraints.contains_key(piece_id) {
+            self.constraints.insert(*piece_id, FxHashSet::default());
         }
-        self.constraints.get_mut(piece).unwrap()
+        self.constraints.get_mut(piece_id).unwrap()
     }
 
-    fn s2p_moves_mut(&mut self, score: MoveScore, piece: &Rc<Piece>) -> &mut MovesSetT {
+    fn s2p_moves_mut(&mut self, score: MoveScore, piece_id: &PieceId) -> &mut MovesSetT {
         if !self.score_to_piece_moves.contains_key(&score) {
             self.score_to_piece_moves.insert(score, FxHashMap::default());
         }
         let pieces_hashmap = self.score_to_piece_moves.get_mut(&score).unwrap();
-        if !pieces_hashmap.contains_key(piece) {
-            pieces_hashmap.insert(Rc::clone(piece), FxHashSet::default());
+        if !pieces_hashmap.contains_key(piece_id) {
+            pieces_hashmap.insert(*piece_id, FxHashSet::default());
         }
-        pieces_hashmap.get_mut(piece).unwrap()
+        pieces_hashmap.get_mut(piece_id).unwrap()
     }
 
     pub fn is_empty(&self) -> bool {
         self.constraints.is_empty()
     }
 
-    pub fn add(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove, score: MoveScore) -> bool {
-        self.constraint_moves_mut(piece).insert(*piece_move) 
-            && self.s2p_moves_mut(score, piece).insert(*piece_move) 
+    pub fn add(&mut self, piece_id: &PieceId, piece_move: &PieceMove, score: MoveScore) -> bool {
+        self.constraint_moves_mut(piece_id).insert(*piece_move) 
+            && self.s2p_moves_mut(score, piece_id).insert(*piece_move) 
             && self.scores.insert(score)
     }
 

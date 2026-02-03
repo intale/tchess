@@ -1,4 +1,4 @@
-use crate::board_position::BoardPosition;
+use crate::board_position::{BoardPosition, PieceRepr};
 use crate::classic_heat_map::ClassicHeatMap;
 use crate::classic_square_map::ClassicSquaresMap;
 use crate::game_result::GameResult;
@@ -11,11 +11,10 @@ use libtchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoi
 use libtchess::color::Color;
 use libtchess::dimension::Dimension;
 use libtchess::last_board_changes::LastBoardChanges;
-use libtchess::piece::Piece;
+use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::player::Player;
 use libtchess::point::Point;
-use std::rc::Rc;
 
 const FIFTY_MOVE_RULE_TURNS_COUNT: u8 = 100;
 const MAX_NUMBER_OF_EQUAL_POSITIONS: u8 = 3;
@@ -122,32 +121,34 @@ impl ClassicGame {
     }
 
     pub fn move_piece_at(&mut self, position: &Point, piece_move: &PieceMove) -> MoveResult {
-        let piece = self
+        let &piece_id = self
             .board
-            .piece_at(position)
+            .piece_id_at(position)
             .expect(format!("Could not find piece at {} position", position).as_str());
-        let piece = Rc::clone(piece);
-        self.move_piece(&piece, piece_move)
+        self.move_piece(&piece_id, piece_move)
     }
 
-    pub fn move_piece(&mut self, piece: &Rc<Piece>, piece_move: &PieceMove) -> MoveResult {
+    pub fn move_piece(&mut self, piece_id: &PieceId, piece_move: &PieceMove) -> MoveResult {
         if let Some(game_result) = self.game_result {
             return MoveResult::GameEnded(game_result);
         }
         let opposite_active_pieces_number_was =
-            self.board.active_pieces(&piece.color().inverse()).len();
-        let result = self.board.move_piece(piece, piece_move);
+            self.board.active_pieces(&piece_id.color().inverse()).len();
+        let result = self.board.move_piece(piece_id, piece_move);
         if !result {
             return MoveResult::IllegalMove;
         }
 
         // Non pawn move and not a capture move should be tracked as a move within
         // "50 move-rule". A pawn move and a capture move should reset "50 move-rule" counter.
-        match &**piece {
-            Piece::Pawn(_) => self.game_stats.reset_meaningless_moves_number(),
+        let piece_repr = self.current_position.get_piece(piece_id);
+        match piece_repr {
+            PieceRepr::Pawn(_) => self.game_stats.reset_meaningless_moves_number(),
             _ => {
-                let opposite_active_pieces_number =
-                    self.board.active_pieces(&piece.color().inverse()).len();
+                let opposite_active_pieces_number = self
+                    .board
+                    .active_pieces(&piece_repr.data().color.inverse())
+                    .len();
                 if opposite_active_pieces_number == opposite_active_pieces_number_was {
                     self.game_stats.incr_meaningless_moves_number();
                 } else {
@@ -177,21 +178,25 @@ impl ClassicGame {
     fn process_last_board_changes(&mut self) {
         for change in self.board.last_changes().iter() {
             match change {
-                LastBoardChanges::PieceAdded(piece) => {
-                    self.current_position.add_piece(piece);
-                    self.game_stats.add_active_piece(piece);
+                LastBoardChanges::PieceAdded(piece_id) => {
+                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
+                    let piece_repr = self.current_position.add_piece(piece);
+                    self.game_stats.add_active_piece(piece_repr);
                 }
-                LastBoardChanges::PieceRemoved(piece) => {
-                    self.current_position.remove_piece(piece);
-                    self.game_stats.remove_active_piece(piece);
+                LastBoardChanges::PieceRemoved(piece_id) => {
+                    let piece_repr = self.current_position.remove_piece(piece_id);
+                    self.game_stats.remove_active_piece(&piece_repr);
                 }
-                LastBoardChanges::PiecePositionChanged(piece) => {
+                LastBoardChanges::PiecePositionChanged(piece_id) => {
+                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
                     self.current_position.update_piece_position(piece)
                 }
-                LastBoardChanges::EnPassantChanged(piece) => {
+                LastBoardChanges::EnPassantChanged(piece_id) => {
+                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
                     self.current_position.update_piece_en_passant(piece)
                 }
-                LastBoardChanges::CastleChanged(piece) => {
+                LastBoardChanges::CastleChanged(piece_id) => {
+                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
                     self.current_position.update_piece_en_passant(piece)
                 }
             }
@@ -261,11 +266,7 @@ mod tests {
         println!("{}", classic_game.board().pp());
     }
 
-    fn draw_by_repetition(
-        classic_game: &mut ClassicGame,
-        point: Point,
-        piece_move: PieceMove,
-    ) {
+    fn draw_by_repetition(classic_game: &mut ClassicGame, point: Point, piece_move: PieceMove) {
         assert_eq!(
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::GameEnded(GameResult::DrawByRepetition)

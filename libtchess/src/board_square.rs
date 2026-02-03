@@ -1,13 +1,12 @@
-use std::rc::Rc;
 use crate::color::Color;
-use crate::piece::Piece;
-pub use crate::square::Square;
+use crate::piece_id::PieceId;
+use crate::square::Square;
 use crate::utils::pretty_print::PrettyPrint;
 
 #[derive(Debug)]
 pub enum BoardSquare {
     Square(Square),
-    VoidSquare
+    VoidSquare,
 }
 
 impl BoardSquare {
@@ -20,19 +19,16 @@ impl BoardSquare {
     // 2 ▓▓▓ ░♚░ ▓▓▓ ░░░
     // 1 ░░░ ▓▓▓ ░░░ ▓▓▓
     //    a   b   c   d
-    pub fn can_look_through(&self, color: &Color) -> bool {
+    pub fn can_look_through(&self, color: &Color, opposite_king_id: Option<&PieceId>) -> bool {
         match self {
             Self::Square(square) => {
-                if let Some(piece) = square.get_piece() {
-                    match &**piece {
-                        Piece::King(_) => piece.color() != color,
-                        _ => false
-                    }
+                if let Some(piece_id) = square.get_piece_id() {
+                    &piece_id.color() != color && Some(piece_id) == opposite_king_id
                 } else {
                     // Empty square
                     true
                 }
-            },
+            }
             Self::VoidSquare => false,
         }
     }
@@ -40,31 +36,29 @@ impl BoardSquare {
     pub fn is_enemy_square(&self, color: &Color) -> bool {
         match self {
             Self::Square(square) => {
-                if let Some(piece) = square.get_piece() {
-                    !piece.is_ally(color)
+                if let Some(piece_id) = square.get_piece_id() {
+                    &piece_id.color() != color
                 } else {
                     false
                 }
-            },
+            }
             Self::VoidSquare => false,
         }
     }
 
-    pub fn is_capturable_enemy_square(&self, color: &Color) -> bool {
+    pub fn is_capturable_enemy_square(
+        &self,
+        color: &Color,
+        opposite_king_id: Option<&PieceId>,
+    ) -> bool {
         match self {
             Self::Square(square) => {
-                if let Some(piece) = square.get_piece() {
-                    if piece.is_ally(color) {
-                        return false
-                    }
-                    match &**piece {
-                        Piece::King(_) => false,
-                        _ => true,
-                    }
+                if let Some(piece_id) = square.get_piece_id() {
+                    &piece_id.color() != color && Some(piece_id) != opposite_king_id
                 } else {
                     false
                 }
-            },
+            }
             Self::VoidSquare => false,
         }
     }
@@ -72,21 +66,19 @@ impl BoardSquare {
     pub fn is_ally_square(&self, color: &Color) -> bool {
         match self {
             Self::Square(square) => {
-                if let Some(piece) = square.get_piece() {
-                    piece.is_ally(color)
+                if let Some(piece_id) = square.get_piece_id() {
+                    &piece_id.color() == color
                 } else {
                     false
                 }
-            },
+            }
             Self::VoidSquare => false,
         }
     }
 
     pub fn is_empty_square(&self) -> bool {
         match self {
-            Self::Square(square) => {
-                square.get_piece().is_none()
-            },
+            Self::Square(square) => square.get_piece_id().is_none(),
             Self::VoidSquare => false,
         }
     }
@@ -98,9 +90,9 @@ impl BoardSquare {
         }
     }
 
-    pub fn get_piece(&self) -> Option<&Rc<Piece>> {
+    pub fn get_piece_id(&self) -> Option<&PieceId> {
         match self {
-            Self::Square(square) => square.get_piece(),
+            Self::Square(square) => square.get_piece_id(),
             Self::VoidSquare => None,
         }
     }

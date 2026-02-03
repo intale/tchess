@@ -16,11 +16,11 @@ fn when_there_are_no_pieces_around() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&knight).to_vec(),
+        &board.moves_of(knight.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -39,12 +39,12 @@ fn when_there_is_a_an_enemy_piece_on_an_attack_point() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
-    board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
+    let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&knight).to_vec(),
+        &board.moves_of(knight.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -63,12 +63,12 @@ fn when_there_is_an_ally_piece_on_an_attack_point() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
-    board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 5));
+    let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(4, 5));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&knight).to_vec(),
+        &board.moves_of(knight.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -86,7 +86,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+    let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
     // A box of bishops around the knight
     create_box_of(
@@ -100,7 +100,7 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&knight).to_vec(),
+        &board.moves_of(knight.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -117,13 +117,13 @@ fn when_there_are_ally_pieces_between_the_knight_and_an_enemy_piece() {
 #[test]
 fn when_knight_is_pinned() {
     let mut board = board_default_4x4();
-    let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
-    board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
+    let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 1));
+    add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&knight).to_vec(),
+        &board.moves_of(knight.id()).to_vec(),
         &vec![],
     );
 }
@@ -148,11 +148,11 @@ mod when_there_are_void_squares_on_the_way {
             squares_map,
         );
         let mut board = Board::empty(config);
-        let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+        let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&knight).to_vec(),
+            &board.moves_of(knight.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 1)),
                 &PieceMove::Point(Point::new(1, 2)),
@@ -187,11 +187,11 @@ mod when_there_are_void_squares_on_move_points {
             squares_map,
         );
         let mut board = Board::empty(config);
-        let knight = board.add_piece("Knight", Color::White, vec![], vec![], Point::new(3, 3));
+        let knight = add_piece(&mut board,"Knight", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&knight).to_vec(),
+            &board.moves_of(knight.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 1)),
                 &PieceMove::Point(Point::new(1, 2)),

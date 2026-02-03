@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use libtchess::heat_map::HeatMap;
 use libtchess::piece::Piece;
 use libtchess::point::Point;
@@ -13,8 +12,8 @@ impl ClassicHeatMap {
 
 impl HeatMap for ClassicHeatMap {
     // The actual implementation will be presented later. For now just put stub values here.
-    fn positional_value(&self, piece: &Rc<Piece>, _position: &Point) -> i16 {
-        match &**piece {
+    fn positional_value(&self, piece: &Piece, _position: &Point) -> i16 {
+        match piece {
             Piece::Bishop(_) => 300,
             Piece::King(_) => 0,
             Piece::Knight(_) => 300,

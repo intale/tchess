@@ -3,10 +3,11 @@ mod support;
 
 use libtchess::board::Board;
 use libtchess::color::Color;
+use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
-use std::rc::Rc;
+use std::fmt::Debug;
 use support::traits::{CloneMoves, ToVecRef};
 use support::*;
 use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo};
@@ -19,23 +20,36 @@ mod white_pawn {
 
         mod when_moving_a_piece_of_the_same_color {
             use super::*;
-            use libtchess::piece::PieceId;
-            use std::fmt::Debug;
 
             fn setup() -> Board {
                 let mut board = board_default_4x4();
-                board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-                board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 2));
+                add_piece(
+                    &mut board,
+                    "Pawn",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(2, 2),
+                );
+                add_piece(
+                    &mut board,
+                    "Bishop",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(3, 2),
+                );
                 board
             }
 
             fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
                 let mut expectation: Expect<T, Board> = Expect::setup(setup);
                 expectation.expect(|board| {
-                    let bishop =
-                        Rc::clone(board.find_piece_by_id(&Color::White, &PieceId(2)).unwrap());
-
-                    board.move_piece(&bishop, &PieceMove::Point(Point::new(2, 3)));
+                    move_piece(
+                        board,
+                        PieceId::new(2, &Color::White),
+                        PieceMove::Point(Point::new(2, 3)),
+                    );
                     println!("{}", board.pp());
                 });
                 expectation
@@ -45,8 +59,10 @@ mod white_pawn {
             fn it_unblocks_the_move_square() {
                 expectation()
                     .to_change(|board| {
-                        let pawn = board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap();
-                        board.moves_of(pawn).to_vec().clone_moves()
+                        board
+                            .moves_of(&PieceId::new(1, &Color::White))
+                            .to_vec()
+                            .clone_moves()
                     })
                     .to(|_board| vec![]);
             }
@@ -54,13 +70,25 @@ mod white_pawn {
 
         mod when_moving_a_piece_of_the_opposite_color {
             use super::*;
-            use libtchess::piece::PieceId;
-            use std::fmt::Debug;
 
             fn setup() -> Board {
                 let mut board = board_default_4x4();
-                board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-                board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 2));
+                add_piece(
+                    &mut board,
+                    "Pawn",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(2, 2),
+                );
+                add_piece(
+                    &mut board,
+                    "Bishop",
+                    Color::Black,
+                    vec![],
+                    vec![],
+                    Point::new(3, 2),
+                );
                 board.pass_turn(&Color::Black);
                 board
             }
@@ -68,10 +96,11 @@ mod white_pawn {
             fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
                 let mut expectation: Expect<T, Board> = Expect::setup(setup);
                 expectation.expect(|board| {
-                    let bishop =
-                        Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(2)).unwrap());
-
-                    board.move_piece(&bishop, &PieceMove::Point(Point::new(2, 3)));
+                    move_piece(
+                        board,
+                        PieceId::new(1, &Color::Black),
+                        PieceMove::Point(Point::new(2, 3)),
+                    );
                     println!("{}", board.pp());
                 });
                 expectation
@@ -81,8 +110,10 @@ mod white_pawn {
             fn it_unblocks_the_move_square() {
                 expectation()
                     .to_change(|board| {
-                        let pawn = board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap();
-                        board.moves_of(pawn).to_vec().clone_moves()
+                        board
+                            .moves_of(&PieceId::new(1, &Color::White))
+                            .to_vec()
+                            .clone_moves()
                     })
                     .to(|_board| vec![]);
             }
@@ -94,23 +125,36 @@ mod white_pawn {
 
         mod when_moving_a_piece_of_the_same_color {
             use super::*;
-            use libtchess::piece::PieceId;
-            use std::fmt::Debug;
 
             fn setup() -> Board {
                 let mut board = board_default_4x4();
-                board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-                board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 2));
+                add_piece(
+                    &mut board,
+                    "Pawn",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(2, 2),
+                );
+                add_piece(
+                    &mut board,
+                    "Bishop",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(3, 2),
+                );
                 board
             }
 
             fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
                 let mut expectation: Expect<T, Board> = Expect::setup(setup);
                 expectation.expect(|board| {
-                    let bishop =
-                        Rc::clone(board.find_piece_by_id(&Color::White, &PieceId(2)).unwrap());
-
-                    board.move_piece(&bishop, &PieceMove::Point(Point::new(2, 3)));
+                    move_piece(
+                        board,
+                        PieceId::new(2, &Color::White),
+                        PieceMove::Point(Point::new(2, 3)),
+                    );
                     println!("{}", board.pp());
                 });
                 expectation
@@ -120,8 +164,10 @@ mod white_pawn {
             fn it_unblocks_the_move_square() {
                 expectation()
                     .to_change(|board| {
-                        let pawn = board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap();
-                        board.moves_of(pawn).to_vec().clone_moves()
+                        board
+                            .moves_of(&PieceId::new(1, &Color::White))
+                            .to_vec()
+                            .clone_moves()
                     })
                     .to(|_board| vec![]);
             }
@@ -129,14 +175,25 @@ mod white_pawn {
 
         mod when_moving_a_piece_of_the_opposite_color {
             use super::*;
-            use crate::blocking_unblocking_moves::pawn_tests::support::traits::CloneMoves;
-            use libtchess::piece::PieceId;
-            use std::fmt::Debug;
 
             fn setup() -> Board {
                 let mut board = board_default_4x4();
-                board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
-                board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(2, 3));
+                add_piece(
+                    &mut board,
+                    "Pawn",
+                    Color::White,
+                    vec![],
+                    vec![],
+                    Point::new(2, 2),
+                );
+                add_piece(
+                    &mut board,
+                    "Bishop",
+                    Color::Black,
+                    vec![],
+                    vec![],
+                    Point::new(2, 3),
+                );
                 board.pass_turn(&Color::Black);
                 board
             }
@@ -144,10 +201,11 @@ mod white_pawn {
             fn expectation<T: PartialEq + Debug>() -> Expect<T, Board> {
                 let mut expectation: Expect<T, Board> = Expect::setup(setup);
                 expectation.expect(|board| {
-                    let bishop =
-                        Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(2)).unwrap());
-
-                    board.move_piece(&bishop, &PieceMove::Point(Point::new(3, 2)));
+                    move_piece(
+                        board,
+                        PieceId::new(1, &Color::Black),
+                        PieceMove::Point(Point::new(3, 2)),
+                    );
                     println!("{}", board.pp());
                 });
                 expectation
@@ -157,10 +215,12 @@ mod white_pawn {
             fn it_unblocks_the_move_square() {
                 expectation()
                     .to_change(|board| {
-                        let pawn = board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap();
-                        board.moves_of(pawn).to_vec().clone_moves()
+                        board
+                            .moves_of(&PieceId::new(1, &Color::White))
+                            .to_vec()
+                            .clone_moves()
                     })
-                    .to(|board| vec![PieceMove::Point(Point::new(2, 3))]);
+                    .to(|_board| vec![PieceMove::Point(Point::new(2, 3))]);
             }
         }
     }

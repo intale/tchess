@@ -1,23 +1,31 @@
 #[path = "../support/mod.rs"]
 mod support;
 
-use support::traits::{ToVecCopy};
-use support::*;
-use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, scored_moves::ScoredMoves};
 use libtchess::board::Board;
 use libtchess::color::Color;
 use libtchess::move_score::MoveScore;
+use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
+use support::traits::ToVecCopy;
+use support::*;
+use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, scored_moves::ScoredMoves};
 
 mod when_adding_new_pieces {
     use super::*;
 
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(board_4x4_white_computer);
-        expectation.expect(|board| {
-            board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
+        expectation.expect(|mut board| {
+            add_piece(
+                &mut board,
+                "Pawn",
+                Color::White,
+                vec![],
+                vec![],
+                Point::new(2, 2),
+            );
             println!("{}", board.pp());
         });
         expectation
@@ -52,25 +60,28 @@ mod when_adding_new_pieces {
 }
 
 mod when_moving_a_piece {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_4x4_white_computer();
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 1));
+        add_piece(
+            &mut board,
+            "Pawn",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
         board
     }
 
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let pawn = Rc::clone(board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap());
-            assert!(
-                board.move_piece(&pawn, &PieceMove::Point(Point::new(2, 2))),
-                "Unable to move {} to {}",
-                &pawn,
-                &PieceMove::Point(Point::new(2, 2))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::White),
+                PieceMove::Point(Point::new(2, 2)),
             );
 
             println!("{}", board.pp());
@@ -106,14 +117,26 @@ mod when_moving_a_piece {
 }
 
 mod when_capturing_a_piece {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_3x3_white_computer();
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 2));
+        add_piece(
+            &mut board,
+            "Pawn",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
+        add_piece(
+            &mut board,
+            "Bishop",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(3, 2),
+        );
         board.pass_turn(&Color::Black);
         board
     }
@@ -121,12 +144,10 @@ mod when_capturing_a_piece {
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let bishop = Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(2)).unwrap());
-            assert!(
-                board.move_piece(&bishop, &PieceMove::Point(Point::new(2, 1))),
-                "Unable to move {} to {}",
-                &bishop,
-                &PieceMove::Point(Point::new(2, 1))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::Black),
+                PieceMove::Point(Point::new(2, 1)),
             );
 
             println!("{}", board.pp());
@@ -192,15 +213,34 @@ mod when_capturing_a_piece {
 }
 
 mod when_pinning_a_piece {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_4x4_white_computer();
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 2));
+        add_piece(
+            &mut board,
+            "Pawn",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
+        add_piece(
+            &mut board,
+            "King",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(1, 1),
+        );
+        add_piece(
+            &mut board,
+            "Rook",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(3, 2),
+        );
         board.pass_turn(&Color::Black);
         board
     }
@@ -208,14 +248,11 @@ mod when_pinning_a_piece {
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let rook = Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(3)).unwrap());
-            assert!(
-                board.move_piece(&rook, &PieceMove::Point(Point::new(3, 1))),
-                "Unable to move {} to {}",
-                &rook,
-                &PieceMove::Point(Point::new(3, 1))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::Black),
+                PieceMove::Point(Point::new(3, 1)),
             );
-
             println!("{}", board.pp());
         });
         expectation
@@ -290,15 +327,34 @@ mod when_pinning_a_piece {
 }
 
 mod when_unpinning_a_piece {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_4x4_white_computer();
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 1));
+        add_piece(
+            &mut board,
+            "Pawn",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
+        add_piece(
+            &mut board,
+            "King",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(1, 1),
+        );
+        add_piece(
+            &mut board,
+            "Rook",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(3, 1),
+        );
         board.pass_turn(&Color::Black);
         board
     }
@@ -306,12 +362,10 @@ mod when_unpinning_a_piece {
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let rook = Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(3)).unwrap());
-            assert!(
-                board.move_piece(&rook, &PieceMove::Point(Point::new(3, 2))),
-                "Unable to move {} to {}",
-                &rook,
-                &PieceMove::Point(Point::new(3, 2))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::Black),
+                PieceMove::Point(Point::new(3, 2)),
             );
 
             println!("{}", board.pp());
@@ -382,15 +436,34 @@ mod when_unpinning_a_piece {
 }
 
 mod when_checking_the_king {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_4x4_white_computer();
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(4, 3));
+        add_piece(
+            &mut board,
+            "Bishop",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(3, 1),
+        );
+        add_piece(
+            &mut board,
+            "King",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
+        add_piece(
+            &mut board,
+            "Rook",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(4, 3),
+        );
         board.pass_turn(&Color::Black);
         board
     }
@@ -398,12 +471,10 @@ mod when_checking_the_king {
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let rook = Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(3)).unwrap());
-            assert!(
-                board.move_piece(&rook, &PieceMove::Point(Point::new(2, 3))),
-                "Unable to move {} to {}",
-                &rook,
-                &PieceMove::Point(Point::new(2, 3))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::Black),
+                PieceMove::Point(Point::new(2, 3)),
             );
 
             println!("{}", board.pp());
@@ -482,15 +553,34 @@ mod when_checking_the_king {
 }
 
 mod when_capturing_the_piece_caused_the_check {
-    use std::rc::Rc;
-    use libtchess::piece::PieceId;
     use super::*;
 
     fn setup() -> Board {
         let mut board = board_4x4_white_computer();
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 1));
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(4, 2));
+        add_piece(
+            &mut board,
+            "Bishop",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(3, 1),
+        );
+        add_piece(
+            &mut board,
+            "King",
+            Color::White,
+            vec![],
+            vec![],
+            Point::new(2, 1),
+        );
+        add_piece(
+            &mut board,
+            "Rook",
+            Color::Black,
+            vec![],
+            vec![],
+            Point::new(4, 2),
+        );
         board.pass_turn(&Color::Black);
         board
     }
@@ -498,22 +588,17 @@ mod when_capturing_the_piece_caused_the_check {
     fn expectation<T: std::fmt::Debug + PartialEq>() -> Expect<Vec<T>, Board> {
         let mut expectation: Expect<Vec<T>, Board> = Expect::setup(setup);
         expectation.expect(|board| {
-            let black_rook = Rc::clone(board.find_piece_by_id(&Color::Black, &PieceId(3)).unwrap());
-            let white_bishop = Rc::clone(board.find_piece_by_id(&Color::White, &PieceId(1)).unwrap());
-
-            assert!(
-                board.move_piece(&black_rook, &PieceMove::Point(Point::new(2, 2))),
-                "Unable to move {} to {}",
-                &black_rook,
-                &PieceMove::Point(Point::new(2, 2))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::Black),
+                PieceMove::Point(Point::new(2, 2)),
             );
             println!("{}", board.pp());
 
-            assert!(
-                board.move_piece(&white_bishop, &PieceMove::Point(Point::new(2, 2))),
-                "Unable to move {} to {}",
-                &white_bishop,
-                &PieceMove::Point(Point::new(2, 2))
+            move_piece(
+                board,
+                PieceId::new(1, &Color::White),
+                PieceMove::Point(Point::new(2, 2)),
             );
             println!("{}", board.pp());
         });

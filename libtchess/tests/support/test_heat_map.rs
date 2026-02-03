@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use libtchess::heat_map::HeatMap;
 use libtchess::piece::Piece;
 use libtchess::point::Point;
@@ -92,11 +91,11 @@ impl TestHeatMap {
 }
 
 impl HeatMap for TestHeatMap {
-    fn positional_value(&self, piece: &Rc<Piece>, position: &Point) -> i16 {
+    fn positional_value(&self, piece: &Piece, position: &Point) -> i16 {
         let x = *position.x().value() as usize - 1;
         let y = *position.y().value() as usize - 1;
 
-        match &**piece {
+        match piece {
             Piece::Bishop(_) => self.map_bishop[y][x],
             Piece::King(_) => self.map_king[y][x],
             Piece::Knight(_) => self.map_knight[y][x],

@@ -1,9 +1,7 @@
-use crate::board_position::BoardPosition;
+use crate::board_position::{BoardPosition, PieceRepr, ZKey};
 use libtchess::color::Color;
 use libtchess::colored_property::ColoredProperty;
-use libtchess::piece::Piece;
 use rustc_hash::FxHashMap;
-use std::rc::Rc;
 
 #[derive(Eq, PartialEq)]
 struct ActivePiecesStats {
@@ -42,8 +40,8 @@ pub struct GameStats {
     move_number: usize,
     // Moves number made to trigger so called "50 move-rule"
     meaningless_moves_number: u8,
-    persisted_positions: FxHashMap<BoardPosition, u8>,
-    most_frequent_position: Option<(BoardPosition, u8)>,
+    persisted_positions: FxHashMap<ZKey, u8>,
+    most_frequent_position: Option<(ZKey, u8)>,
 }
 
 impl GameStats {
@@ -76,31 +74,25 @@ impl GameStats {
         &self.meaningless_moves_number
     }
 
-    pub fn add_active_piece(&mut self, piece: &Rc<Piece>) {
-        match &**piece {
-            Piece::Bishop(_) => self.active_pieces_stats[piece.color()].bishop_count += 1,
-            Piece::King(_) => self.active_pieces_stats[piece.color()].king_count += 1,
-            Piece::Knight(_) => self.active_pieces_stats[piece.color()].knight_count += 1,
-            Piece::Pawn(_) => self.active_pieces_stats[piece.color()].pawn_count += 1,
-            Piece::Queen(_) => self.active_pieces_stats[piece.color()].queen_count += 1,
-            Piece::Rook(_) => self.active_pieces_stats[piece.color()].rook_count += 1,
-            Piece::UnknownPiece(_) => {
-                panic!("Unknown piece can't be tracked within active pieces list")
-            }
+    pub fn add_active_piece(&mut self, piece: &PieceRepr) {
+        match piece {
+            PieceRepr::Bishop(_) => self.active_pieces_stats[&piece.data().color].bishop_count += 1,
+            PieceRepr::King(_) => self.active_pieces_stats[&piece.data().color].king_count += 1,
+            PieceRepr::Knight(_) => self.active_pieces_stats[&piece.data().color].knight_count += 1,
+            PieceRepr::Pawn(_) => self.active_pieces_stats[&piece.data().color].pawn_count += 1,
+            PieceRepr::Queen(_) => self.active_pieces_stats[&piece.data().color].queen_count += 1,
+            PieceRepr::Rook(_) => self.active_pieces_stats[&piece.data().color].rook_count += 1,
         }
     }
 
-    pub fn remove_active_piece(&mut self, piece: &Rc<Piece>) {
-        match &**piece {
-            Piece::Bishop(_) => self.active_pieces_stats[piece.color()].bishop_count -= 1,
-            Piece::King(_) => self.active_pieces_stats[piece.color()].king_count -= 1,
-            Piece::Knight(_) => self.active_pieces_stats[piece.color()].knight_count -= 1,
-            Piece::Pawn(_) => self.active_pieces_stats[piece.color()].pawn_count -= 1,
-            Piece::Queen(_) => self.active_pieces_stats[piece.color()].queen_count -= 1,
-            Piece::Rook(_) => self.active_pieces_stats[piece.color()].rook_count -= 1,
-            Piece::UnknownPiece(_) => {
-                panic!("Unknown piece can't be tracked within active pieces list")
-            }
+    pub fn remove_active_piece(&mut self, piece: &PieceRepr) {
+        match piece {
+            PieceRepr::Bishop(_) => self.active_pieces_stats[&piece.data().color].bishop_count -= 1,
+            PieceRepr::King(_) => self.active_pieces_stats[&piece.data().color].king_count -= 1,
+            PieceRepr::Knight(_) => self.active_pieces_stats[&piece.data().color].knight_count -= 1,
+            PieceRepr::Pawn(_) => self.active_pieces_stats[&piece.data().color].pawn_count -= 1,
+            PieceRepr::Queen(_) => self.active_pieces_stats[&piece.data().color].queen_count -= 1,
+            PieceRepr::Rook(_) => self.active_pieces_stats[&piece.data().color].rook_count -= 1,
         }
     }
 
@@ -109,21 +101,22 @@ impl GameStats {
     }
 
     pub fn persist_position(&mut self, board_position: &BoardPosition) {
-        if !self.persisted_positions.contains_key(board_position) {
-            self.persisted_positions.insert(board_position.copy(), 0);
+        let zkey = board_position.zkey();
+        if !self.persisted_positions.contains_key(zkey) {
+            self.persisted_positions.insert(*zkey, 0);
         }
-        let occurrences_num = self.persisted_positions.get_mut(board_position).unwrap();
+        let occurrences_num = self.persisted_positions.get_mut(zkey).unwrap();
         *occurrences_num += 1;
         if let Some((_, old_occurrences)) = self.most_frequent_position.as_mut() {
             if occurrences_num > old_occurrences {
-                self.most_frequent_position = Some((board_position.copy(), *occurrences_num))
+                self.most_frequent_position = Some((*zkey, *occurrences_num))
             }
         } else {
-            self.most_frequent_position = Some((board_position.copy(), *occurrences_num))
+            self.most_frequent_position = Some((*zkey, *occurrences_num))
         }
     }
 
-    pub fn most_frequent_position(&self) -> Option<&(BoardPosition, u8)> {
+    pub fn most_frequent_position(&self) -> Option<&(ZKey, u8)> {
         self.most_frequent_position.as_ref()
     }
 }

@@ -19,11 +19,11 @@ mod white_pawn {
     #[test]
     fn when_there_are_no_pieces_around() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 2));
+        let pawn = add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 3))],
         );
     }
@@ -31,7 +31,7 @@ mod white_pawn {
     #[test]
     fn when_there_are_no_pieces_around_and_additional_move_point_is_available() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
@@ -41,7 +41,7 @@ mod white_pawn {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -52,18 +52,18 @@ mod white_pawn {
     #[test]
     fn when_there_is_an_enemy_piece_on_the_way() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 4));
+        add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(2, 4));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 3))],
         );
     }
@@ -71,18 +71,18 @@ mod white_pawn {
     #[test]
     fn when_there_is_an_ally_piece_on_the_way() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 4));
+        add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 4));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 3))],
         );
     }
@@ -90,18 +90,18 @@ mod white_pawn {
     #[test]
     fn when_there_is_an_enemy_piece_on_attack_point() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -113,18 +113,18 @@ mod white_pawn {
     #[test]
     fn when_there_is_an_ally_piece_on_attack_point() {
         let mut board = board_default_4x4();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -137,20 +137,20 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 5));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 1));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(2, 5));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 4)),
@@ -163,20 +163,20 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 2));
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(5, 2));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(1, 2));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(5, 2));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![],
         );
     }
@@ -187,20 +187,20 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(1, 3));
+        add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(1, 1));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(1, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![],
         );
     }
@@ -210,19 +210,19 @@ mod white_pawn {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 2),
         );
-        board.add_piece("King", Color::White, vec![], vec![], Point::new(1, 1));
-        board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(1, 1));
+        add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(3, 3))],
         );
     }
@@ -230,14 +230,14 @@ mod white_pawn {
     #[test]
     fn unblocking_the_move_square_by_moving_the_same_color_piece() {
         let mut board = board_default_5x5();
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![],
             vec![],
             Point::new(2, 2),
         );
-        let bishop = board.add_piece(
+        let bishop = add_piece(&mut board,
             "Bishop",
             Color::White,
             vec![],
@@ -245,11 +245,11 @@ mod white_pawn {
             Point::new(2, 3),
         );
 
-        board.move_piece(&bishop, &PieceMove::Point(Point::new(3, 2)));
+        move_piece(&mut board, *bishop.id(), PieceMove::Point(Point::new(3, 2)));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 3))],
         );
     }
@@ -257,14 +257,14 @@ mod white_pawn {
     #[test]
     fn unblocking_the_move_square_by_moving_the_opposite_color_piece() {
         let mut board = board_default_5x5();
-        let white_pawn = board.add_piece(
+        let white_pawn = add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![],
             vec![],
             Point::new(2, 2),
         );
-        let black_bishop = board.add_piece(
+        let black_bishop = add_piece(&mut board,
             "Bishop",
             Color::Black,
             vec![],
@@ -273,11 +273,11 @@ mod white_pawn {
         );
 
         board.pass_turn(&Color::Black);
-        board.move_piece(&black_bishop, &PieceMove::Point(Point::new(3, 2)));
+        move_piece(&mut board, *black_bishop.id(), PieceMove::Point(Point::new(3, 2)));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&white_pawn).to_vec(),
+            &board.moves_of(white_pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 3))],
         );
     }
@@ -302,7 +302,7 @@ mod white_pawn {
                 squares_map,
             );
             let mut board = Board::empty(config);
-            let pawn = board.add_piece(
+            let pawn = add_piece(&mut board,
                 "Pawn",
                 Color::White,
                 vec![Buff::AdditionalPoint],
@@ -312,7 +312,7 @@ mod white_pawn {
 
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves_of(&pawn).to_vec(),
+                &board.moves_of(pawn.id()).to_vec(),
                 &vec![],
             );
         }
@@ -329,11 +329,11 @@ mod black_pawn {
     fn when_there_are_no_pieces_around() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 3));
+        let pawn = add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(2, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 2))],
         );
     }
@@ -342,7 +342,7 @@ mod black_pawn {
     fn when_there_are_no_pieces_around_and_additional_move_point_is_available() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
@@ -352,7 +352,7 @@ mod black_pawn {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -364,18 +364,18 @@ mod black_pawn {
     fn when_there_is_an_enemy_piece_on_the_way() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 3),
         );
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(2, 1));
+        add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(2, 1));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 2))],
         );
     }
@@ -384,18 +384,18 @@ mod black_pawn {
     fn when_there_is_an_ally_piece_on_the_way() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 3),
         );
-        board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(2, 1));
+        add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(2, 1));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(2, 2))],
         );
     }
@@ -404,18 +404,18 @@ mod black_pawn {
     fn when_there_is_an_enemy_piece_on_attack_point() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 3),
         );
-        board.add_piece("Pawn", Color::White, vec![], vec![], Point::new(3, 2));
+        add_piece(&mut board,"Pawn", Color::White, vec![], vec![], Point::new(3, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -428,18 +428,18 @@ mod black_pawn {
     fn when_there_is_an_ally_piece_on_attack_point() {
         let mut board = board_default_4x4();
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 3),
         );
-        board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(3, 2));
+        add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(3, 2));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::LongMove(Point::new(2, 1)),
@@ -453,20 +453,20 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 4),
         );
-        board.add_piece("King", Color::Black, vec![], vec![], Point::new(2, 5));
-        board.add_piece("Rook", Color::White, vec![], vec![], Point::new(2, 1));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::Black, vec![], vec![], Point::new(2, 5));
+        add_piece(&mut board,"Rook", Color::White, vec![], vec![], Point::new(2, 1));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::LongMove(Point::new(2, 2)),
@@ -480,20 +480,20 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 4),
         );
-        board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 4));
-        board.add_piece("Rook", Color::White, vec![], vec![], Point::new(5, 4));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::Black, vec![], vec![], Point::new(1, 4));
+        add_piece(&mut board,"Rook", Color::White, vec![], vec![], Point::new(5, 4));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![],
         );
     }
@@ -505,20 +505,20 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 4),
         );
-        board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 5));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 2));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(1, 3));
+        add_piece(&mut board,"King", Color::Black, vec![], vec![], Point::new(1, 5));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(4, 2));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(1, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![],
         );
     }
@@ -529,19 +529,19 @@ mod black_pawn {
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
         board.set_pov(Color::Black);
-        let pawn = board.add_piece(
+        let pawn = add_piece(&mut board,
             "Pawn",
             Color::Black,
             vec![Buff::AdditionalPoint],
             vec![],
             Point::new(2, 4),
         );
-        board.add_piece("King", Color::Black, vec![], vec![], Point::new(1, 5));
-        board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"King", Color::Black, vec![], vec![], Point::new(1, 5));
+        add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&pawn).to_vec(),
+            &board.moves_of(pawn.id()).to_vec(),
             &vec![&PieceMove::Point(Point::new(3, 3))],
         );
     }
@@ -567,7 +567,7 @@ mod black_pawn {
             );
             let mut board = Board::empty(config);
             board.set_pov(Color::Black);
-            let pawn = board.add_piece(
+            let pawn = add_piece(&mut board,
                 "Pawn",
                 Color::Black,
                 vec![Buff::AdditionalPoint],
@@ -577,7 +577,7 @@ mod black_pawn {
 
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves_of(&pawn).to_vec(),
+                &board.moves_of(pawn.id()).to_vec(),
                 &vec![],
             );
         }

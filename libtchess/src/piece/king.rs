@@ -1,30 +1,29 @@
-use crate::board::{Board, INVERT_COLORS};
-use crate::buff::{Buff, BuffsCollection};
-use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
-use crate::piece::{Piece, PieceId, PieceInit};
-use crate::point::Point;
-use crate::utils::pretty_print::PrettyPrint;
-use crate::vector::Vector;
-use crate::vector_points::VectorPoints;
-use std::cell::Cell;
-use std::rc::Rc;
+use crate::board::INVERT_COLORS;
 use crate::board_config::BoardConfig;
 use crate::board_map::BoardMap;
+use crate::buff::{Buff, BuffsCollection};
 use crate::castle_points::{CastlePoints, CastleSide};
+use crate::color::Color;
+use crate::debuff::{Debuff, DebuffsCollection};
 use crate::dimension::Dimension;
-use crate::piece_move::{PieceMove};
+use crate::piece::{Piece, PieceInit};
+use crate::piece_id::PieceId;
+use crate::piece_move::PieceMove;
+use crate::point::Point;
 use crate::strategy_point::StrategyPoint;
 use crate::strategy_points::StrategyPoints;
+use crate::utils::pretty_print::PrettyPrint;
+use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
+use crate::vector_points::VectorPoints;
 
 #[derive(Debug)]
 pub struct King {
     color: Color,
     buffs: BuffsCollection,
     debuffs: DebuffsCollection,
-    current_position: Cell<Point>,
+    current_position: Point,
     id: PieceId,
 }
 
@@ -45,71 +44,23 @@ impl King {
         &self.color
     }
 
-    pub fn current_position(&self) -> Point {
-        self.current_position.get()
+    pub fn current_position(&self) -> &Point {
+        &self.current_position
     }
 
-    pub fn set_current_position(&self, point: Point) {
-        self.current_position.set(point)
+    pub fn set_current_position(&mut self, point: Point) {
+        self.current_position = point;
     }
 
-    pub fn attack_points(&self, board: &Board) -> Vec<Point> {
-        let mut points: Vec<Point> = vec![];
-
+    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(
+        &self,
+        board_map: &BoardMap,
+        dimension: &Dimension,
+        mut consumer: F,
+    ) {
         for direction in self.attack_vectors() {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *board.dimension(),
-                direction,
-            );
-            for point in vector_points {
-                let square = board.board_square(&point);
-
-                if square.is_void_square() {
-                    break;
-                }
-                if square.is_empty_square() || square.is_enemy_square(&self.color) {
-                    points.push(point)
-                }
-                break;
-            }
-        }
-
-        points
-    }
-
-    pub fn defensive_points(&self, board: &Board) -> Vec<Point> {
-        let mut points: Vec<Point> = vec![];
-
-        for direction in self.attack_vectors() {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *board.dimension(),
-                direction,
-            );
-            for point in vector_points {
-                let square = board.board_square(&point);
-
-                if square.is_void_square() {
-                    break;
-                }
-                if square.is_ally_square(&self.color) {
-                    points.push(point)
-                }
-                break;
-            }
-        }
-
-        points
-    }
-
-    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(&self, board_map: &BoardMap, dimension: &Dimension, mut consumer: F) {
-        for direction in self.attack_vectors() {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *dimension,
-                direction,
-            );
+            let vector_points =
+                VectorPoints::without_initial(self.current_position, *dimension, direction);
             for point in vector_points {
                 let square = board_map.board_square(&point);
 
@@ -128,15 +79,19 @@ impl King {
         }
     }
 
-    pub fn calculate_moves<F: FnMut(PieceMove)>(&self, board_map: &BoardMap, dimension: &Dimension, board_config: &BoardConfig, opposite_strategy_points: &StrategyPoints, mut consumer: F) {
+    pub fn calculate_moves<F: FnMut(PieceMove)>(
+        &self,
+        board_map: &BoardMap,
+        dimension: &Dimension,
+        board_config: &BoardConfig,
+        opposite_strategy_points: &StrategyPoints,
+        mut consumer: F,
+    ) {
         let available_directions = Vector::diagonal_and_line_vectors();
 
         for direction in available_directions {
-            let vector_points = VectorPoints::without_initial(
-                self.current_position.get(),
-                *dimension,
-                direction,
-            );
+            let vector_points =
+                VectorPoints::without_initial(self.current_position, *dimension, direction);
             for point in vector_points {
                 let square = board_map.board_square(&point);
 
@@ -147,45 +102,53 @@ impl King {
                     consumer(PieceMove::Point(point));
                     break;
                 }
-                if square.is_enemy_square(&self.color) &&
-                    !opposite_strategy_points.is_under_enemy_defense(&point) {
+                if square.is_enemy_square(&self.color)
+                    && !opposite_strategy_points.is_under_enemy_defense(&point)
+                {
                     consumer(PieceMove::Point(point));
                 }
-                break
+                break;
             }
         }
 
         if !self.debuffs.has_check() && self.buffs.has_castle() {
-            self.castle_moves(board_map, dimension, board_config, opposite_strategy_points, consumer);
+            self.castle_moves(
+                board_map,
+                dimension,
+                board_config,
+                opposite_strategy_points,
+                consumer,
+            );
         }
     }
 
-    fn castle_moves<F: FnMut(PieceMove)>(&self, board_map: &BoardMap, dimension: &Dimension, board_config: &BoardConfig, opposite_strategy_points: &StrategyPoints, mut consumer: F) {
-        let current_position = self.current_position.get();
+    fn castle_moves<F: FnMut(PieceMove)>(
+        &self,
+        board_map: &BoardMap,
+        dimension: &Dimension,
+        board_config: &BoardConfig,
+        opposite_strategy_points: &StrategyPoints,
+        mut consumer: F,
+    ) {
+        let current_position = self.current_position;
 
         for (king_point, rook_point, side) in self.castle_points(board_config) {
             let mut king_path_is_safe = false;
             let mut rook_path_is_safe = false;
-            let mut ally_rook: Option<&Rc<Piece>> = None;
+            let mut ally_rook: Option<&Piece> = None;
             if current_position == king_point {
                 // King is already on its position - no need to calculate its path.
                 king_path_is_safe = true;
             } else {
-                let direction = LineVector::calc_direction(
-                    &current_position,
-                    &king_point,
-                ).unwrap_or_else(|| {
-                    panic!(
-                        "King at {:#?} is not on the same line with its castle point {:#?}",
-                        current_position, king_point
-                    );
-                });
+                let direction = LineVector::calc_direction(&current_position, &king_point)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "King at {:#?} is not on the same line with its castle point {:#?}",
+                            current_position, king_point
+                        );
+                    });
                 let direction = Vector::Line(direction);
-                let points = VectorPoints::without_initial(
-                    current_position,
-                    *dimension,
-                    direction,
-                );
+                let points = VectorPoints::without_initial(current_position, *dimension, direction);
 
                 for point in points {
                     let square = board_map.board_square(&point);
@@ -194,14 +157,15 @@ impl King {
                         break;
                     }
                     if opposite_strategy_points.is_under_attack(&point) {
-                        break
+                        break;
                     }
-                    if let Some(piece) = square.get_piece() {
+                    if let Some(piece_id) = square.get_piece_id() {
+                        let piece = board_map.find_piece_by_id(piece_id);
                         if piece.is_enemy(self.color()) {
-                            break
+                            break;
                         }
 
-                        match &**piece {
+                        match piece {
                             Piece::Rook(_) => {
                                 if direction == side.direction() && ally_rook.is_none() {
                                     // King meets a rook when looking up its path to its castle
@@ -210,43 +174,40 @@ impl King {
                                     rook_path_is_safe = true;
                                     ally_rook = Some(piece);
                                 } else {
-                                    break
+                                    break;
                                 }
-                            },
+                            }
                             _ => break,
                         }
                     }
                     if point == king_point {
                         king_path_is_safe = true;
-                        break
+                        break;
                     }
                 }
             }
 
             if !king_path_is_safe {
-                continue
+                continue;
             }
 
             // Find rook on the board. The rook to castle with should be to the left for queen
             // side castle and to the right for king side castle. There should not be any
             // pieces between the king and the rook.
             if ally_rook.is_none() {
-                let points = VectorPoints::without_initial(
-                    current_position,
-                    *dimension,
-                    side.direction(),
-                );
+                let points =
+                    VectorPoints::without_initial(current_position, *dimension, side.direction());
 
                 for point in points {
                     if let Some(piece) = board_map.piece_at(&point) {
                         if piece.is_enemy(self.color()) {
-                            break
+                            break;
                         }
-                        match &**piece {
+                        match piece {
                             Piece::Rook(_) => {
                                 ally_rook = Some(piece);
-                                break
-                            },
+                                break;
+                            }
                             _ => break,
                         }
                     }
@@ -259,19 +220,17 @@ impl King {
                 // castle will result in check which would be illegal move. Such kind of pin
                 // is possible in chess 960. We may skip further checks in this case.
                 if !(rook.buffs().has_castle() && rook.debuffs().pin().is_none()) {
-                    continue
+                    continue;
                 }
 
                 // Rook was placed outside of king's path to king's castle point. Thus, we
                 // have to make sure the rook's path to its castle point is safe as well.
                 if !rook_path_is_safe {
-                    let direction = LineVector::calc_direction(
-                        &rook.current_position(),
-                        &rook_point,
-                    );
+                    let direction =
+                        LineVector::calc_direction(&rook.current_position(), &rook_point);
                     if let Some(direction) = direction {
                         let points = VectorPoints::without_initial(
-                            rook.current_position(),
+                            *rook.current_position(),
                             *dimension,
                             Vector::Line(direction),
                         );
@@ -282,33 +241,30 @@ impl King {
                             if square.is_void_square() {
                                 break;
                             }
-                            if let Some(piece) = square.get_piece() {
+                            if let Some(piece_id) = square.get_piece_id() {
+                                let piece = board_map.find_piece_by_id(piece_id);
                                 if piece.is_enemy(self.color()) {
-                                    break
+                                    break;
                                 }
-                                match &**piece {
+                                match piece {
                                     Piece::King(_) => continue,
                                     _ => break,
                                 }
                             }
                             if point == rook_point {
                                 rook_path_is_safe = true;
-                                break
+                                break;
                             }
                         }
                     }
                 }
                 if rook_path_is_safe {
-                    consumer(
-                        PieceMove::Castle(
-                            CastlePoints::new(
-                                king_point,
-                                rook_point,
-                                self.current_position(),
-                                rook.current_position(),
-                            )
-                        )
-                    )
+                    consumer(PieceMove::Castle(CastlePoints::new(
+                        king_point,
+                        rook_point,
+                        self.current_position,
+                        *rook.current_position(),
+                    )))
                 }
             }
         }
@@ -319,15 +275,27 @@ impl King {
         let queen_side_points = config.queen_side_castle_x_points();
         [
             (
-                Point::new(*king_side_points.king_x(), *self.current_position().y().value()),
-                Point::new(*king_side_points.rook_x(), *self.current_position().y().value()),
+                Point::new(
+                    *king_side_points.king_x(),
+                    *self.current_position().y().value(),
+                ),
+                Point::new(
+                    *king_side_points.rook_x(),
+                    *self.current_position().y().value(),
+                ),
                 CastleSide::King,
             ),
             (
-                Point::new(*queen_side_points.king_x(), *self.current_position().y().value()),
-                Point::new(*queen_side_points.rook_x(), *self.current_position().y().value()),
+                Point::new(
+                    *queen_side_points.king_x(),
+                    *self.current_position().y().value(),
+                ),
+                Point::new(
+                    *queen_side_points.rook_x(),
+                    *self.current_position().y().value(),
+                ),
                 CastleSide::Queen,
-            )
+            ),
         ]
     }
 
@@ -352,14 +320,14 @@ impl PieceInit for King {
         buffs: Vec<Buff>,
         debuffs: Vec<Debuff>,
         current_position: Point,
-        id: usize,
+        id: PieceId,
     ) -> Self {
         Self {
             color,
             buffs: BuffsCollection::new(buffs),
             debuffs: DebuffsCollection::new(debuffs),
-            current_position: Cell::new(current_position),
-            id: PieceId(id),
+            current_position,
+            id,
         }
     }
 }

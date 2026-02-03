@@ -1,31 +1,32 @@
-pub mod traits;
 pub mod expect;
-pub mod expect_to_change_to;
 pub mod expect_not_to_change_to;
-pub mod test_squares_map;
-pub mod test_heat_map;
+pub mod expect_to_change_to;
 pub mod scored_moves;
+pub mod test_heat_map;
+pub mod test_squares_map;
+pub mod traits;
 
-use std::env;
-use std::fmt::{Debug, Display};
-use std::rc::Rc;
+use super::scored_moves::ScoredMoves;
+use super::traits::{CloneMoves, ToVecRef};
 use libtchess::board::*;
-use libtchess::board_config::{BoardConfig};
+use libtchess::board_config::BoardConfig;
 use libtchess::buff::Buff;
 use libtchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use libtchess::color::Color;
 use libtchess::debuff::Debuff;
 use libtchess::dimension::Dimension;
 use libtchess::piece::Piece;
+use libtchess::piece_id::PieceId;
+use libtchess::piece_move::PieceMove;
 use libtchess::player::Player;
 use libtchess::point::Point;
 use libtchess::vector::Vector;
 use libtchess::vector::line_vector::LineVector;
 use libtchess::vector_points::VectorPoints;
-use test_squares_map::TestSquaresMap;
+use std::env;
+use std::fmt::{Debug, Display};
 use test_heat_map::TestHeatMap;
-use super::scored_moves::ScoredMoves;
-use super::traits::{CloneMoves, ToVecRef};
+use test_squares_map::TestSquaresMap;
 
 #[allow(unused)]
 pub fn compare<T>(vec1: &Vec<T>, vec2: &Vec<T>) -> Result<String, String>
@@ -49,7 +50,10 @@ where
         if debug {
             format!("{:#?}", obj)
         } else {
-            let str_vec = obj.iter().map(|item| format!("{}", item)).collect::<Vec<_>>();
+            let str_vec = obj
+                .iter()
+                .map(|item| format!("{}", item))
+                .collect::<Vec<_>>();
             format!("{:?}", str_vec)
         }
     };
@@ -58,7 +62,10 @@ where
         if debug {
             format!("{:#?}", obj)
         } else {
-            let str_vec = obj.iter().map(|item| format!("{}", item)).collect::<Vec<_>>();
+            let str_vec = obj
+                .iter()
+                .map(|item| format!("{}", item))
+                .collect::<Vec<_>>();
             format!("{:?}", str_vec)
         }
     };
@@ -68,29 +75,33 @@ where
               Expected {} to match {}. Missing elements: {}.
               Extra elements: {}.
             "#,
-            formatter(vec1), formatter(vec2), ref_formatter(rh_rest), ref_formatter(lh_rest)
+            formatter(vec1),
+            formatter(vec2),
+            ref_formatter(rh_rest),
+            ref_formatter(lh_rest)
         );
         return Err(err);
     }
     if lh_rest.len() > 0 {
         let err = format!(
             "Expected {} to match {}. Extra elements: {}.",
-            formatter(vec1), formatter(vec2), ref_formatter(lh_rest)
+            formatter(vec1),
+            formatter(vec2),
+            ref_formatter(lh_rest)
         );
         return Err(err);
     }
     if rh_rest.len() > 0 {
         let err = format!(
             "Expected {} to match {}. Missing elements: {}.",
-            formatter(vec1), formatter(vec2), ref_formatter(rh_rest)
+            formatter(vec1),
+            formatter(vec2),
+            ref_formatter(rh_rest)
         );
         return Err(err);
     }
     if vec1.len() != vec2.len() {
-        let err = format!(
-            "Expected {} to match {}.",
-            formatter(vec1), formatter(vec2)
-        );
+        let err = format!("Expected {} to match {}.", formatter(vec1), formatter(vec2));
         return Err(err);
     }
     Ok("Arrays match".to_string())
@@ -105,7 +116,7 @@ where
         Ok(_) => (),
         Err(msg) => {
             panic!("{}", msg);
-        },
+        }
     };
 }
 
@@ -174,7 +185,7 @@ pub fn board_config(dimension: Dimension, squares_map: TestSquaresMap) -> BoardC
 
 #[allow(unused)]
 pub fn board_default_3x3() -> Board {
-    let dimension = Dimension::new(Point::new(1,1), Point::new(3, 3));
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
@@ -190,7 +201,7 @@ pub fn board_default_3x3() -> Board {
 
 #[allow(unused)]
 pub fn board_3x3_white_computer() -> Board {
-    let dimension = Dimension::new(Point::new(1,1), Point::new(3, 3));
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
@@ -204,10 +215,9 @@ pub fn board_3x3_white_computer() -> Board {
     Board::empty(config)
 }
 
-
 #[allow(unused)]
 pub fn board_default_4x4() -> Board {
-    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
@@ -223,7 +233,7 @@ pub fn board_default_4x4() -> Board {
 
 #[allow(unused)]
 pub fn board_4x4_white_computer() -> Board {
-    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
@@ -239,7 +249,7 @@ pub fn board_4x4_white_computer() -> Board {
 
 #[allow(unused)]
 pub fn board_default_5x5() -> Board {
-    let dimension = Dimension::new(Point::new(1,1), Point::new(4, 4));
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(4, 4));
     let squares_map = TestSquaresMap::from_dimension(&dimension);
     let config = BoardConfig::new(
         CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
@@ -254,22 +264,20 @@ pub fn board_default_5x5() -> Board {
 }
 
 #[allow(unused)]
-pub fn scored_moves_of(board: &Board, pieces: Vec<&Rc<Piece>>) -> Vec<ScoredMoves> {
+pub fn scored_moves_of(board: &Board, pieces: Vec<&Piece>) -> Vec<ScoredMoves> {
     let mut res = vec![];
 
     for &piece in pieces.iter() {
         let scores = board.move_scores(piece.color());
         for score in scores {
             if let Some(scored_moves) = board.moves_by_score(piece.color(), score) {
-                if let Some(piece_moves) = scored_moves.get(piece) {
-                    res.push(
-                        ScoredMoves::new(
-                            piece.name(),
-                            piece.current_position(),
-                            *score,
-                            piece_moves.to_vec().clone_moves(),
-                        )
-                    )
+                if let Some(piece_moves) = scored_moves.get(piece.id()) {
+                    res.push(ScoredMoves::new(
+                        piece.name(),
+                        *piece.current_position(),
+                        *score,
+                        piece_moves.to_vec().clone_moves(),
+                    ))
                 }
             }
         }
@@ -281,7 +289,68 @@ pub fn scored_moves_of(board: &Board, pieces: Vec<&Rc<Piece>>) -> Vec<ScoredMove
 pub fn all_moves(board: &Board, color: &Color) -> Vec<ScoredMoves> {
     let mut pieces = vec![];
     for score in board.move_scores(color) {
-        pieces.append(&mut board.moves_by_score(color, score).unwrap().keys().collect::<Vec<_>>())
+        pieces.append(
+            &mut board
+                .moves_by_score(color, score)
+                .unwrap()
+                .keys()
+                .collect::<Vec<_>>(),
+        )
     }
+    let pieces = pieces
+        .iter()
+        .map(|piece_id| board.find_piece_by_id(piece_id).unwrap())
+        .collect::<Vec<_>>();
     scored_moves_of(board, pieces)
+}
+
+pub struct PieceRepr {
+    pub id: PieceId,
+    pub color: Color,
+    pub current_position: Point,
+}
+
+impl PieceRepr {
+    pub fn id(&self) -> &PieceId {
+        &self.id
+    }
+
+    pub fn current_position(&self) -> &Point {
+        &self.current_position
+    }
+
+    pub fn color(&self) -> &Color {
+        &self.color
+    }
+}
+
+#[allow(unused)]
+pub fn add_piece(
+    board: &mut Board,
+    piece_name: &str,
+    color: Color,
+    buffs: Vec<Buff>,
+    debuffs: Vec<Debuff>,
+    position: Point,
+) -> PieceRepr {
+    let piece_id = board.add_piece(piece_name, color, buffs, debuffs, position);
+    let piece = board.find_piece_by_id(&piece_id).unwrap();
+
+    PieceRepr {
+        id: piece_id,
+        color: *piece.color(),
+        current_position: *piece.current_position(),
+    }
+}
+
+#[allow(unused)]
+pub fn move_piece(board: &mut Board, piece_id: PieceId, piece_move: PieceMove) {
+    assert!(
+        board.move_piece(&piece_id, &piece_move),
+        "Failed to move {} on {} position",
+        board
+            .find_piece_by_id(&piece_id)
+            .expect(format!("Could not find piece by id {}", piece_id).as_str()),
+        piece_move.destination(),
+    );
 }

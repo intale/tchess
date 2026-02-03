@@ -18,11 +18,11 @@ fn when_there_are_no_pieces_around() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -41,12 +41,12 @@ fn when_there_is_an_enemy_piece_on_the_way() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
-    board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(3, 3));
+    add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -65,13 +65,13 @@ fn when_there_is_a_protected_enemy_piece_on_the_way() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
-    board.add_piece("Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
-    board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(3, 3));
+    add_piece(&mut board,"Pawn", Color::Black, vec![], vec![], Point::new(4, 4));
+    add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(5, 5));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -89,12 +89,12 @@ fn when_there_is_an_ally_piece_on_the_way() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(5, 5));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
-    board.add_piece("Bishop", Color::White, vec![], vec![], Point::new(4, 4));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(3, 3));
+    add_piece(&mut board,"Bishop", Color::White, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(2, 2)),
             &PieceMove::Point(Point::new(2, 3)),
@@ -110,12 +110,12 @@ fn when_there_is_an_ally_piece_on_the_way() {
 #[test]
 fn when_move_points_are_under_attack() {
     let mut board = board_default_4x4();
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("King", Color::Black, vec![], vec![], Point::new(2, 4));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"King", Color::Black, vec![], vec![], Point::new(2, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(3, 2)),
@@ -129,12 +129,12 @@ fn when_move_points_are_under_attack() {
 #[test]
 fn when_king_is_on_the_diagonal_under_attack() {
     let mut board = board_default_4x4();
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(4, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -151,12 +151,12 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
     let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"Bishop", Color::Black, vec![], vec![], Point::new(3, 3));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 2)),
             &PieceMove::Point(Point::new(1, 3)),
@@ -172,12 +172,12 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_diagonal_attack() 
 #[test]
 fn when_king_is_on_the_line_under_attack() {
     let mut board = board_default_4x4();
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 4));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(2, 4));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -194,12 +194,12 @@ fn when_king_is_on_the_attack_range_to_the_enemy_piece_caused_line_attack() {
     let dimension = Dimension::new(Point::new(1, 1), Point::new(3, 3));
     let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
     let mut board = Board::empty(config);
-    let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(2, 2));
-    board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
+    let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(2, 2));
+    add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
     println!("{}", board.pp());
     compare_and_assert(
-        &board.moves_of(&king).to_vec(),
+        &board.moves_of(king.id()).to_vec(),
         &vec![
             &PieceMove::Point(Point::new(1, 1)),
             &PieceMove::Point(Point::new(1, 2)),
@@ -230,11 +230,11 @@ mod when_there_are_void_squares_on_the_way {
             squares_map,
         );
         let mut board = Board::empty(config);
-        let king = board.add_piece("King", Color::White, vec![], vec![], Point::new(3, 3));
+        let king = add_piece(&mut board,"King", Color::White, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 3)),
                 &PieceMove::Point(Point::new(2, 4)),
@@ -255,27 +255,27 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let white_king = board.add_piece(
+        let white_king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 1),
         );
-        board.add_piece("Rook", Color::White, vec![], vec![], Point::new(1, 1));
+        add_piece(&mut board,"Rook", Color::White, vec![], vec![], Point::new(1, 1));
 
-        let black_king = board.add_piece(
+        let black_king = add_piece(&mut board,
             "King",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 8),
         );
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(1, 8));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(1, 8));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&white_king).to_vec(),
+            &board.moves_of(white_king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -286,7 +286,7 @@ mod castle_tests {
         );
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&black_king).to_vec(),
+            &board.moves_of(black_king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 8)),
                 &PieceMove::Point(Point::new(4, 7)),
@@ -302,14 +302,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let white_king = board.add_piece(
+        let white_king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 1),
         );
-        let white_rook = board.add_piece(
+        let white_rook = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -317,14 +317,14 @@ mod castle_tests {
             Point::new(1, 1),
         );
 
-        let black_king = board.add_piece(
+        let black_king = add_piece(&mut board,
             "King",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 8),
         );
-        let black_rook = board.add_piece(
+        let black_rook = add_piece(&mut board,
             "Rook",
             Color::Black,
             vec![Buff::Castle],
@@ -334,13 +334,13 @@ mod castle_tests {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&white_king).to_vec(),
+            &board.moves_of(white_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 1),
                     Point::new(4, 1),
-                    white_king.current_position(),
-                    white_rook.current_position(),
+                    *white_king.current_position(),
+                    *white_rook.current_position(),
                 )),
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -351,13 +351,13 @@ mod castle_tests {
         );
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&black_king).to_vec(),
+            &board.moves_of(black_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 8),
                     Point::new(4, 8),
-                    black_king.current_position(),
-                    black_rook.current_position(),
+                    *black_king.current_position(),
+                    *black_rook.current_position(),
                 )),
                 &PieceMove::Point(Point::new(4, 8)),
                 &PieceMove::Point(Point::new(4, 7)),
@@ -373,21 +373,21 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let white_king = board.add_piece(
+        let white_king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 1),
         );
-        let white_rook1 = board.add_piece(
+        let white_rook1 = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(1, 1),
         );
-        let white_rook2 = board.add_piece(
+        let white_rook2 = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -395,21 +395,21 @@ mod castle_tests {
             Point::new(8, 1),
         );
 
-        let black_king = board.add_piece(
+        let black_king = add_piece(&mut board,
             "King",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 8),
         );
-        let black_rook1 = board.add_piece(
+        let black_rook1 = add_piece(&mut board,
             "Rook",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(1, 8),
         );
-        let black_rook2 = board.add_piece(
+        let black_rook2 = add_piece(&mut board,
             "Rook",
             Color::Black,
             vec![Buff::Castle],
@@ -419,19 +419,19 @@ mod castle_tests {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&white_king).to_vec(),
+            &board.moves_of(white_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 1),
                     Point::new(4, 1),
-                    white_king.current_position(),
-                    white_rook1.current_position(),
+                    *white_king.current_position(),
+                    *white_rook1.current_position(),
                 )),
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(7, 1),
                     Point::new(6, 1),
-                    white_king.current_position(),
-                    white_rook2.current_position(),
+                    *white_king.current_position(),
+                    *white_rook2.current_position(),
                 )),
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -442,19 +442,19 @@ mod castle_tests {
         );
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&black_king).to_vec(),
+            &board.moves_of(black_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 8),
                     Point::new(4, 8),
-                    black_king.current_position(),
-                    black_rook1.current_position(),
+                    *black_king.current_position(),
+                    *black_rook1.current_position(),
                 )),
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(7, 8),
                     Point::new(6, 8),
-                    black_king.current_position(),
-                    black_rook2.current_position(),
+                    *black_king.current_position(),
+                    *black_rook2.current_position(),
                 )),
                 &PieceMove::Point(Point::new(4, 8)),
                 &PieceMove::Point(Point::new(4, 7)),
@@ -470,21 +470,21 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let white_king = board.add_piece(
+        let white_king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(4, 1),
         );
-        let white_rook1 = board.add_piece(
+        let white_rook1 = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(3, 1),
         );
-        let white_rook2 = board.add_piece(
+        let white_rook2 = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -492,14 +492,14 @@ mod castle_tests {
             Point::new(5, 1),
         );
         // Add two white pawns so they cover castle way of both sides
-        board.add_piece(
+        add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(3, 2),
         );
-        board.add_piece(
+        add_piece(&mut board,
             "Pawn",
             Color::White,
             vec![Buff::Castle],
@@ -507,21 +507,21 @@ mod castle_tests {
             Point::new(5, 2),
         );
 
-        let black_king = board.add_piece(
+        let black_king = add_piece(&mut board,
             "King",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(4, 8),
         );
-        let black_rook1 = board.add_piece(
+        let black_rook1 = add_piece(&mut board,
             "Rook",
             Color::Black,
             vec![Buff::Castle],
             vec![],
             Point::new(3, 8),
         );
-        let black_rook2 = board.add_piece(
+        let black_rook2 = add_piece(&mut board,
             "Rook",
             Color::Black,
             vec![Buff::Castle],
@@ -531,38 +531,38 @@ mod castle_tests {
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&white_king).to_vec(),
+            &board.moves_of(white_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 1),
                     Point::new(4, 1),
-                    white_king.current_position(),
-                    white_rook1.current_position(),
+                    *white_king.current_position(),
+                    *white_rook1.current_position(),
                 )),
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(7, 1),
                     Point::new(6, 1),
-                    white_king.current_position(),
-                    white_rook2.current_position(),
+                    *white_king.current_position(),
+                    *white_rook2.current_position(),
                 )),
                 &PieceMove::Point(Point::new(4, 2)),
             ],
         );
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&black_king).to_vec(),
+            &board.moves_of(black_king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 8),
                     Point::new(4, 8),
-                    black_king.current_position(),
-                    black_rook1.current_position(),
+                    *black_king.current_position(),
+                    *black_rook1.current_position(),
                 )),
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(7, 8),
                     Point::new(6, 8),
-                    black_king.current_position(),
-                    black_rook2.current_position(),
+                    *black_king.current_position(),
+                    *black_rook2.current_position(),
                 )),
                 &PieceMove::Point(Point::new(3, 7)),
                 &PieceMove::Point(Point::new(4, 7)),
@@ -576,14 +576,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let king = board.add_piece(
+        let king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(5, 1),
         );
-        board.add_piece(
+        add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -591,11 +591,11 @@ mod castle_tests {
             Point::new(1, 1),
         );
 
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(3, 3));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(3, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(4, 1)),
                 &PieceMove::Point(Point::new(4, 2)),
@@ -611,14 +611,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let king = board.add_piece(
+        let king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(7, 1),
         );
-        board.add_piece(
+        add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -626,11 +626,11 @@ mod castle_tests {
             Point::new(5, 1),
         );
 
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(5, 3));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(5, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
                 &PieceMove::Point(Point::new(6, 2)),
@@ -646,14 +646,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let king = board.add_piece(
+        let king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(7, 1),
         );
-        let white_rook = board.add_piece(
+        let white_rook = add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -661,17 +661,17 @@ mod castle_tests {
             Point::new(1, 1),
         );
 
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(2, 3));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(2, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Castle(CastlePoints::new(
                     Point::new(3, 1),
                     Point::new(4, 1),
-                    king.current_position(),
-                    white_rook.current_position(),
+                    *king.current_position(),
+                    *white_rook.current_position(),
                 )),
                 &PieceMove::Point(Point::new(6, 1)),
                 &PieceMove::Point(Point::new(6, 2)),
@@ -687,14 +687,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let king = board.add_piece(
+        let king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(7, 1),
         );
-        board.add_piece(
+        add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -702,11 +702,11 @@ mod castle_tests {
             Point::new(1, 1),
         );
 
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(7, 3));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(7, 3));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(6, 1)),
                 &PieceMove::Point(Point::new(6, 2)),
@@ -721,14 +721,14 @@ mod castle_tests {
         let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 3));
         let config = board_config(dimension, TestSquaresMap::from_dimension(&dimension));
         let mut board = Board::empty(config);
-        let king = board.add_piece(
+        let king = add_piece(&mut board,
             "King",
             Color::White,
             vec![Buff::Castle],
             vec![],
             Point::new(3, 1),
         );
-        board.add_piece(
+        add_piece(&mut board,
             "Rook",
             Color::White,
             vec![Buff::Castle],
@@ -736,11 +736,11 @@ mod castle_tests {
             Point::new(2, 1),
         );
 
-        board.add_piece("Rook", Color::Black, vec![], vec![], Point::new(1, 1));
+        add_piece(&mut board,"Rook", Color::Black, vec![], vec![], Point::new(1, 1));
 
         println!("{}", board.pp());
         compare_and_assert(
-            &board.moves_of(&king).to_vec(),
+            &board.moves_of(king.id()).to_vec(),
             &vec![
                 &PieceMove::Point(Point::new(2, 2)),
                 &PieceMove::Point(Point::new(3, 2)),
@@ -770,14 +770,14 @@ mod castle_tests {
                 squares_map,
             );
             let mut board = Board::empty(config);
-            let king = board.add_piece(
+            let king = add_piece(&mut board,
                 "King",
                 Color::White,
                 vec![Buff::Castle],
                 vec![],
                 Point::new(5, 1),
             );
-            let rook = board.add_piece(
+            let rook = add_piece(&mut board,
                 "Rook",
                 Color::White,
                 vec![Buff::Castle],
@@ -787,14 +787,14 @@ mod castle_tests {
 
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves_of(&king).to_vec(),
+                &board.moves_of(king.id()).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(4, 2)),
                     &PieceMove::Point(Point::new(5, 2)),
                 ],
             );
             compare_and_assert(
-                &board.moves_of(&rook).to_vec(),
+                &board.moves_of(rook.id()).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(1, 3)),
@@ -827,14 +827,14 @@ mod castle_tests {
                 squares_map,
             );
             let mut board = Board::empty(config);
-            let king = board.add_piece(
+            let king = add_piece(&mut board,
                 "King",
                 Color::White,
                 vec![Buff::Castle],
                 vec![],
                 Point::new(5, 1),
             );
-            let rook = board.add_piece(
+            let rook = add_piece(&mut board,
                 "Rook",
                 Color::White,
                 vec![Buff::Castle],
@@ -844,7 +844,7 @@ mod castle_tests {
 
             println!("{}", board.pp());
             compare_and_assert(
-                &board.moves_of(&king).to_vec(),
+                &board.moves_of(king.id()).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(4, 1)),
                     &PieceMove::Point(Point::new(4, 2)),
@@ -852,7 +852,7 @@ mod castle_tests {
                 ],
             );
             compare_and_assert(
-                &board.moves_of(&rook).to_vec(),
+                &board.moves_of(rook.id()).to_vec(),
                 &vec![
                     &PieceMove::Point(Point::new(1, 2)),
                     &PieceMove::Point(Point::new(1, 3)),
