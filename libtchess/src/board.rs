@@ -9,7 +9,6 @@ use crate::colored_property::ColoredProperty;
 use crate::debuff::Debuff;
 use crate::dimension::Dimension;
 use crate::ids_generator::IdsGenerator;
-use crate::last_board_changes::LastBoardChanges;
 use crate::move_constraints::MoveConstraints;
 use crate::move_score::MoveScore;
 use crate::moves_map::{MovesMap, MovesSetT, PieceToMovesMapT};
@@ -25,6 +24,8 @@ use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
 use rustc_hash::{FxBuildHasher};
+use crate::board_stats::BoardStats;
+use crate::board_summary::{BoardSummary};
 use crate::heat_map::HeatMap;
 use crate::squares_map::SquaresMap;
 
@@ -45,7 +46,7 @@ pub struct Board<HT: HeatMap, SQ: SquaresMap> {
     // Determines board's point of view. Debugging purpose only.
     pov: Color,
     config: BoardConfig<HT, SQ>,
-    last_changes: Vec<LastBoardChanges>,
+    board_summary: BoardSummary,
 }
 
 impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
@@ -106,7 +107,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             current_turn: Color::White,
             pov: Color::White,
             config,
-            last_changes: vec![],
+            board_summary: BoardSummary::new(),
         };
         for y in board.dimension().get_rows_range() {
             for x in board.dimension().get_columns_range() {
@@ -436,7 +437,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         caused_by_color: &Color,
         board_map: &BoardMap,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
-        last_changes: &mut Vec<LastBoardChanges>,
+        board_summary: &mut BoardSummary,
         cpawns_with_en_passant: &mut ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
     ) {
         let en_passant_position = match caused_by_color {
@@ -456,7 +457,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                             .buffs()
                             .add(Buff::EnPassant(en_passant_position, *position));
                         pawns.push(piece.id());
-                        last_changes.push(LastBoardChanges::EnPassantChanged(*piece.id()))
+                        board_summary.update_piece_en_passant(piece.id(), true);
                     }
                     _ => (),
                 }
@@ -471,15 +472,12 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         for pawn_id in self.pawns_with_en_passant[&Color::White].iter() {
             let pawn = self.board_map.find_piece_by_id(pawn_id);
             pawn.buffs().remove_en_passant();
-            self.last_changes
-                .push(LastBoardChanges::EnPassantChanged(*pawn_id))
+            self.board_summary.update_piece_en_passant(pawn.id(), false);
         }
         self.pawns_with_en_passant[&Color::White].clear();
         for pawn_id in self.pawns_with_en_passant[&Color::Black].iter() {
             let pawn = self.board_map.find_piece_by_id(pawn_id);
             pawn.buffs().remove_en_passant();
-            self.last_changes
-                .push(LastBoardChanges::EnPassantChanged(*pawn_id))
         }
         self.pawns_with_en_passant[&Color::Black].clear();
     }
@@ -590,6 +588,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     ) -> PieceId {
         let id = self.ids_generator[&color].next_val(&color);
         let piece = Piece::init_piece_by_name(name, color, buffs, debuffs, position, id);
+        self.board_summary.add_piece(&piece);
         self.board_map.add_piece(piece, position);
         if calculate_mechanics {
             self.recalculate_connected_positions(&position, &color, true);
@@ -597,7 +596,6 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             self.recalculate_king_mechanics(&color);
             self.recalculate_king_mechanics(&color.inverse());
         }
-        self.last_changes.push(LastBoardChanges::PieceAdded(id));
         id
     }
 
@@ -609,9 +607,9 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         if let Some(moves) = self.moves_of(piece_id)
             && moves.contains(piece_move)
         {
-            self.last_changes.clear();
             self.move_piece_unchecked(piece_id, piece_move, true);
             self.pass_turn(&piece_id.color().inverse());
+            self.board_summary.next_turn();
             true
         } else {
             false
@@ -631,11 +629,11 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 Piece::King(_) | Piece::Rook(_) => {
                     if piece.buffs().has_castle() {
                         piece.buffs().remove_castle();
-                        self.last_changes
-                            .push(LastBoardChanges::CastleChanged(*piece.id()));
+                        self.board_summary.update_piece_castle(piece.id(), false);
                     }
                 }
                 Piece::Pawn(_) => {
+                    self.board_summary.pawn_moved();
                     piece.buffs().remove_additional_point();
                     match piece_move {
                         PieceMove::LongMove(new_position) => {
@@ -644,7 +642,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                                 &piece.color(),
                                 &self.board_map,
                                 &self.strategy_points,
-                                &mut self.last_changes,
+                                &mut self.board_summary,
                                 &mut self.pawns_with_en_passant,
                             );
                         }
@@ -714,10 +712,12 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     ) {
         if let Some(piece_id) = enemy_piece_id {
             self.remove_piece(&piece_id);
+            self.board_summary.piece_captured();
         }
         let old_position = self
             .board_map
             .change_piece_position(new_position, piece_id_to_move);
+        self.board_summary.update_piece_position(piece_id_to_move, new_position);
         self.recalculate_connected_positions(&old_position, &piece_id_to_move.color(), false);
         self.recalculate_connected_positions(&new_position, &piece_id_to_move.color(), true);
         self.recalculate_connected_positions(
@@ -725,8 +725,6 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             &piece_id_to_move.color().inverse(),
             false,
         );
-        self.last_changes
-            .push(LastBoardChanges::PiecePositionChanged(*piece_id_to_move));
     }
 
     // Not every piece removal from the board is capturing. For example, when promoting a pawn - we
@@ -746,8 +744,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             &mut self.moves_map,
             &mut self.x_ray_pieces,
         );
-        self.last_changes
-            .push(LastBoardChanges::PieceRemoved(*piece_id));
+        self.board_summary.remove_piece(piece_id);
         piece_position
     }
 
@@ -890,8 +887,8 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         &self.current_turn
     }
 
-    pub fn last_changes(&self) -> &Vec<LastBoardChanges> {
-        &self.last_changes
+    pub fn stats(&'_ self) -> BoardStats<'_> {
+        self.board_summary.stats()
     }
 
     fn x_ray_direction(piece: &Piece, opposite_king: &Piece) -> Option<Vector> {

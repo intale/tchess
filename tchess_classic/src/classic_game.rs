@@ -1,30 +1,28 @@
-use crate::board_position::{BoardPosition, PieceRepr};
 use crate::classic_heat_map::ClassicHeatMap;
 use crate::classic_square_map::ClassicSquaresMap;
 use crate::game_result::GameResult;
-use crate::game_stats::GameStats;
 use crate::move_result::MoveResult;
 use libtchess::board::Board;
 use libtchess::board_config::BoardConfig;
+use libtchess::board_stats::BoardStats;
 use libtchess::buff::Buff;
 use libtchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use libtchess::color::Color;
 use libtchess::dimension::Dimension;
 use libtchess::heat_map::HeatMap;
-use libtchess::last_board_changes::LastBoardChanges;
 use libtchess::piece_id::PieceId;
 use libtchess::piece_move::PieceMove;
 use libtchess::player::Player;
 use libtchess::point::Point;
 use libtchess::squares_map::SquaresMap;
+use crate::board_positions::BoardPositions;
 
-const FIFTY_MOVE_RULE_TURNS_COUNT: u8 = 100;
+const FIFTY_MOVE_RULE_TURNS_COUNT: usize = 100;
 const MAX_NUMBER_OF_EQUAL_POSITIONS: u8 = 3;
 
 pub struct ClassicGame<HT: HeatMap, SQ: SquaresMap> {
-    current_position: BoardPosition,
+    board_positions: BoardPositions,
     board: Board<HT, SQ>,
-    game_stats: GameStats,
     game_result: Option<GameResult>,
 }
 
@@ -34,7 +32,7 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
         let config = BoardConfig::new(
             CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
             CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
-            ClassicHeatMap::empty(),
+            ClassicHeatMap::init(),
             ClassicSquaresMap::init(),
             dimension,
             Player::Human,
@@ -112,13 +110,11 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
                 };
             }
         }
-        let mut classic_board = Self {
+        let classic_board = Self {
             board,
-            game_stats: GameStats::new(),
-            current_position: BoardPosition::new(),
+            board_positions: BoardPositions::empty(),
             game_result: None,
         };
-        classic_board.process_last_board_changes();
         classic_board
     }
 }
@@ -136,32 +132,11 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
         if let Some(game_result) = self.game_result {
             return MoveResult::GameEnded(game_result);
         }
-        let opposite_active_pieces_number_was =
-            self.board.active_pieces(&piece_id.color().inverse()).len();
         let result = self.board.move_piece(piece_id, piece_move);
         if !result {
             return MoveResult::IllegalMove;
         }
-
-        // Non pawn move and not a capture move should be tracked as a move within
-        // "50 move-rule". A pawn move and a capture move should reset "50 move-rule" counter.
-        let piece_repr = self.current_position.get_piece(piece_id);
-        match piece_repr {
-            PieceRepr::Pawn(_) => self.game_stats.reset_meaningless_moves_number(),
-            _ => {
-                let opposite_active_pieces_number = self
-                    .board
-                    .active_pieces(&piece_repr.data().color.inverse())
-                    .len();
-                if opposite_active_pieces_number == opposite_active_pieces_number_was {
-                    self.game_stats.incr_meaningless_moves_number();
-                } else {
-                    self.game_stats.reset_meaningless_moves_number()
-                }
-            }
-        }
-        self.process_last_board_changes();
-        self.game_stats.incr_move_number();
+        self.board_positions.persist_position(&self.board.stats().zposition.0);
         self.calculate_game_result();
 
         if self.game_result.is_some() {
@@ -179,36 +154,6 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
         self.game_result.as_ref()
     }
 
-    fn process_last_board_changes(&mut self) {
-        for change in self.board.last_changes().iter() {
-            match change {
-                LastBoardChanges::PieceAdded(piece_id) => {
-                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
-                    let piece_repr = self.current_position.add_piece(piece);
-                    self.game_stats.add_active_piece(piece_repr);
-                }
-                LastBoardChanges::PieceRemoved(piece_id) => {
-                    let piece_repr = self.current_position.remove_piece(piece_id);
-                    self.game_stats.remove_active_piece(&piece_repr);
-                }
-                LastBoardChanges::PiecePositionChanged(piece_id) => {
-                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
-                    self.current_position.update_piece_position(piece)
-                }
-                LastBoardChanges::EnPassantChanged(piece_id) => {
-                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
-                    self.current_position.update_piece_en_passant(piece)
-                }
-                LastBoardChanges::CastleChanged(piece_id) => {
-                    let piece = self.board.find_piece_by_id(piece_id).unwrap();
-                    self.current_position.update_piece_en_passant(piece)
-                }
-            }
-        }
-        self.current_position
-            .set_current_turn(self.board.current_turn());
-        self.game_stats.persist_position(&self.current_position);
-    }
 
     fn calculate_game_result(&mut self) {
         if self.board.has_no_moves(self.board.current_turn()) {
@@ -223,22 +168,33 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
             }
             return;
         }
-        if self.game_stats.meaningless_moves_number() == &FIFTY_MOVE_RULE_TURNS_COUNT {
+        if self.board.stats().turn_number - self.board.stats().last_capture_turn_number >= FIFTY_MOVE_RULE_TURNS_COUNT ||
+            self.board.stats().turn_number - self.board.stats().last_pawn_move_turn_number >= FIFTY_MOVE_RULE_TURNS_COUNT {
             self.game_result = Some(GameResult::FiftyMoveRuleDraw);
             return;
         }
-        if let Some((_, occurrences_num)) = self.game_stats.most_frequent_position()
+        if let Some((_, occurrences_num)) = self.board_positions.most_frequent_position()
             && occurrences_num == &MAX_NUMBER_OF_EQUAL_POSITIONS
         {
             self.game_result = Some(GameResult::DrawByRepetition);
             return;
         }
-        if self.game_stats.is_insufficient_material(&Color::White)
-            && self.game_stats.is_insufficient_material(&Color::Black)
+        if Self::is_insufficient_material(&Color::White, self.board.stats())
+            && Self::is_insufficient_material(&Color::Black, self.board.stats())
         {
             self.game_result = Some(GameResult::InsufficientMaterialDraw);
             return;
         }
+    }
+
+    fn is_insufficient_material(color: &Color, stats: BoardStats) -> bool {
+        let active_pieces = &stats.active_pieces_stats[color];
+        let no_other_pieces = active_pieces.rook_count == 0 && active_pieces.queen_count == 0 && active_pieces.pawn_count == 0;
+        no_other_pieces
+            && ((active_pieces.knight_count == 2 && active_pieces.bishop_count == 0)
+            || (active_pieces.knight_count == 1 && active_pieces.bishop_count == 0)
+            || (active_pieces.knight_count == 0 && active_pieces.bishop_count == 1)
+            || (active_pieces.knight_count == 0 && active_pieces.bishop_count == 0))
     }
 }
 

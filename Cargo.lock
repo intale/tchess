@@ -30,6 +30,7 @@ name = "libtchess"
 version = "0.0.1"
 dependencies = [
  "im-rc",
+ "rand_xoshiro 0.8.0",
  "rustc-hash",
 ]
 
@@ -83,8 +84,8 @@ dependencies = [
 name = "tchess_classic"
 version = "0.0.1"
 dependencies = [
+ "im-rc",
  "libtchess",
- "rand_xoshiro 0.8.0",
  "rustc-hash",
 ]
 

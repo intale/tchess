@@ -11,7 +11,6 @@ pub mod debuff;
 pub mod dimension;
 pub mod heat_map;
 mod ids_generator;
-pub mod last_board_changes;
 mod move_constraints;
 pub mod move_score;
 mod moves_map;
@@ -29,4 +28,5 @@ pub mod utils;
 pub mod vector;
 pub mod vector_points;
 mod x_ray_pieces;
-
+mod board_summary;
+pub mod board_stats;
