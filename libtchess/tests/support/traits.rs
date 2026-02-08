@@ -1,6 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{BTreeSet};
-use im_rc::HashSet;
+use im_rc::{HashSet, OrdSet};
 use libtchess::piece_move::PieceMove;
 
 #[allow(unused)]
@@ -35,7 +34,7 @@ impl<T: Copy> ToVecCopy for RefCell<Vec<T>> {
     }
 }
 
-impl<T: Copy> ToVecCopy for BTreeSet<T> {
+impl<T: Copy + Ord> ToVecCopy for OrdSet<T> {
     type Item = T;
 
     fn to_vec(&self) -> Vec<Self::Item> {

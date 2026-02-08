@@ -1,3 +1,4 @@
+use crate::board_positions::BoardPositions;
 use crate::classic_heat_map::ClassicHeatMap;
 use crate::classic_square_map::ClassicSquaresMap;
 use crate::game_result::GameResult;
@@ -8,6 +9,7 @@ use libtchess::board_stats::BoardStats;
 use libtchess::buff::Buff;
 use libtchess::castle_x_points::{CastleXPoints, KingCastleXPoint, RookCastleXPoint};
 use libtchess::color::Color;
+use libtchess::colored_property::ColoredProperty;
 use libtchess::dimension::Dimension;
 use libtchess::heat_map::HeatMap;
 use libtchess::piece_id::PieceId;
@@ -15,7 +17,6 @@ use libtchess::piece_move::PieceMove;
 use libtchess::player::Player;
 use libtchess::point::Point;
 use libtchess::squares_map::SquaresMap;
-use crate::board_positions::BoardPositions;
 
 const FIFTY_MOVE_RULE_TURNS_COUNT: usize = 100;
 const MAX_NUMBER_OF_EQUAL_POSITIONS: u8 = 3;
@@ -24,6 +25,8 @@ pub struct ClassicGame<HT: HeatMap, SQ: SquaresMap> {
     board_positions: BoardPositions,
     board: Board<HT, SQ>,
     game_result: Option<GameResult>,
+    last_turn_pieces_changed: usize,
+    initial_pieces_weight: isize,
 }
 
 impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
@@ -110,16 +113,18 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
                 };
             }
         }
+
+        let initial_pieces_weight = Self::all_pieces_weight(&board.stats());
         let classic_board = Self {
             board,
             board_positions: BoardPositions::empty(),
             game_result: None,
+            last_turn_pieces_changed: 0,
+            initial_pieces_weight,
         };
         classic_board
     }
-}
 
-impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
     pub fn move_piece_at(&mut self, position: &Point, piece_move: &PieceMove) -> MoveResult {
         let &piece_id = self
             .board
@@ -136,7 +141,8 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
         if !result {
             return MoveResult::IllegalMove;
         }
-        self.board_positions.persist_position(&self.board.stats().zposition.0);
+        self.board_positions
+            .persist_position(&self.board.stats().zposition.0);
         self.calculate_game_result();
 
         if self.game_result.is_some() {
@@ -146,14 +152,13 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
         }
     }
 
-    pub fn board(&self) -> &Board<HT, SQ> {
+    pub fn board(&self) -> &Board<ClassicHeatMap, ClassicSquaresMap> {
         &self.board
     }
 
     pub fn game_result(&self) -> Option<&GameResult> {
         self.game_result.as_ref()
     }
-
 
     fn calculate_game_result(&mut self) {
         if self.board.has_no_moves(self.board.current_turn()) {
@@ -168,8 +173,11 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
             }
             return;
         }
-        if self.board.stats().turn_number - self.board.stats().last_capture_turn_number >= FIFTY_MOVE_RULE_TURNS_COUNT ||
-            self.board.stats().turn_number - self.board.stats().last_pawn_move_turn_number >= FIFTY_MOVE_RULE_TURNS_COUNT {
+        if self.board.stats().turn_number - self.board.stats().last_capture_turn_number
+            >= FIFTY_MOVE_RULE_TURNS_COUNT
+            || self.board.stats().turn_number - self.board.stats().last_pawn_move_turn_number
+                >= FIFTY_MOVE_RULE_TURNS_COUNT
+        {
             self.game_result = Some(GameResult::FiftyMoveRuleDraw);
             return;
         }
@@ -187,14 +195,52 @@ impl<HT: HeatMap, SQ: SquaresMap> ClassicGame<HT, SQ> {
         }
     }
 
+    fn update_pieces_balance(&mut self) {
+        let stats = self.board.stats();
+        let last_modification_was =
+            if stats.last_capture_turn_number < stats.last_promote_turn_number {
+                stats.last_promote_turn_number
+            } else {
+                stats.last_capture_turn_number
+            };
+
+        if &self.last_turn_pieces_changed < last_modification_was {
+            self.last_turn_pieces_changed = *last_modification_was;
+
+            let mut ratio = 100
+                - Self::all_pieces_weight(&self.board.stats()) * 100 / self.initial_pieces_weight;
+            if ratio < 0 {
+                ratio = 0;
+            }
+            self.board
+                .config()
+                .heat_map()
+                .update_phase_ratio(ratio as i32);
+        }
+    }
+
+    fn all_pieces_weight(stats: &BoardStats) -> isize {
+        let queens_count = stats.active_pieces_stats[&Color::White].queens_count
+            + stats.active_pieces_stats[&Color::Black].queens_count;
+        let rooks_count = stats.active_pieces_stats[&Color::White].rooks_count
+            + stats.active_pieces_stats[&Color::Black].rooks_count;
+        let bishops_count = stats.active_pieces_stats[&Color::White].bishops_count
+            + stats.active_pieces_stats[&Color::Black].bishops_count;
+        let knights_count = stats.active_pieces_stats[&Color::White].knights_count
+            + stats.active_pieces_stats[&Color::Black].knights_count;
+        4 * queens_count + 2 * rooks_count + bishops_count + knights_count
+    }
+
     fn is_insufficient_material(color: &Color, stats: BoardStats) -> bool {
         let active_pieces = &stats.active_pieces_stats[color];
-        let no_other_pieces = active_pieces.rook_count == 0 && active_pieces.queen_count == 0 && active_pieces.pawn_count == 0;
+        let no_other_pieces = active_pieces.rooks_count == 0
+            && active_pieces.queens_count == 0
+            && active_pieces.pawns_count == 0;
         no_other_pieces
-            && ((active_pieces.knight_count == 2 && active_pieces.bishop_count == 0)
-            || (active_pieces.knight_count == 1 && active_pieces.bishop_count == 0)
-            || (active_pieces.knight_count == 0 && active_pieces.bishop_count == 1)
-            || (active_pieces.knight_count == 0 && active_pieces.bishop_count == 0))
+            && ((active_pieces.knights_count == 2 && active_pieces.bishops_count == 0)
+                || (active_pieces.knights_count == 1 && active_pieces.bishops_count == 0)
+                || (active_pieces.knights_count == 0 && active_pieces.bishops_count == 1)
+                || (active_pieces.knights_count == 0 && active_pieces.bishops_count == 0))
     }
 }
 

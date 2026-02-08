@@ -2,14 +2,13 @@ use crate::move_score::MoveScore;
 use crate::moves_map::{MovesSetT, PieceToMovesMapT};
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
-use im_rc::{HashMap, HashSet};
+use im_rc::{HashMap, HashSet, OrdSet};
 use rustc_hash::FxBuildHasher;
-use std::collections::BTreeSet;
 
 // Moves map of pieces, used in situations when the king is in check.
 #[derive(Debug, Clone)]
 pub struct MoveConstraints {
-    scores: BTreeSet<MoveScore>,
+    scores: OrdSet<MoveScore>,
     score_to_piece_moves: HashMap<MoveScore, PieceToMovesMapT, FxBuildHasher>,
     constraints: PieceToMovesMapT,
     has_constraints: bool,
@@ -17,7 +16,7 @@ pub struct MoveConstraints {
 
 impl MoveConstraints {
     pub fn empty() -> Self {
-        let scores = BTreeSet::default();
+        let scores = OrdSet::default();
         let score_to_piece_moves = HashMap::default();
         let constraints = HashMap::default();
         Self {
@@ -75,7 +74,7 @@ impl MoveConstraints {
         self.scores.insert(score);
     }
 
-    pub fn move_scores(&self) -> &BTreeSet<MoveScore> {
+    pub fn move_scores(&self) -> &OrdSet<MoveScore> {
         &self.scores
     }
 

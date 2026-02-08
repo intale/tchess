@@ -2,9 +2,8 @@ use crate::move_score::MoveScore;
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
 use crate::point::Point;
-use im_rc::{HashMap, HashSet};
+use im_rc::{HashMap, HashSet, OrdSet};
 use rustc_hash::FxBuildHasher;
-use std::collections::BTreeSet;
 
 pub type MovesSetT = HashSet<PieceMove>;
 pub type PieceToMovesMapT = HashMap<PieceId, MovesSetT, FxBuildHasher>;
@@ -12,7 +11,7 @@ pub type PointToPiecesMapT = HashMap<Point, PieceToMovesMapT, FxBuildHasher>;
 
 #[derive(Clone)]
 pub struct MovesMap {
-    scores: BTreeSet<MoveScore>,
+    scores: OrdSet<MoveScore>,
     score_to_piece_moves: HashMap<MoveScore, PieceToMovesMapT, FxBuildHasher>,
     piece_to_scores: HashMap<PieceId, HashSet<MoveScore>, FxBuildHasher>,
     piece_to_moves: PieceToMovesMapT,
@@ -25,7 +24,7 @@ pub struct MovesMap {
 
 impl MovesMap {
     pub fn empty() -> Self {
-        let scores = BTreeSet::default();
+        let scores = OrdSet::default();
         let score_to_piece_moves = HashMap::default();
         let piece_to_scores = HashMap::default();
         let piece_to_moves = HashMap::default();
@@ -121,7 +120,7 @@ impl MovesMap {
         None
     }
 
-    pub fn move_scores(&self) -> &BTreeSet<MoveScore> {
+    pub fn move_scores(&self) -> &OrdSet<MoveScore> {
         &self.scores
     }
 

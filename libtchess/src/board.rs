@@ -1,13 +1,14 @@
-use std::collections::BTreeSet;
-use im_rc::{HashMap, HashSet};
 use crate::board_config::BoardConfig;
 use crate::board_map::BoardMap;
 use crate::board_square::BoardSquare;
+use crate::board_stats::BoardStats;
+use crate::board_summary::BoardSummary;
 use crate::buff::Buff;
 use crate::color::Color;
 use crate::colored_property::ColoredProperty;
 use crate::debuff::Debuff;
 use crate::dimension::Dimension;
+use crate::heat_map::HeatMap;
 use crate::ids_generator::IdsGenerator;
 use crate::move_constraints::MoveConstraints;
 use crate::move_score::MoveScore;
@@ -16,6 +17,7 @@ use crate::piece::Piece;
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
 use crate::point::Point;
+use crate::squares_map::SquaresMap;
 use crate::strategy_point::StrategyPoint;
 use crate::strategy_points::StrategyPoints;
 use crate::utils::pretty_print::PrettyPrint;
@@ -23,11 +25,9 @@ use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
-use rustc_hash::{FxBuildHasher};
-use crate::board_stats::BoardStats;
-use crate::board_summary::{BoardSummary};
-use crate::heat_map::HeatMap;
-use crate::squares_map::SquaresMap;
+use im_rc::{HashMap, HashSet, OrdSet};
+use rustc_hash::FxBuildHasher;
+use std::collections::BTreeSet;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -74,7 +74,11 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         &self.x_ray_pieces[color]
     }
 
-    fn evaluate_move(config: &BoardConfig<HT, SQ>, destination: &Point, piece: &Piece) -> MoveScore {
+    fn evaluate_move(
+        config: &BoardConfig<HT, SQ>,
+        destination: &Point,
+        piece: &Piece,
+    ) -> MoveScore {
         let new_position_score = config.heat_map().positional_value(piece, destination);
         let current_position_score = config
             .heat_map()
@@ -397,7 +401,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         }
     }
 
-    pub fn move_scores(&self, color: &Color) -> &BTreeSet<MoveScore> {
+    pub fn move_scores(&self, color: &Color) -> &OrdSet<MoveScore> {
         if self.general_constraints[color].is_enabled() {
             self.general_constraints[color].move_scores()
         } else {
@@ -667,8 +671,22 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 self.perform_move(piece_id, &new_position, Some(*captured_pawn_id));
             }
             PieceMove::Castle(castle_points) => {
-                let &king_id = self.board_map.piece_id_at(castle_points.initial_king_point()).expect(format!("Logical mistake: expect the king to be present at {} position during the castle move.", castle_points.initial_king_point()).as_str());
-                let &rook_id = self.board_map.piece_id_at(castle_points.initial_rook_point()).expect(format!("Logical mistake: expect the rook to be present at {} position during the castle move.", castle_points.initial_rook_point()).as_str());
+                let &king_id = self.board_map.piece_id_at(
+                    castle_points.initial_king_point()
+                ).expect(
+                    format!(
+                        "Logical mistake: expect the king to be present at {} position during the castle move.",
+                        castle_points.initial_king_point()
+                    ).as_str()
+                );
+                let &rook_id = self.board_map.piece_id_at(
+                    castle_points.initial_rook_point()
+                ).expect(
+                    format!(
+                        "Logical mistake: expect the rook to be present at {} position during the castle move.",
+                        castle_points.initial_rook_point()
+                    ).as_str()
+                );
                 // In chess960 king or rook may keep staying on their places during the castling
                 if castle_points.initial_rook_point() != castle_points.rook_point() {
                     self.move_piece_unchecked(
@@ -695,6 +713,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     pawn_position,
                     false,
                 );
+                self.board_summary.piece_promoted();
                 self.move_piece_unchecked(&promoted_piece_id, &PieceMove::Point(*point), false);
             }
         }
@@ -717,7 +736,8 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         let old_position = self
             .board_map
             .change_piece_position(new_position, piece_id_to_move);
-        self.board_summary.update_piece_position(piece_id_to_move, new_position);
+        self.board_summary
+            .update_piece_position(piece_id_to_move, new_position);
         self.recalculate_connected_positions(&old_position, &piece_id_to_move.color(), false);
         self.recalculate_connected_positions(&new_position, &piece_id_to_move.color(), true);
         self.recalculate_connected_positions(

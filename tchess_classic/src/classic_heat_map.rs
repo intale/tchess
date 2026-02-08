@@ -2,6 +2,7 @@ use libtchess::color::Color;
 use libtchess::heat_map::HeatMap;
 use libtchess::piece::Piece;
 use libtchess::point::Point;
+use std::cell::Cell;
 
 const BISHOP_P0_MAP: [[i16; 8]; 8] = [
     [324, 325, 325, 325, 325, 325, 325, 324],
@@ -131,16 +132,18 @@ const ROOK_P1_MAP: [[i16; 8]; 8] = [
 ];
 
 pub struct ClassicHeatMap {
-    phase_ratio: f32,
+    phase_ratio: Cell<i32>,
 }
 
 impl ClassicHeatMap {
     pub fn init() -> Self {
-        Self { phase_ratio: 0.0 }
+        Self {
+            phase_ratio: Cell::new(0),
+        }
     }
 
-    pub fn update_phase_ratio(&mut self, ratio: f32) {
-        self.phase_ratio = ratio;
+    pub fn update_phase_ratio(&self, ratio: i32) {
+        self.phase_ratio.replace(ratio);
     }
 }
 
@@ -157,26 +160,18 @@ impl HeatMap for ClassicHeatMap {
                 *position.y().value() as usize - 1,
             ),
         };
-
+        let phase_ratio = self.phase_ratio.get();
+        let calc_value = |p0_map: &[[i16; 8]; 8], p1_map: &[[i16; 8]; 8]| {
+            (((100 - phase_ratio) * (p0_map[y][x] as i32) + phase_ratio * (p1_map[y][x] as i32))
+                / 100) as i16
+        };
         match piece {
-            Piece::Bishop(_) => ((1.0 - self.phase_ratio) * BISHOP_P0_MAP[y][x] as f32
-                + self.phase_ratio * BISHOP_P1_MAP[y][x] as f32)
-                .round() as i16,
-            Piece::King(_) => ((1.0 - self.phase_ratio) * KING_P0_MAP[y][x] as f32
-                + self.phase_ratio * KING_P1_MAP[y][x] as f32)
-                .round() as i16,
-            Piece::Knight(_) => ((1.0 - self.phase_ratio) * KNIGHT_P0_MAP[y][x] as f32
-                + self.phase_ratio * KNIGHT_P1_MAP[y][x] as f32)
-                .round() as i16,
-            Piece::Pawn(_) => ((1.0 - self.phase_ratio) * PAWN_P0_MAP[y][x] as f32
-                + self.phase_ratio * PAWN_P1_MAP[y][x] as f32)
-                .round() as i16,
-            Piece::Queen(_) => ((1.0 - self.phase_ratio) * QUEEN_P0_MAP[y][x] as f32
-                + self.phase_ratio * QUEEN_P1_MAP[y][x] as f32)
-                .round() as i16,
-            Piece::Rook(_) => ((1.0 - self.phase_ratio) * ROOK_P0_MAP[y][x] as f32
-                + self.phase_ratio * ROOK_P1_MAP[y][x] as f32)
-                .round() as i16,
+            Piece::Bishop(_) => calc_value(&BISHOP_P0_MAP, &BISHOP_P1_MAP),
+            Piece::King(_) => calc_value(&KING_P0_MAP, &KING_P1_MAP),
+            Piece::Knight(_) => calc_value(&KNIGHT_P0_MAP, &KNIGHT_P1_MAP),
+            Piece::Pawn(_) => calc_value(&PAWN_P0_MAP, &PAWN_P1_MAP),
+            Piece::Queen(_) => calc_value(&QUEEN_P0_MAP, &QUEEN_P1_MAP),
+            Piece::Rook(_) => calc_value(&ROOK_P0_MAP, &ROOK_P1_MAP),
             Piece::UnknownPiece(_) => panic!("Unknown piece can't be evaluated!"),
         }
     }

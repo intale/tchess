@@ -16,23 +16,23 @@ const SIDE_TO_MOVE_TAG: u128 = 0xb599dc227a3a1a24100dfc8f1c9cccd6;
 
 #[derive(Eq, PartialEq, Clone)]
 pub struct ActivePiecesStats {
-    pub bishop_count: u16,
-    pub king_count: u16,
-    pub knight_count: u16,
-    pub pawn_count: u16,
-    pub queen_count: u16,
-    pub rook_count: u16,
+    pub bishops_count: isize,
+    pub kings_count: isize,
+    pub knights_count: isize,
+    pub pawns_count: isize,
+    pub queens_count: isize,
+    pub rooks_count: isize,
 }
 
 impl ActivePiecesStats {
     pub fn empty() -> Self {
         Self {
-            bishop_count: 0,
-            king_count: 0,
-            knight_count: 0,
-            pawn_count: 0,
-            queen_count: 0,
-            rook_count: 0,
+            bishops_count: 0,
+            kings_count: 0,
+            knights_count: 0,
+            pawns_count: 0,
+            queens_count: 0,
+            rooks_count: 0,
         }
     }
 }
@@ -145,6 +145,7 @@ pub struct BoardSummary {
     active_pieces_stats: ColoredProperty<ActivePiecesStats>,
     turn_number: usize,
     last_capture_turn_number: usize,
+    last_promote_turn_number: usize,
     last_pawn_move_turn_number: usize,
     // Zobrist representation of the current position
     zposition: ZKey,
@@ -169,6 +170,7 @@ impl BoardSummary {
             ]),
             turn_number: 1,
             last_capture_turn_number: 0,
+            last_promote_turn_number: 0,
             last_pawn_move_turn_number: 0,
             zposition: ZKey(0),
             packed_pieces: HashMap::default(),
@@ -184,18 +186,22 @@ impl BoardSummary {
         self.last_capture_turn_number = self.turn_number;
     }
 
+    pub fn piece_promoted(&mut self) {
+        self.last_promote_turn_number = self.turn_number;
+    }
+
     pub fn pawn_moved(&mut self) {
         self.last_pawn_move_turn_number = self.turn_number;
     }
 
     pub fn add_piece(&mut self, piece: &Piece) {
         match piece {
-            Piece::Bishop(_) => self.active_pieces_stats[piece.color()].bishop_count += 1,
-            Piece::King(_) => self.active_pieces_stats[piece.color()].king_count += 1,
-            Piece::Knight(_) => self.active_pieces_stats[piece.color()].knight_count += 1,
-            Piece::Pawn(_) => self.active_pieces_stats[piece.color()].pawn_count += 1,
-            Piece::Queen(_) => self.active_pieces_stats[piece.color()].queen_count += 1,
-            Piece::Rook(_) => self.active_pieces_stats[piece.color()].rook_count += 1,
+            Piece::Bishop(_) => self.active_pieces_stats[piece.color()].bishops_count += 1,
+            Piece::King(_) => self.active_pieces_stats[piece.color()].kings_count += 1,
+            Piece::Knight(_) => self.active_pieces_stats[piece.color()].knights_count += 1,
+            Piece::Pawn(_) => self.active_pieces_stats[piece.color()].pawns_count += 1,
+            Piece::Queen(_) => self.active_pieces_stats[piece.color()].queens_count += 1,
+            Piece::Rook(_) => self.active_pieces_stats[piece.color()].rooks_count += 1,
             Piece::UnknownPiece(_) => panic!("Can't add unknown piece to active pieces list!"),
         }
         let packed_piece = PieceRepr::from_piece(piece);
@@ -213,12 +219,12 @@ impl BoardSummary {
         );
 
         match packed_repr.piece_type_repr() {
-            BISHOP_REPR => self.active_pieces_stats[&piece_id.color()].bishop_count -= 1,
-            KING_REPR => self.active_pieces_stats[&piece_id.color()].king_count -= 1,
-            KNIGHT_REPR => self.active_pieces_stats[&piece_id.color()].knight_count -= 1,
-            PAWN_REPR => self.active_pieces_stats[&piece_id.color()].pawn_count -= 1,
-            QUEEN_REPR => self.active_pieces_stats[&piece_id.color()].queen_count -= 1,
-            ROOK_REPR => self.active_pieces_stats[&piece_id.color()].rook_count -= 1,
+            BISHOP_REPR => self.active_pieces_stats[&piece_id.color()].bishops_count -= 1,
+            KING_REPR => self.active_pieces_stats[&piece_id.color()].kings_count -= 1,
+            KNIGHT_REPR => self.active_pieces_stats[&piece_id.color()].knights_count -= 1,
+            PAWN_REPR => self.active_pieces_stats[&piece_id.color()].pawns_count -= 1,
+            QUEEN_REPR => self.active_pieces_stats[&piece_id.color()].queens_count -= 1,
+            ROOK_REPR => self.active_pieces_stats[&piece_id.color()].rooks_count -= 1,
             _ => panic!("Can't add unknown piece to active pieces list!"),
         }
 
@@ -230,6 +236,7 @@ impl BoardSummary {
             active_pieces_stats: &self.active_pieces_stats,
             turn_number: &self.turn_number,
             last_capture_turn_number: &self.last_capture_turn_number,
+            last_promote_turn_number: &self.last_promote_turn_number,
             last_pawn_move_turn_number: &self.last_pawn_move_turn_number,
             zposition: &self.zposition,
         }
