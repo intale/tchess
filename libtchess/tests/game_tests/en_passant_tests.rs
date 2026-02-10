@@ -127,10 +127,10 @@ mod when_enemy_piece_crosses_attack_point_of_ally_pawn {
             println!("{}", board.pp());
 
             assert!(
-                !board.move_piece(
+                board.move_piece(
                     &PieceId::new(1, &Color::White),
                     &PieceMove::EnPassant(Point::new(3, 3), Point::new(3, 2))
-                ),
+                ).is_none(),
                 "En passant must not be possible for white pawn!"
             );
             println!("{}", board.pp());
@@ -184,10 +184,10 @@ mod when_enemy_pawn_steps_from_attack_point_of_ally_pawn {
             println!("{}", board.pp());
 
             assert!(
-                !board.move_piece(
+                board.move_piece(
                     &PieceId::new(1, &Color::White),
                     &PieceMove::EnPassant(Point::new(3, 3), Point::new(3, 2))
-                ),
+                ).is_none(),
                 "En passant must not be possible for white pawn!"
             );
             println!("{}", board.pp());
@@ -270,10 +270,10 @@ mod when_ally_pawn_does_not_utilize_en_passant_on_ally_turn {
             println!("{}", board.pp());
 
             assert!(
-                !board.move_piece(
+                board.move_piece(
                     &PieceId::new(1, &Color::White),
                     &PieceMove::EnPassant(Point::new(3, 3), Point::new(3, 2))
-                ),
+                ).is_none(),
                 "En passant must not be possible for white pawn!"
             );
             println!("{}", board.pp());

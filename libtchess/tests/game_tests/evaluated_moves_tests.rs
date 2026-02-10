@@ -12,7 +12,7 @@ use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::ToVecCopy;
 use support::*;
-use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, scored_moves::ScoredMoves};
+use support::{expect::Expect, expect_to_change_to::ExpectToChangeTo, piece_moves_by_score::PieceMovesByScore};
 
 mod when_adding_new_pieces {
     use super::*;
@@ -38,13 +38,13 @@ mod when_adding_new_pieces {
     #[test]
     fn it_updates_move_scores_collection() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(-5)]);
     }
 
     #[test]
     fn it_evaluates_new_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 if let Some(pawn) = board.piece_at(&Point::new(2, 2)) {
                     scored_moves_of(board, vec![pawn])
@@ -53,7 +53,7 @@ mod when_adding_new_pieces {
                 }
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "Pawn",
                     Point::new(2, 2),
                     MoveScore::WeightDelta(-5),
@@ -98,13 +98,13 @@ mod when_moving_a_piece {
     #[test]
     fn it_updates_move_scores_collection() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(-5)]);
     }
 
     #[test]
     fn it_evaluates_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let pawn = board
                     .piece_at(&Point::new(2, 2))
@@ -112,7 +112,7 @@ mod when_moving_a_piece {
                 scored_moves_of(board, vec![pawn])
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "Pawn",
                     Point::new(2, 2),
                     MoveScore::WeightDelta(-5),
@@ -166,20 +166,20 @@ mod when_capturing_a_piece {
     #[test]
     fn it_updates_white_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![]);
     }
 
     #[test]
     fn it_updates_black_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::Black).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::Black).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0), MoveScore::WeightDelta(15)]);
     }
 
     #[test]
     fn it_evaluates_white_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 if let Some(pawn) = board.piece_at(&Point::new(2, 1))
                     && pawn.name() == "Pawn"
@@ -194,7 +194,7 @@ mod when_capturing_a_piece {
 
     #[test]
     fn it_evaluates_black_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let bishop = board
                     .piece_at(&Point::new(2, 1))
@@ -203,13 +203,13 @@ mod when_capturing_a_piece {
             })
             .to(|_board| {
                 vec![
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 1),
                         MoveScore::WeightDelta(0),
                         vec![PieceMove::Point(Point::new(1, 2))],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 1),
                         MoveScore::WeightDelta(15),
@@ -271,27 +271,27 @@ mod when_pinning_a_piece {
     #[test]
     fn it_updates_white_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0)]);
     }
 
     #[test]
     fn it_updates_black_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::Black).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::Black).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0), MoveScore::WeightDelta(10)]);
     }
 
     #[test]
     fn it_evaluates_white_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let pawn = board.piece_at(&Point::new(2, 1)).unwrap();
                 let king = board.piece_at(&Point::new(1, 1)).unwrap();
                 scored_moves_of(board, vec![pawn, king])
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "King",
                     Point::new(1, 1),
                     MoveScore::WeightDelta(0),
@@ -305,7 +305,7 @@ mod when_pinning_a_piece {
 
     #[test]
     fn it_evaluates_black_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let rook = board
                     .piece_at(&Point::new(3, 1))
@@ -314,7 +314,7 @@ mod when_pinning_a_piece {
             })
             .to(|_board| {
                 vec![
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Rook",
                         Point::new(3, 1),
                         MoveScore::WeightDelta(0),
@@ -325,7 +325,7 @@ mod when_pinning_a_piece {
                             PieceMove::Point(Point::new(3, 4)),
                         ],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Rook",
                         Point::new(3, 1),
                         MoveScore::WeightDelta(10),
@@ -388,27 +388,27 @@ mod when_unpinning_a_piece {
     #[test]
     fn it_updates_white_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(5)]);
     }
 
     #[test]
     fn it_updates_black_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::Black).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::Black).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0)]);
     }
 
     #[test]
     fn it_evaluates_white_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let pawn = board.piece_at(&Point::new(2, 1)).unwrap();
                 let king = board.piece_at(&Point::new(1, 1)).unwrap();
                 scored_moves_of(board, vec![pawn, king])
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "Pawn",
                     Point::new(2, 1),
                     MoveScore::WeightDelta(5),
@@ -422,7 +422,7 @@ mod when_unpinning_a_piece {
 
     #[test]
     fn it_evaluates_black_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let rook = board
                     .piece_at(&Point::new(3, 2))
@@ -430,7 +430,7 @@ mod when_unpinning_a_piece {
                 scored_moves_of(board, vec![rook])
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "Rook",
                     Point::new(3, 2),
                     MoveScore::WeightDelta(0),
@@ -499,14 +499,14 @@ mod when_checking_the_king {
     #[test]
     fn it_updates_white_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0), MoveScore::WeightDelta(15)]);
     }
 
     #[test]
     fn it_updates_black_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::Black).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::Black).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![MoveScore::WeightDelta(0)]);
     }
 
@@ -520,13 +520,13 @@ mod when_checking_the_king {
             })
             .to(|_board| {
                 vec![
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(3, 1),
                         MoveScore::WeightDelta(15),
                         vec![PieceMove::Point(Point::new(2, 2))],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "King",
                         Point::new(2, 1),
                         MoveScore::WeightDelta(0),
@@ -550,7 +550,7 @@ mod when_checking_the_king {
                 scored_moves_of(board, vec![rook])
             })
             .to(|_board| {
-                vec![ScoredMoves::new(
+                vec![PieceMovesByScore::new(
                     "Rook",
                     Point::new(2, 3),
                     MoveScore::WeightDelta(0),
@@ -624,7 +624,7 @@ mod when_capturing_the_piece_caused_the_check {
     #[test]
     fn it_updates_white_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::White).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::White).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| {
                 vec![
                     MoveScore::WeightDelta(-25),
@@ -638,13 +638,13 @@ mod when_capturing_the_piece_caused_the_check {
     #[test]
     fn it_updates_black_move_scores() {
         expectation::<MoveScore>()
-            .to_change(|board| board.move_scores(&Color::Black).to_vec())
+            .to_change(|board| board.score_to_moves(&Color::Black).keys().map(|x| *x).collect::<Vec<_>>())
             .to(|_board| vec![]);
     }
 
     #[test]
     fn it_evaluates_white_piece_moves() {
-        expectation::<ScoredMoves>()
+        expectation::<PieceMovesByScore>()
             .to_change(|board| {
                 let bishop = board
                     .piece_at(&Point::new(2, 2))
@@ -654,19 +654,19 @@ mod when_capturing_the_piece_caused_the_check {
             })
             .to(|_board| {
                 vec![
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 2),
                         MoveScore::WeightDelta(-25),
                         vec![PieceMove::Point(Point::new(1, 1))],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 2),
                         MoveScore::WeightDelta(-15),
                         vec![PieceMove::Point(Point::new(3, 1))],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 2),
                         MoveScore::WeightDelta(0),
@@ -675,13 +675,13 @@ mod when_capturing_the_piece_caused_the_check {
                             PieceMove::Point(Point::new(3, 3)),
                         ],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "Bishop",
                         Point::new(2, 2),
                         MoveScore::WeightDelta(20),
                         vec![PieceMove::Point(Point::new(4, 4))],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "King",
                         Point::new(2, 1),
                         MoveScore::WeightDelta(0),
@@ -691,7 +691,7 @@ mod when_capturing_the_piece_caused_the_check {
                             PieceMove::Point(Point::new(3, 2)),
                         ],
                     ),
-                    ScoredMoves::new(
+                    PieceMovesByScore::new(
                         "King",
                         Point::new(2, 1),
                         MoveScore::WeightDelta(20),

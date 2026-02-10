@@ -11,7 +11,6 @@ pub mod debuff;
 pub mod dimension;
 pub mod heat_map;
 mod ids_generator;
-mod move_constraints;
 pub mod move_score;
 mod moves_map;
 pub mod piece;

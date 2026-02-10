@@ -63,7 +63,7 @@ impl BoardMap {
         self.active_pieces[piece.color()].insert(*piece.id(), piece);
     }
 
-    pub fn remove_piece(&mut self, piece_id: &PieceId) -> Point {
+    pub fn remove_piece(&mut self, piece_id: &PieceId) -> Piece {
         let piece = self.active_pieces[&piece_id.color()]
             .remove(piece_id)
             .expect(format!("Logical error: could not remove piece by {} id", piece_id).as_str());
@@ -74,7 +74,7 @@ impl BoardMap {
             Piece::King(_) => self.king[&piece_id.color()] = None,
             _ => (),
         }
-        *piece.current_position()
+        piece
     }
 
     pub fn change_piece_position(&mut self, to_point: &Point, piece_id: &PieceId) -> Point {

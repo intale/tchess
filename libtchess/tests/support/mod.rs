@@ -1,12 +1,12 @@
 pub mod expect;
 pub mod expect_not_to_change_to;
 pub mod expect_to_change_to;
-pub mod scored_moves;
+pub mod piece_moves_by_score;
 pub mod test_heat_map;
 pub mod test_squares_map;
 pub mod traits;
 
-use super::scored_moves::ScoredMoves;
+use super::piece_moves_by_score::PieceMovesByScore;
 use super::traits::{CloneMoves, ToVecRef};
 use libtchess::board::*;
 use libtchess::board_config::BoardConfig;
@@ -25,6 +25,8 @@ use libtchess::vector::line_vector::LineVector;
 use libtchess::vector_points::VectorPoints;
 use std::env;
 use std::fmt::{Debug, Display};
+use rustc_hash::FxHashMap;
+use libtchess::move_score::MoveScore;
 use test_heat_map::TestHeatMap;
 use test_squares_map::TestSquaresMap;
 
@@ -264,21 +266,14 @@ pub fn board_default_5x5() -> Board<TestHeatMap, TestSquaresMap> {
 }
 
 #[allow(unused)]
-pub fn scored_moves_of(board: &Board<TestHeatMap, TestSquaresMap>, pieces: Vec<&Piece>) -> Vec<ScoredMoves> {
+pub fn scored_moves_of(board: &Board<TestHeatMap, TestSquaresMap>, pieces: Vec<&Piece>) -> Vec<PieceMovesByScore> {
     let mut res = vec![];
 
     for &piece in pieces.iter() {
-        let scores = board.move_scores(piece.color());
-        for score in scores {
-            if let Some(scored_moves) = board.moves_by_score(piece.color(), score) {
-                if let Some(piece_moves) = scored_moves.get(piece.id()) {
-                    res.push(ScoredMoves::new(
-                        piece.name(),
-                        *piece.current_position(),
-                        *score,
-                        piece_moves.to_vec().clone_moves(),
-                    ))
-                }
+        let moves_with_score = all_moves(board, piece.color());
+        for move_with_score in moves_with_score {
+            if &move_with_score.current_position == piece.current_position() && piece.name() == move_with_score.piece_name {
+                res.push(move_with_score)
             }
         }
     }
@@ -286,22 +281,30 @@ pub fn scored_moves_of(board: &Board<TestHeatMap, TestSquaresMap>, pieces: Vec<&
 }
 
 #[allow(unused)]
-pub fn all_moves(board: &Board<TestHeatMap, TestSquaresMap>, color: &Color) -> Vec<ScoredMoves> {
-    let mut pieces = vec![];
-    for score in board.move_scores(color) {
-        pieces.append(
-            &mut board
-                .moves_by_score(color, score)
-                .unwrap()
-                .keys()
-                .collect::<Vec<_>>(),
-        )
+pub fn all_moves(board: &Board<TestHeatMap, TestSquaresMap>, color: &Color) -> Vec<PieceMovesByScore> {
+    let mut moves_by_score: FxHashMap<(PieceId, MoveScore), Vec<PieceMove>>  = FxHashMap::default();
+    for (move_score, piece_to_moves) in board.score_to_moves(color) {
+        for (piece_id, piece_moves) in piece_to_moves {
+            let key = (*piece_id, *move_score);
+            if !moves_by_score.contains_key(&key) {
+                moves_by_score.insert(key, vec![]);
+            }
+            let moves = moves_by_score.get_mut(&key).unwrap();
+            for piece_move in piece_moves {
+                moves.push(*piece_move);
+            }
+        }
     }
-    let pieces = pieces
-        .iter()
-        .map(|piece_id| board.find_piece_by_id(piece_id).unwrap())
-        .collect::<Vec<_>>();
-    scored_moves_of(board, pieces)
+
+    moves_by_score.iter().map(|((piece_id, move_score), piece_moves)| {
+        let piece = board.find_piece_by_id(piece_id).unwrap();
+        PieceMovesByScore::new(
+            piece.name(),
+            *piece.current_position(),
+            *move_score,
+            piece_moves.clone(),
+        )
+    }).collect::<Vec<_>>()
 }
 
 pub struct PieceRepr {
@@ -346,7 +349,7 @@ pub fn add_piece(
 #[allow(unused)]
 pub fn move_piece(board: &mut Board<TestHeatMap, TestSquaresMap>, piece_id: PieceId, piece_move: PieceMove) {
     assert!(
-        board.move_piece(&piece_id, &piece_move),
+        board.move_piece(&piece_id, &piece_move).is_some(),
         "Failed to move {} on {} position",
         board
             .find_piece_by_id(&piece_id)

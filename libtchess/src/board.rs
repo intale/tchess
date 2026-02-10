@@ -10,9 +10,8 @@ use crate::debuff::Debuff;
 use crate::dimension::Dimension;
 use crate::heat_map::HeatMap;
 use crate::ids_generator::IdsGenerator;
-use crate::move_constraints::MoveConstraints;
 use crate::move_score::MoveScore;
-use crate::moves_map::{MovesMap, MovesSetT, PieceToMovesMapT};
+use crate::moves_map::MovesMap;
 use crate::piece::Piece;
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
@@ -25,9 +24,8 @@ use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
-use im_rc::{HashMap, HashSet, OrdSet};
+use im_rc::{HashMap, HashSet, OrdMap};
 use rustc_hash::FxBuildHasher;
-use std::collections::BTreeSet;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -40,7 +38,7 @@ pub struct Board<HT: HeatMap, SQ: SquaresMap> {
     x_ray_pieces: ColoredProperty<XRayPieces>,
     pawns_with_en_passant: ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
     moves_map: ColoredProperty<MovesMap>,
-    general_constraints: ColoredProperty<MoveConstraints>,
+    general_constraints: ColoredProperty<Option<MovesMap>>,
     ids_generator: ColoredProperty<IdsGenerator>,
     current_turn: Color,
     // Determines board's point of view. Debugging purpose only.
@@ -76,16 +74,62 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
 
     fn evaluate_move(
         config: &BoardConfig<HT, SQ>,
-        destination: &Point,
+        board_map: &BoardMap,
+        piece_move: &PieceMove,
         piece: &Piece,
     ) -> MoveScore {
-        let new_position_score = config.heat_map().positional_value(piece, destination);
-        let current_position_score = config
-            .heat_map()
-            .positional_value(piece, &piece.current_position());
-        let delta = new_position_score - current_position_score;
+        let destination_point = piece_move.destination();
+        let new_position_score;
+        let current_position_score;
+        match piece_move {
+            PieceMove::Promote(_, promote_piece) => {
+                let theoretically_promoted_piece = Piece::init_piece_by_name(
+                    &promote_piece.name(),
+                    *piece.color(),
+                    vec![],
+                    vec![],
+                    *destination_point,
+                    PieceId::new(1, piece.color()),
+                );
+                // Calculate promote move value based on the promoted piece instead of a value of
+                // a pawn to promote
+                new_position_score = config
+                    .heat_map()
+                    .positional_value(&theoretically_promoted_piece, &destination_point);
+                current_position_score = config
+                    .heat_map()
+                    .positional_value(piece, &piece.current_position());
+            }
+            PieceMove::Castle(castle_points) => {
+                let rook = board_map
+                    .piece_at(castle_points.initial_rook_point())
+                    .unwrap();
+                let old_king_score = config
+                    .heat_map()
+                    .positional_value(piece, castle_points.initial_king_point());
+                let old_rook_score = config
+                    .heat_map()
+                    .positional_value(rook, castle_points.initial_rook_point());
+                let new_king_score = config
+                    .heat_map()
+                    .positional_value(piece, castle_points.king_point());
+                let new_rook_score = config
+                    .heat_map()
+                    .positional_value(rook, castle_points.rook_point());
+                new_position_score = new_king_score + new_rook_score;
+                current_position_score = old_king_score + old_rook_score;
+            }
+            _ => {
+                new_position_score = config
+                    .heat_map()
+                    .positional_value(piece, &destination_point);
+                current_position_score = config
+                    .heat_map()
+                    .positional_value(piece, &piece.current_position());
+            }
+        };
 
-        MoveScore::WeightDelta(delta)
+        MoveScore::WeightDelta(new_position_score - current_position_score)
     }
 
     pub fn king(&self, color: &Color) -> Option<&Piece> {
@@ -103,10 +147,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             x_ray_pieces: ColoredProperty([XRayPieces::empty(), XRayPieces::empty()]),
             pawns_with_en_passant: ColoredProperty([HashSet::default(), HashSet::default()]),
             moves_map: ColoredProperty([MovesMap::empty(), MovesMap::empty()]),
-            general_constraints: ColoredProperty([
-                MoveConstraints::empty(),
-                MoveConstraints::empty(),
-            ]),
+            general_constraints: ColoredProperty([None, None]),
             ids_generator: ColoredProperty([IdsGenerator::init(), IdsGenerator::init()]),
             current_turn: Color::White,
             pov: Color::White,
@@ -291,7 +332,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         cmoves_map[piece.color()].remove_piece(piece.id());
 
         let add_move = |piece_move: PieceMove| {
-            let move_score = Self::evaluate_move(config, piece_move.destination(), piece);
+            let move_score = Self::evaluate_move(config, board_map, &piece_move, piece);
             cmoves_map[piece.color()].add(piece.id(), piece_move, move_score);
         };
         match piece {
@@ -319,7 +360,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         config: &BoardConfig<HT, SQ>,
         cstrategy_points: &ColoredProperty<StrategyPoints>,
         cmoves_map: &ColoredProperty<MovesMap>,
-        cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
+        cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
         let mut constraints: Vec<PieceMove> = vec![];
         let pieces_caused_check = cstrategy_points[&king.color().inverse()]
@@ -374,46 +415,45 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     fn add_king_moves_to_general_constraints(
         king: &Piece,
         cmoves_map: &ColoredProperty<MovesMap>,
-        config: &BoardConfig<HT, SQ>,
-        cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
+        cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
+        let general_constraints = cgeneral_constraints[king.color()]
+            .as_mut()
+            .expect("Logical error: constraints MovesMap must be initialized at this point!");
         if let Some(moves) = cmoves_map[king.color()].moves_of(king.id()) {
-            for piece_move in moves.iter() {
-                let move_score = Self::evaluate_move(config, piece_move.destination(), king);
-                cgeneral_constraints[king.color()].add(king.id(), piece_move, move_score);
+            for (piece_move, move_score) in moves.iter() {
+                general_constraints.add(king.id(), *piece_move, *move_score);
             }
         }
     }
 
     pub fn has_no_moves(&self, color: &Color) -> bool {
-        if self.general_constraints[color].is_enabled() {
-            self.general_constraints[color].is_empty()
+        if let Some(general_constraints) = &self.general_constraints[color] {
+            general_constraints.is_empty()
         } else {
             self.moves_map[color].is_empty()
         }
     }
 
-    pub fn moves_of(&self, piece_id: &PieceId) -> Option<&MovesSetT> {
-        if self.general_constraints[&piece_id.color()].is_enabled() {
-            self.general_constraints[&piece_id.color()].moves_of(piece_id)
+    pub fn moves_of(
+        &self,
+        piece_id: &PieceId,
+    ) -> Option<&HashMap<PieceMove, MoveScore, FxBuildHasher>> {
+        if let Some(general_constraints) = &self.general_constraints[&piece_id.color()] {
+            general_constraints.moves_of(piece_id)
         } else {
             self.moves_map[&piece_id.color()].moves_of(piece_id)
         }
     }
 
-    pub fn move_scores(&self, color: &Color) -> &OrdSet<MoveScore> {
-        if self.general_constraints[color].is_enabled() {
-            self.general_constraints[color].move_scores()
+    pub fn score_to_moves(
+        &self,
+        color: &Color,
+    ) -> &OrdMap<MoveScore, HashMap<PieceId, im_rc::Vector<PieceMove>, FxBuildHasher>> {
+        if let Some(general_constraints) = &self.general_constraints[color] {
+            general_constraints.score_to_moves()
         } else {
-            self.moves_map[color].move_scores()
-        }
-    }
-
-    pub fn moves_by_score(&self, color: &Color, score: &MoveScore) -> Option<&PieceToMovesMapT> {
-        if self.general_constraints[color].is_enabled() {
-            self.general_constraints[color].moves_by_score(score)
-        } else {
-            self.moves_map[color].moves_by_score(score)
+            self.moves_map[color].score_to_moves()
         }
     }
 
@@ -423,14 +463,17 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
         cmoves_map: &ColoredProperty<MovesMap>,
-        cgeneral_constraints: &mut ColoredProperty<MoveConstraints>,
+        cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
+        let constraints = cgeneral_constraints[color]
+            .as_mut()
+            .expect("Logical error: constraints MovesMap must be initialized at this point!");
         if let Some(pieces) = cmoves_map[color].pieces_to_move_onto(piece_move.destination()) {
             for (piece_id, piece_moves) in pieces {
                 let piece = board_map.find_piece_by_id(piece_id);
                 for piece_move in piece_moves.into_iter() {
-                    let move_score = Self::evaluate_move(&config, piece_move.destination(), piece);
-                    cgeneral_constraints[color].add(piece_id, &piece_move, move_score);
+                    let move_score = Self::evaluate_move(&config, board_map, piece_move, piece);
+                    constraints.add(piece_id, *piece_move, move_score);
                 }
             }
         }
@@ -603,20 +646,20 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         id
     }
 
-    pub fn move_piece(&mut self, piece_id: &PieceId, piece_move: &PieceMove) -> bool {
+    pub fn move_piece(&mut self, piece_id: &PieceId, piece_move: &PieceMove) -> Option<MoveScore> {
         if self.current_turn != piece_id.color() {
-            return false;
+            return None;
         }
 
-        if let Some(moves) = self.moves_of(piece_id)
-            && moves.contains(piece_move)
+        if let Some(&move_score) =
+            self.moves_map[&piece_id.color()].move_score(piece_id, piece_move)
         {
             self.move_piece_unchecked(piece_id, piece_move, true);
             self.pass_turn(&piece_id.color().inverse());
             self.board_summary.next_turn();
-            true
+            Some(move_score)
         } else {
-            false
+            None
         }
     }
 
@@ -704,13 +747,13 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 }
             }
             PieceMove::Promote(point, promote_piece) => {
-                let pawn_position = self.remove_piece(piece_id);
+                let pawn = self.remove_piece(piece_id);
                 let promoted_piece_id = self.add_piece_unchecked(
                     &promote_piece.name(),
                     piece_id.color(),
                     vec![],
                     vec![],
-                    pawn_position,
+                    *pawn.current_position(),
                     false,
                 );
                 self.board_summary.piece_promoted();
@@ -730,8 +773,8 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         enemy_piece_id: Option<PieceId>,
     ) {
         if let Some(piece_id) = enemy_piece_id {
-            self.remove_piece(&piece_id);
-            self.board_summary.piece_captured();
+            let piece = self.remove_piece(&piece_id);
+            self.board_summary.piece_captured(piece);
         }
         let old_position = self
             .board_map
@@ -749,13 +792,13 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
 
     // Not every piece removal from the board is capturing. For example, when promoting a pawn - we
     // need to remove it from the board without any other potential actions
-    fn remove_piece(&mut self, piece_id: &PieceId) -> Point {
+    fn remove_piece(&mut self, piece_id: &PieceId) -> Piece {
         self.strategy_points[&piece_id.color()].remove_piece(piece_id);
         self.moves_map[&piece_id.color()].remove_piece(piece_id);
         if let Some(vector) = self.board_map.find_piece_by_id(piece_id).debuffs().pin() {
             self.x_ray_pieces[&piece_id.color().inverse()].remove_pinned_piece(&vector);
         }
-        let piece_position = self.board_map.remove_piece(piece_id);
+        let piece = self.board_map.remove_piece(piece_id);
         Self::remove_x_ray_piece(
             piece_id,
             &self.board_map,
@@ -765,7 +808,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             &mut self.x_ray_pieces,
         );
         self.board_summary.remove_piece(piece_id);
-        piece_position
+        piece
     }
 
     fn recalculate_connected_positions(
@@ -865,12 +908,12 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     fn recalculate_king_mechanics(&mut self, color: &Color) {
         if let Some(king) = self.board_map.king(color) {
             king.debuffs().remove_check();
-            self.general_constraints[king.color()].clear();
+            self.general_constraints[king.color()] = None;
             if self.strategy_points[&king.color().inverse()]
                 .is_under_attack(&king.current_position())
             {
                 king.debuffs().add(Debuff::Check);
-                self.general_constraints[king.color()].enable();
+                self.general_constraints[king.color()] = Some(MovesMap::empty());
             }
             Self::calculate_moves_for(
                 king,
@@ -892,7 +935,6 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 Self::add_king_moves_to_general_constraints(
                     &king,
                     &self.moves_map,
-                    &self.config,
                     &mut self.general_constraints,
                 );
             }

@@ -140,18 +140,6 @@ impl PieceRepr {
     }
 }
 
-#[derive(Clone)]
-pub struct BoardSummary {
-    active_pieces_stats: ColoredProperty<ActivePiecesStats>,
-    turn_number: usize,
-    last_capture_turn_number: usize,
-    last_promote_turn_number: usize,
-    last_pawn_move_turn_number: usize,
-    // Zobrist representation of the current position
-    zposition: ZKey,
-    packed_pieces: HashMap<PieceId, PieceRepr, FxBuildHasher>,
-}
-
 #[derive(Eq, PartialEq, Debug, Hash, Copy, Clone)]
 pub struct ZKey(pub u128);
 
@@ -159,6 +147,19 @@ impl BitXorAssign<u128> for ZKey {
     fn bitxor_assign(&mut self, rhs: u128) {
         self.0 ^= rhs;
     }
+}
+
+#[derive(Clone)]
+pub struct BoardSummary {
+    active_pieces_stats: ColoredProperty<ActivePiecesStats>,
+    turn_number: usize,
+    last_capture_turn_number: usize,
+    last_promote_turn_number: usize,
+    last_pawn_move_turn_number: usize,
+    last_captured_piece: Option<Piece>,
+    // Zobrist representation of the current position
+    zposition: ZKey,
+    packed_pieces: HashMap<PieceId, PieceRepr, FxBuildHasher>,
 }
 
 impl BoardSummary {
@@ -172,6 +173,7 @@ impl BoardSummary {
             last_capture_turn_number: 0,
             last_promote_turn_number: 0,
             last_pawn_move_turn_number: 0,
+            last_captured_piece: None,
             zposition: ZKey(0),
             packed_pieces: HashMap::default(),
         }
@@ -182,8 +184,9 @@ impl BoardSummary {
         self.turn_number += 1;
     }
 
-    pub fn piece_captured(&mut self) {
+    pub fn piece_captured(&mut self, captured_piece: Piece) {
         self.last_capture_turn_number = self.turn_number;
+        self.last_captured_piece = Some(captured_piece);
     }
 
     pub fn piece_promoted(&mut self) {
@@ -239,6 +242,7 @@ impl BoardSummary {
             last_promote_turn_number: &self.last_promote_turn_number,
             last_pawn_move_turn_number: &self.last_pawn_move_turn_number,
             zposition: &self.zposition,
+            last_captured_piece: self.last_captured_piece.as_ref(),
         }
     }
 

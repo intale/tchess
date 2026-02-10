@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use im_rc::{HashSet, OrdSet};
+use im_rc::{HashMap, HashSet, OrdSet};
 use libtchess::piece_move::PieceMove;
 
 #[allow(unused)]
@@ -56,6 +56,17 @@ impl<T, B> ToVecRef for Option<&HashSet<T, B>> {
     fn to_vec(&self) -> Vec<&Self::Item> {
         match self {
             Some(hash) => hash.to_vec(),
+            None => vec![],
+        }
+    }
+}
+
+impl<K, V, B> ToVecRef for Option<&HashMap<K, V, B>> {
+    type Item = K;
+
+    fn to_vec(&self) -> Vec<&Self::Item> {
+        match self {
+            Some(hash) => hash.keys().collect::<Vec<_>>(),
             None => vec![],
         }
     }

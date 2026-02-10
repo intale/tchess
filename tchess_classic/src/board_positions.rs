@@ -1,6 +1,7 @@
 use im_rc::HashMap;
 use rustc_hash::{FxBuildHasher};
 
+#[derive(Clone)]
 pub struct BoardPositions {
     persisted_positions: HashMap<u128, u8, FxBuildHasher>,
     most_frequent_position: Option<(u128, u8)>,

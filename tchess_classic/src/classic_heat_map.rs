@@ -131,6 +131,7 @@ const ROOK_P1_MAP: [[i16; 8]; 8] = [
     [498, 499, 499, 500, 500, 499, 499, 498],
 ];
 
+#[derive(Clone)]
 pub struct ClassicHeatMap {
     phase_ratio: Cell<i32>,
 }

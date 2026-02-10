@@ -21,12 +21,14 @@ use libtchess::squares_map::SquaresMap;
 const FIFTY_MOVE_RULE_TURNS_COUNT: usize = 100;
 const MAX_NUMBER_OF_EQUAL_POSITIONS: u8 = 3;
 
+#[derive(Clone)]
 pub struct ClassicGame<HT: HeatMap, SQ: SquaresMap> {
     board_positions: BoardPositions,
     board: Board<HT, SQ>,
     game_result: Option<GameResult>,
     last_turn_pieces_changed: usize,
-    initial_pieces_weight: isize,
+    initial_pieces_phase_weight: isize,
+    positional_weight: ColoredProperty<i32>,
 }
 
 impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
@@ -114,13 +116,35 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
             }
         }
 
-        let initial_pieces_weight = Self::all_pieces_weight(&board.stats());
+        let initial_pieces_phase_weight = Self::all_pieces_phase_weight(&board.stats());
+        let white_positional_weight = board
+            .active_pieces(&Color::White)
+            .iter()
+            .map(|(_, piece)| {
+                board
+                    .config()
+                    .heat_map()
+                    .positional_value(piece, piece.current_position()) as i32
+            })
+            .sum::<i32>();
+        let black_positional_weight = board
+            .active_pieces(&Color::Black)
+            .iter()
+            .map(|(_, piece)| {
+                board
+                    .config()
+                    .heat_map()
+                    .positional_value(piece, piece.current_position()) as i32
+            })
+            .sum::<i32>();
+
         let classic_board = Self {
             board,
             board_positions: BoardPositions::empty(),
             game_result: None,
             last_turn_pieces_changed: 0,
-            initial_pieces_weight,
+            initial_pieces_phase_weight,
+            positional_weight: ColoredProperty([white_positional_weight, black_positional_weight]),
         };
         classic_board
     }
@@ -137,15 +161,41 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
         if let Some(game_result) = self.game_result {
             return MoveResult::GameEnded(game_result);
         }
-        let result = self.board.move_piece(piece_id, piece_move);
-        if !result {
+
+        if let Some(move_score) = self.board.move_piece(piece_id, piece_move) {
+            self.positional_weight[&self.board.current_turn().inverse()] +=
+                *move_score.score() as i32;
+            let stats = self.board.stats();
+            if &(stats.last_capture_turn_number + 1) == stats.turn_number {
+                let captured_piece = stats.last_captured_piece.unwrap();
+                self.positional_weight[captured_piece.color()] -= self
+                    .board
+                    .config()
+                    .heat_map()
+                    .positional_value(captured_piece, captured_piece.current_position())
+                    as i32;
+            }
+        } else {
             return MoveResult::IllegalMove;
-        }
+        };
+
         self.board_positions
             .persist_position(&self.board.stats().zposition.0);
         self.calculate_game_result();
 
-        if self.game_result.is_some() {
+        if let Some(game_result) = self.game_result {
+            match game_result {
+                GameResult::Checkmate(color) => {
+                    self.positional_weight[&color.inverse()] = i32::MAX;
+                }
+                GameResult::InsufficientMaterialDraw
+                | GameResult::DrawByRepetition
+                | GameResult::FiftyMoveRuleDraw
+                | GameResult::Stalemate(_) => {
+                    self.positional_weight[&Color::White] = 0;
+                    self.positional_weight[&Color::Black] = 0;
+                }
+            }
             MoveResult::GameEnded(self.game_result.unwrap())
         } else {
             MoveResult::PieceMoved
@@ -208,7 +258,8 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
             self.last_turn_pieces_changed = *last_modification_was;
 
             let mut ratio = 100
-                - Self::all_pieces_weight(&self.board.stats()) * 100 / self.initial_pieces_weight;
+                - Self::all_pieces_phase_weight(&self.board.stats()) * 100
+                    / self.initial_pieces_phase_weight;
             if ratio < 0 {
                 ratio = 0;
             }
@@ -219,7 +270,7 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
         }
     }
 
-    fn all_pieces_weight(stats: &BoardStats) -> isize {
+    fn all_pieces_phase_weight(stats: &BoardStats) -> isize {
         let queens_count = stats.active_pieces_stats[&Color::White].queens_count
             + stats.active_pieces_stats[&Color::Black].queens_count;
         let rooks_count = stats.active_pieces_stats[&Color::White].rooks_count
@@ -260,6 +311,11 @@ mod tests {
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::PieceMoved
         );
+        println!(
+            "Current positional score: {}",
+            classic_game.positional_weight[&Color::White]
+                - classic_game.positional_weight[&Color::Black]
+        );
         println!("{}", classic_game.board().pp());
     }
 
@@ -273,6 +329,11 @@ mod tests {
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::GameEnded(GameResult::Checkmate(color))
         );
+        println!(
+            "Current positional score: {}",
+            classic_game.positional_weight[&Color::White]
+                - classic_game.positional_weight[&Color::Black]
+        );
         println!("{}", classic_game.board().pp());
     }
 
@@ -284,6 +345,11 @@ mod tests {
         assert_eq!(
             classic_game.move_piece_at(&point, &piece_move),
             MoveResult::GameEnded(GameResult::DrawByRepetition)
+        );
+        println!(
+            "Current positional score: {}",
+            classic_game.positional_weight[&Color::White]
+                - classic_game.positional_weight[&Color::Black]
         );
         println!("{}", classic_game.board().pp());
     }
