@@ -210,10 +210,14 @@ impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
         self.game_result.as_ref()
     }
 
+    pub fn current_evaluation(&self) -> i32 {
+        self.positional_weight[&Color::White] - self.positional_weight[&Color::Black]
+    }
+
     fn calculate_game_result(&mut self) {
         if self.board.has_no_moves(self.board.current_turn()) {
             if let Some(king) = self.board.king(self.board.current_turn()) {
-                if king.debuffs().has_check() {
+                if self.board.debuffs(king.color()).has_check(king.id()) {
                     self.game_result = Some(GameResult::Checkmate(*self.board.current_turn()))
                 } else {
                     self.game_result = Some(GameResult::Stalemate(*self.board.current_turn()))

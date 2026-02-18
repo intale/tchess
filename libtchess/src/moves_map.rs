@@ -7,7 +7,7 @@ use rustc_hash::FxBuildHasher;
 
 #[derive(Clone)]
 pub struct MovesMap {
-    score_to_moves: OrdMap<MoveScore, HashMap<PieceId, Vector<PieceMove>, FxBuildHasher>>,
+    score_to_moves: OrdMap<MoveScore, OrdMap<PieceId, Vector<PieceMove>>>,
     piece_to_moves: HashMap<PieceId, HashMap<PieceMove, MoveScore, FxBuildHasher>, FxBuildHasher>,
     // This is Point-to-Pieces-to-Moves structure that allows to fetch all moves for the certain
     // piece in the given point. It is useful because there can be several moves that ends on the
@@ -34,7 +34,7 @@ impl MovesMap {
 
     fn s2m_moves_mut(&mut self, move_score: &MoveScore, piece_id: &PieceId) -> &mut Vector<PieceMove> {
         if !self.score_to_moves.contains_key(move_score) {
-            self.score_to_moves.insert(*move_score, HashMap::default());
+            self.score_to_moves.insert(*move_score, OrdMap::default());
         }
         let moves = self.score_to_moves.get_mut(move_score).unwrap();
         if !moves.contains_key(piece_id) {
@@ -124,7 +124,7 @@ impl MovesMap {
         None
     }
 
-    pub fn score_to_moves(&self) -> &OrdMap<MoveScore, HashMap<PieceId, Vector<PieceMove>, FxBuildHasher>> {
+    pub fn score_to_moves(&self) -> &OrdMap<MoveScore, OrdMap<PieceId, Vector<PieceMove>>> {
         &self.score_to_moves
     }
 

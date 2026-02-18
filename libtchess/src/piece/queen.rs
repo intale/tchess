@@ -1,8 +1,9 @@
 use crate::board::{INVERT_COLORS};
 use crate::board_map::BoardMap;
-use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
+use crate::colored_property::ColoredProperty;
+use crate::debuff::Debuff;
+use crate::debuffs_map::DebuffsMap;
 use crate::dimension::Dimension;
 use crate::piece::{PieceId, PieceInit};
 use crate::piece_move::PieceMove;
@@ -17,8 +18,6 @@ use crate::vector_points::VectorPoints;
 #[derive(Debug, Clone)]
 pub struct Queen {
     color: Color,
-    buffs: BuffsCollection,
-    debuffs: DebuffsCollection,
     current_position: Point,
     id: PieceId,
 }
@@ -26,14 +25,6 @@ pub struct Queen {
 impl Queen {
     pub fn id(&self) -> &PieceId {
         &self.id
-    }
-
-    pub fn buffs(&self) -> &BuffsCollection {
-        &self.buffs
-    }
-
-    pub fn debuffs(&self) -> &DebuffsCollection {
-        &self.debuffs
     }
 
     pub fn color(&self) -> &Color {
@@ -81,17 +72,23 @@ impl Queen {
     pub fn calculate_moves<F: FnMut(PieceMove)>(
         &self,
         board_map: &BoardMap,
+        cdebuffs_map: &ColoredProperty<DebuffsMap>,
         dimension: &Dimension,
         mut consumer: F,
     ) {
-        let pin = self.debuffs.pin();
-        let available_directions = if pin.is_none() {
+        let debuff = cdebuffs_map[&self.color].pin(&self.id);
+        let available_directions = if debuff.is_none() {
             Vector::diagonal_and_line_vectors()
         } else {
-            let pin = pin.unwrap();
+            let debuff = debuff.unwrap();
+            let pin_vector =
+                match debuff {
+                    Debuff::Pin(v) => v,
+                    _ => panic!("Logical error! Expected pin debuff, but got {:?}", debuff),
+                };
             Vector::diagonal_and_line_vectors()
                 .iter()
-                .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                .filter(|&vec| pin_vector == vec || &pin_vector.inverse() == vec)
                 .map(|&vec| vec)
                 .collect::<Vec<_>>()
         };
@@ -139,15 +136,11 @@ impl Queen {
 impl PieceInit for Queen {
     fn from_parts(
         color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
         current_position: Point,
         id: PieceId,
     ) -> Self {
         Self {
             color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
             current_position,
             id,
         }

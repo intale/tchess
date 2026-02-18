@@ -29,3 +29,5 @@ pub mod vector_points;
 mod x_ray_pieces;
 mod board_summary;
 pub mod board_stats;
+pub mod debuffs_map;
+pub mod buffs_map;

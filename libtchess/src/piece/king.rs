@@ -1,10 +1,11 @@
 use crate::board::INVERT_COLORS;
 use crate::board_config::BoardConfig;
 use crate::board_map::BoardMap;
-use crate::buff::{Buff, BuffsCollection};
+use crate::buffs_map::BuffsMap;
 use crate::castle_points::{CastlePoints, CastleSide};
 use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
+use crate::colored_property::ColoredProperty;
+use crate::debuffs_map::DebuffsMap;
 use crate::dimension::Dimension;
 use crate::heat_map::HeatMap;
 use crate::piece::{Piece, PieceInit};
@@ -23,8 +24,6 @@ use crate::vector_points::VectorPoints;
 #[derive(Debug, Clone)]
 pub struct King {
     color: Color,
-    buffs: BuffsCollection,
-    debuffs: DebuffsCollection,
     current_position: Point,
     id: PieceId,
 }
@@ -32,14 +31,6 @@ pub struct King {
 impl King {
     pub fn id(&self) -> &PieceId {
         &self.id
-    }
-
-    pub fn buffs(&self) -> &BuffsCollection {
-        &self.buffs
-    }
-
-    pub fn debuffs(&self) -> &DebuffsCollection {
-        &self.debuffs
     }
 
     pub fn color(&self) -> &Color {
@@ -84,6 +75,8 @@ impl King {
     pub fn calculate_moves<F: FnMut(PieceMove), HT: HeatMap, SQ: SquaresMap>(
         &self,
         board_map: &BoardMap,
+        cbuffs_map: &ColoredProperty<BuffsMap>,
+        cdebuffs_map: &ColoredProperty<DebuffsMap>,
         dimension: &Dimension,
         board_config: &BoardConfig<HT, SQ>,
         opposite_strategy_points: &StrategyPoints,
@@ -113,9 +106,11 @@ impl King {
             }
         }
 
-        if !self.debuffs.has_check() && self.buffs.has_castle() {
+        if !cdebuffs_map[&self.color].has_check(&self.id) && cbuffs_map[&self.color].has_castle(&self.id) {
             self.castle_moves(
                 board_map,
+                cbuffs_map,
+                cdebuffs_map,
                 dimension,
                 board_config,
                 opposite_strategy_points,
@@ -127,6 +122,8 @@ impl King {
     fn castle_moves<F: FnMut(PieceMove), HT: HeatMap, SQ: SquaresMap>(
         &self,
         board_map: &BoardMap,
+        cbuffs_map: &ColoredProperty<BuffsMap>,
+        cdebuffs_map: &ColoredProperty<DebuffsMap>,
         dimension: &Dimension,
         board_config: &BoardConfig<HT, SQ>,
         opposite_strategy_points: &StrategyPoints,
@@ -221,7 +218,7 @@ impl King {
                 // important to make sure rook is not pinned. If it is pinned then it means
                 // castle will result in check which would be illegal move. Such kind of pin
                 // is possible in chess 960. We may skip further checks in this case.
-                if !(rook.buffs().has_castle() && rook.debuffs().pin().is_none()) {
+                if !(cbuffs_map[rook.color()].has_castle(rook.id()) && !cdebuffs_map[rook.color()].has_pin(rook.id())) {
                     continue;
                 }
 
@@ -319,15 +316,11 @@ impl King {
 impl PieceInit for King {
     fn from_parts(
         color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
         current_position: Point,
         id: PieceId,
     ) -> Self {
         Self {
             color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
             current_position,
             id,
         }

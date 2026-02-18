@@ -13,32 +13,22 @@ use knight::*;
 use bishop::*;
 use queen::*;
 use king::*;
-use crate::board_map::BoardMap;
-use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
-use crate::dimension::Dimension;
 use crate::piece_id::PieceId;
 use crate::point::Point;
-use crate::strategy_point::StrategyPoint;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 
 pub trait PieceInit: Sized {
-    fn from_parts(color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                  current_position: Point, id: PieceId) -> Self;
+    fn from_parts(color: Color, current_position: Point, id: PieceId) -> Self;
 
     fn new(
         color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
         current_position: Point,
         id: PieceId,
     ) -> Self {
         Self::from_parts(
             color,
-            buffs,
-            debuffs,
             current_position,
             id,
         )
@@ -57,15 +47,14 @@ pub enum Piece {
 }
 
 impl Piece {
-    pub fn init_piece_by_name(name: &str, color: Color, buffs: Vec<Buff>, debuffs: Vec<Debuff>,
-                              current_position: Point, id: PieceId) -> Self {
+    pub fn init_piece_by_name(name: &str, color: Color, current_position: Point, id: PieceId) -> Self {
         match name {
-            "Pawn" => Self::Pawn(Pawn::new(color, buffs, debuffs, current_position, id)),
-            "Rook" => Self::Rook(Rook::new(color, buffs, debuffs, current_position, id)),
-            "Knight" => Self::Knight(Knight::new(color, buffs, debuffs, current_position, id)),
-            "Bishop" => Self::Bishop(Bishop::new(color, buffs, debuffs, current_position, id)),
-            "Queen" => Self::Queen(Queen::new(color, buffs, debuffs, current_position, id)),
-            "King" => Self::King(King::new(color, buffs, debuffs, current_position, id)),
+            "Pawn" => Self::Pawn(Pawn::new(color, current_position, id)),
+            "Rook" => Self::Rook(Rook::new(color, current_position, id)),
+            "Knight" => Self::Knight(Knight::new(color, current_position, id)),
+            "Bishop" => Self::Bishop(Bishop::new(color, current_position, id)),
+            "Queen" => Self::Queen(Queen::new(color, current_position, id)),
+            "King" => Self::King(King::new(color, current_position, id)),
             _ => panic!("Unknown piece: {name}")
         }
     }
@@ -79,18 +68,6 @@ impl Piece {
             Self::Queen(_) => "Queen",
             Self::King(_) => "King",
             Self::UnknownPiece(_) => panic!("Unknown piece can't be named properly!"),
-        }
-    }
-
-    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(&self, board_map: &BoardMap, dimension: &Dimension, consumer: F) {
-        match self {
-            Self::Pawn(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::Rook(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::Knight(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::Bishop(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::Queen(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::King(p) => p.calculate_strategy_points(board_map, dimension, consumer),
-            Self::UnknownPiece(_) => panic!("Can't calculate strategy points for an unknown piece!"),
         }
     }
 
@@ -142,29 +119,6 @@ impl Piece {
         }
     }
 
-    pub fn buffs(&self) -> &BuffsCollection {
-        match self {
-            Self::Pawn(p) => p.buffs(),
-            Self::Rook(p) => p.buffs(),
-            Self::Knight(p) => p.buffs(),
-            Self::Bishop(p) => p.buffs(),
-            Self::Queen(p) => p.buffs(),
-            Self::King(p) => p.buffs(),
-            Self::UnknownPiece(_) => panic!("Unknown piece does not have buffs!"),
-        }
-    }
-
-    pub fn debuffs(&self) -> &DebuffsCollection {
-        match self {
-            Self::Pawn(p) => p.debuffs(),
-            Self::Rook(p) => p.debuffs(),
-            Self::Knight(p) => p.debuffs(),
-            Self::Bishop(p) => p.debuffs(),
-            Self::Queen(p) => p.debuffs(),
-            Self::King(p) => p.debuffs(),
-            Self::UnknownPiece(_) => panic!("Unknown piece does not have debuffs!"),
-        }
-    }
 
     pub fn is_ally(&self, color: &Color) -> bool {
         self.color() == color

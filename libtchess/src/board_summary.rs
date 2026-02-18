@@ -63,7 +63,7 @@ impl PieceRepr {
         }
     }
 
-    pub fn from_piece(piece: &Piece) -> Self {
+    pub fn from_piece(piece: &Piece, has_castle: bool, has_en_passant: bool) -> Self {
         let mut packed = Self {
             packed: 0,
             initialized: false,
@@ -71,8 +71,8 @@ impl PieceRepr {
         packed.pack_kind(piece);
         packed.pack_color(piece.color());
         packed.pack_position(piece.current_position());
-        packed.pack_castle(piece.buffs().has_castle());
-        packed.pack_en_passant(piece.buffs().has_en_passant());
+        packed.pack_castle(has_castle);
+        packed.pack_en_passant(has_en_passant);
         packed.initialized = true;
         packed
     }
@@ -197,7 +197,7 @@ impl BoardSummary {
         self.last_pawn_move_turn_number = self.turn_number;
     }
 
-    pub fn add_piece(&mut self, piece: &Piece) {
+    pub fn add_piece(&mut self, piece: &Piece, has_castle: bool, has_en_passant: bool) {
         match piece {
             Piece::Bishop(_) => self.active_pieces_stats[piece.color()].bishops_count += 1,
             Piece::King(_) => self.active_pieces_stats[piece.color()].kings_count += 1,
@@ -207,7 +207,7 @@ impl BoardSummary {
             Piece::Rook(_) => self.active_pieces_stats[piece.color()].rooks_count += 1,
             Piece::UnknownPiece(_) => panic!("Can't add unknown piece to active pieces list!"),
         }
-        let packed_piece = PieceRepr::from_piece(piece);
+        let packed_piece = PieceRepr::from_piece(piece, has_castle, has_en_passant);
         self.zposition ^= Self::zobrist_repr(packed_piece.packed());
         self.packed_pieces.insert(*piece.id(), packed_piece);
     }
@@ -338,12 +338,10 @@ mod tests {
             fn it_packs_max_x_min_y_position_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(i16::MAX, i16::MIN),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 0 0 0 1000000000000000 0111111111111111"
@@ -354,12 +352,10 @@ mod tests {
             fn it_packs_min_x_max_y_position_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(i16::MIN, i16::MAX),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 0 0 0 0111111111111111 1000000000000000"
@@ -370,12 +366,10 @@ mod tests {
             fn it_packs_max_x_max_y_position_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(i16::MAX, i16::MAX),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 0 0 0 0111111111111111 0111111111111111"
@@ -386,12 +380,10 @@ mod tests {
             fn it_packs_min_x_min_y_position_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(i16::MIN, i16::MIN),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 0 0 0 1000000000000000 1000000000000000"
@@ -402,12 +394,10 @@ mod tests {
             fn it_packs_white_bishop_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 0 0 0 0000000000000010 0000000000000001"
@@ -418,12 +408,10 @@ mod tests {
             fn it_packs_black_bishop_correctly() {
                 let piece = Piece::Bishop(Bishop::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "000 1 0 0 0000000000000010 0000000000000001"
@@ -434,12 +422,10 @@ mod tests {
             fn it_packs_white_king_with_castle_correctly() {
                 let piece = Piece::King(King::new(
                     Color::White,
-                    vec![Buff::Castle],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, true, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "001 0 0 1 0000000000000010 0000000000000001"
@@ -450,12 +436,10 @@ mod tests {
             fn it_packs_white_king_without_castle_correctly() {
                 let piece = Piece::King(King::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "001 0 0 0 0000000000000010 0000000000000001"
@@ -466,12 +450,10 @@ mod tests {
             fn it_packs_black_king_with_castle_correctly() {
                 let piece = Piece::King(King::new(
                     Color::Black,
-                    vec![Buff::Castle],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, true, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "001 1 0 1 0000000000000010 0000000000000001"
@@ -482,12 +464,10 @@ mod tests {
             fn it_packs_black_king_without_castle_correctly() {
                 let piece = Piece::King(King::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "001 1 0 0 0000000000000010 0000000000000001"
@@ -498,12 +478,10 @@ mod tests {
             fn it_packs_white_knight_correctly() {
                 let piece = Piece::Knight(Knight::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(2, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "010 0 0 0 0000000000000010 0000000000000001"
@@ -514,12 +492,10 @@ mod tests {
             fn it_packs_black_knight_correctly() {
                 let piece = Piece::Knight(Knight::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "010 1 0 0 0000000000000010 0000000000000001"
@@ -530,12 +506,10 @@ mod tests {
             fn it_packs_white_pawn_with_en_passant_correctly() {
                 let piece = Piece::Pawn(Pawn::new(
                     Color::White,
-                    vec![Buff::EnPassant(Point::new(2, 3), Point::new(2, 2))],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, true);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "011 0 1 0 0000000000000010 0000000000000001"
@@ -546,12 +520,10 @@ mod tests {
             fn it_packs_white_pawn_without_en_passant_correctly() {
                 let piece = Piece::Pawn(Pawn::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "011 0 0 0 0000000000000010 0000000000000001"
@@ -562,12 +534,10 @@ mod tests {
             fn it_packs_black_pawn_with_en_passant_correctly() {
                 let piece = Piece::Pawn(Pawn::new(
                     Color::Black,
-                    vec![Buff::EnPassant(Point::new(2, 3), Point::new(2, 2))],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, true);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "011 1 1 0 0000000000000010 0000000000000001"
@@ -578,12 +548,10 @@ mod tests {
             fn it_packs_black_pawn_without_en_passant_correctly() {
                 let piece = Piece::Pawn(Pawn::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "011 1 0 0 0000000000000010 0000000000000001"
@@ -594,12 +562,10 @@ mod tests {
             fn it_packs_white_queen_correctly() {
                 let piece = Piece::Queen(Queen::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "100 0 0 0 0000000000000010 0000000000000001"
@@ -610,12 +576,10 @@ mod tests {
             fn it_packs_black_queen_correctly() {
                 let piece = Piece::Queen(Queen::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "100 1 0 0 0000000000000010 0000000000000001"
@@ -626,12 +590,10 @@ mod tests {
             fn it_packs_white_rook_with_castle_correctly() {
                 let piece = Piece::Rook(Rook::new(
                     Color::White,
-                    vec![Buff::Castle],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, true, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "101 0 0 1 0000000000000010 0000000000000001"
@@ -642,12 +604,10 @@ mod tests {
             fn it_packs_white_rook_without_castle_correctly() {
                 let piece = Piece::Rook(Rook::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "101 0 0 0 0000000000000010 0000000000000001"
@@ -658,12 +618,10 @@ mod tests {
             fn it_packs_black_rook_with_castle_correctly() {
                 let piece = Piece::Rook(Rook::new(
                     Color::Black,
-                    vec![Buff::Castle],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, true, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "101 1 0 1 0000000000000010 0000000000000001"
@@ -674,12 +632,10 @@ mod tests {
             fn it_packs_black_rook_without_castle_correctly() {
                 let piece = Piece::Rook(Rook::new(
                     Color::Black,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::Black),
                 ));
-                let piece_repr = PieceRepr::from_piece(&piece);
+                let piece_repr = PieceRepr::from_piece(&piece, false, false);
                 assert_eq!(
                     format_packed(piece_repr.packed),
                     "101 1 0 0 0000000000000010 0000000000000001"
@@ -693,20 +649,16 @@ mod tests {
             fn packed_piece() -> PieceRepr {
                 let piece = Piece::King(King::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));
-                PieceRepr::from_piece(&piece)
+                PieceRepr::from_piece(&piece, false, false)
             }
 
             #[test]
             fn it_correctly_updates_kind() {
                 let another_piece = Piece::Knight(Knight::new(
                     Color::White,
-                    vec![],
-                    vec![],
                     Point::new(1, 2),
                     PieceId::new(1, &Color::White),
                 ));

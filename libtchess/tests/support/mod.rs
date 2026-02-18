@@ -266,6 +266,94 @@ pub fn board_default_5x5() -> Board<TestHeatMap, TestSquaresMap> {
 }
 
 #[allow(unused)]
+pub fn classic_8x8_prefilled() -> Board<TestHeatMap, TestSquaresMap> {
+    let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
+    let squares_map = TestSquaresMap::from_dimension(&dimension);
+    let config = BoardConfig::new(
+        CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
+        CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
+        TestHeatMap::init(),
+        squares_map,
+        dimension,
+        Player::Human,
+        Player::Human,
+    );
+    let mut board = Board::empty(config);
+
+    for y in board.dimension().get_rows_range() {
+        for x in board.dimension().get_columns_range() {
+            let point = Point::new(x, y);
+            match (y, x) {
+                // White pieces
+                (1, 1) | (1, 8) => {
+                    board.add_piece("Rook", Color::White, vec![Buff::Castle], vec![], point);
+                    ()
+                }
+                (1, 2) | (1, 7) => {
+                    board.add_piece("Knight", Color::White, vec![], vec![], point);
+                    ()
+                }
+                (1, 3) | (1, 6) => {
+                    board.add_piece("Bishop", Color::White, vec![], vec![], point);
+                    ()
+                }
+                (1, 4) => {
+                    board.add_piece("Queen", Color::White, vec![], vec![], point);
+                    ()
+                }
+                (1, 5) => {
+                    board.add_piece("King", Color::White, vec![Buff::Castle], vec![], point);
+                    ()
+                }
+                (2, _) => {
+                    board.add_piece(
+                        "Pawn",
+                        Color::White,
+                        vec![Buff::AdditionalPoint],
+                        vec![],
+                        point,
+                    );
+                    ()
+                }
+                // Black pieces
+                (8, 1) | (8, 8) => {
+                    board.add_piece("Rook", Color::Black, vec![Buff::Castle], vec![], point);
+                    ()
+                }
+                (8, 2) | (8, 7) => {
+                    board.add_piece("Knight", Color::Black, vec![], vec![], point);
+                    ()
+                }
+                (8, 3) | (8, 6) => {
+                    board.add_piece("Bishop", Color::Black, vec![], vec![], point);
+                    ()
+                }
+                (8, 5) => {
+                    board.add_piece("King", Color::Black, vec![Buff::Castle], vec![], point);
+                    ()
+                }
+                (8, 4) => {
+                    board.add_piece("Queen", Color::Black, vec![], vec![], point);
+                    ()
+                }
+                (7, _) => {
+                    board.add_piece(
+                        "Pawn",
+                        Color::Black,
+                        vec![Buff::AdditionalPoint],
+                        vec![],
+                        point,
+                    );
+                    ()
+                }
+                _ => (),
+            };
+        }
+    }
+    board
+}
+
+#[allow(unused)]
 pub fn scored_moves_of(board: &Board<TestHeatMap, TestSquaresMap>, pieces: Vec<&Piece>) -> Vec<PieceMovesByScore> {
     let mut res = vec![];
 
@@ -348,6 +436,19 @@ pub fn add_piece(
 
 #[allow(unused)]
 pub fn move_piece(board: &mut Board<TestHeatMap, TestSquaresMap>, piece_id: PieceId, piece_move: PieceMove) {
+    assert!(
+        board.move_piece(&piece_id, &piece_move).is_some(),
+        "Failed to move {} on {} position",
+        board
+            .find_piece_by_id(&piece_id)
+            .expect(format!("Could not find piece by id {}", piece_id).as_str()),
+        piece_move.destination(),
+    );
+}
+
+#[allow(unused)]
+pub fn move_piece_at(board: &mut Board<TestHeatMap, TestSquaresMap>, point: Point, piece_move: PieceMove) {
+    let piece_id = *board.piece_id_at(&point).unwrap();
     assert!(
         board.move_piece(&piece_id, &piece_move).is_some(),
         "Failed to move {} on {} position",

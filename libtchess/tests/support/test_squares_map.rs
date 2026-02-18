@@ -5,6 +5,7 @@ use libtchess::point::Point;
 use libtchess::square::Square;
 use libtchess::squares_map::SquaresMap;
 
+#[derive(Clone)]
 pub struct TestSquaresMap {
     map: Vec<Vec<Option<Color>>>,
 }

@@ -2,6 +2,7 @@ use libtchess::heat_map::HeatMap;
 use libtchess::piece::Piece;
 use libtchess::point::Point;
 
+#[derive(Clone)]
 pub struct TestHeatMap {
     map_bishop: Vec<Vec<i16>>,
     map_king: Vec<Vec<i16>>,

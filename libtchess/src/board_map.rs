@@ -126,7 +126,16 @@ impl BoardMap {
             .expect(format!("Couldn't find piece by id {}", piece_id).as_str())
     }
 
+    pub fn find_piece_by_id_mut(&mut self, piece_id: &PieceId) -> &mut Piece {
+        self.maybe_find_piece_by_id_mut(piece_id)
+            .expect(format!("Couldn't find piece by id {}", piece_id).as_str())
+    }
+
     pub fn maybe_find_piece_by_id(&self, piece_id: &PieceId) -> Option<&Piece> {
         self.active_pieces[&piece_id.color()].get(piece_id)
+    }
+
+    pub fn maybe_find_piece_by_id_mut(&mut self, piece_id: &PieceId) -> Option<&mut Piece> {
+        self.active_pieces[&piece_id.color()].get_mut(piece_id)
     }
 }

@@ -191,8 +191,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let king = Piece::King(King::new(
             Color::White,
-            vec![],
-            vec![],
             Point::new(1, 1),
             PieceId::new(1, &Color::White),
         ));
@@ -204,8 +202,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let king = Piece::King(King::new(
             Color::Black,
-            vec![],
-            vec![],
             Point::new(1, 1),
             PieceId::new(1, &Color::Black),
         ));
@@ -217,8 +213,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let king = Piece::King(King::new(
             Color::White,
-            vec![],
-            vec![],
             Point::new(1, 1),
             PieceId::new(1, &Color::White),
         ));
@@ -230,8 +224,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let king = Piece::King(King::new(
             Color::Black,
-            vec![],
-            vec![],
             Point::new(1, 1),
             PieceId::new(1, &Color::Black),
         ));
@@ -243,8 +235,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let pawn = Piece::Pawn(Pawn::new(
             Color::White,
-            vec![],
-            vec![],
             Point::new(5, 4),
             PieceId::new(1, &Color::White),
         ));
@@ -256,8 +246,6 @@ mod tests {
         let heat_map = ClassicHeatMap::init();
         let pawn = Piece::Pawn(Pawn::new(
             Color::Black,
-            vec![],
-            vec![],
             Point::new(5, 5),
             PieceId::new(1, &Color::Black),
         ));

@@ -824,3 +824,22 @@ mod capturing_piece_that_previously_captured_pinned_piece {
             .to(|_board| vec![]);
     }
 }
+
+mod pinning_a_piece_on_cloned_boards {
+    use super::*;
+
+    #[test]
+    fn it_does_not_share_the_pin_state_among_cloned_boards() {
+        let mut board = classic_8x8_prefilled();
+        move_piece_at(&mut board, Point::new(5, 2), PieceMove::LongMove(Point::new(5, 4)));
+        move_piece_at(&mut board, Point::new(5, 7), PieceMove::LongMove(Point::new(5, 5)));
+        move_piece_at(&mut board, Point::new(6, 1), PieceMove::Point(Point::new(2, 5)));
+        move_piece_at(&mut board, Point::new(7, 8), PieceMove::Point(Point::new(6, 6)));
+
+        let mut next_pos = board.clone();
+        move_piece_at(&mut next_pos, Point::new(2, 5), PieceMove::Point(Point::new(5, 2)));
+
+        let mut next_pos = board.clone();
+        move_piece_at(&mut next_pos, Point::new(2, 5), PieceMove::Point(Point::new(4, 7)));
+    }
+}

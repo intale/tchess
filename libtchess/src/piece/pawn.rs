@@ -1,8 +1,11 @@
 use crate::board::{INVERT_COLORS};
 use crate::board_map::BoardMap;
-use crate::buff::{Buff, BuffsCollection};
+use crate::buff::Buff;
+use crate::buffs_map::BuffsMap;
 use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
+use crate::colored_property::ColoredProperty;
+use crate::debuff::Debuff;
+use crate::debuffs_map::DebuffsMap;
 use crate::dimension::Dimension;
 use crate::piece::{PieceId, PieceInit};
 use crate::piece_move::PieceMove;
@@ -18,8 +21,6 @@ use crate::vector_points::VectorPoints;
 #[derive(Debug, Clone)]
 pub struct Pawn {
     color: Color,
-    buffs: BuffsCollection,
-    debuffs: DebuffsCollection,
     current_position: Point,
     id: PieceId,
 }
@@ -27,14 +28,6 @@ pub struct Pawn {
 impl Pawn {
     pub fn id(&self) -> &PieceId {
         &self.id
-    }
-
-    pub fn buffs(&self) -> &BuffsCollection {
-        &self.buffs
-    }
-
-    pub fn debuffs(&self) -> &DebuffsCollection {
-        &self.debuffs
     }
 
     pub fn color(&self) -> &Color {
@@ -52,6 +45,7 @@ impl Pawn {
     pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(
         &self,
         board_map: &BoardMap,
+        cbuffs_map: &ColoredProperty<BuffsMap>,
         dimension: &Dimension,
         mut consumer: F,
     ) {
@@ -94,7 +88,7 @@ impl Pawn {
                 break;
             }
             points_calculated += 1;
-            if self.buffs.has_additional_point() && points_calculated == 1 {
+            if cbuffs_map[&self.color].has_additional_point(&self.id) && points_calculated == 1 {
                 continue;
             }
             break;
@@ -104,10 +98,11 @@ impl Pawn {
     pub fn calculate_moves<F: FnMut(PieceMove)>(
         &self,
         board_map: &BoardMap,
+        cbuffs_map: &ColoredProperty<BuffsMap>,
+        cdebuffs_map: &ColoredProperty<DebuffsMap>,
         dimension: &Dimension,
         mut consumer: F,
     ) {
-        let pin = self.debuffs.pin();
         let mut available_directions = match self.color {
             Color::White => {
                 vec![
@@ -125,11 +120,15 @@ impl Pawn {
             }
         };
 
-        if !pin.is_none() {
-            let pin = pin.unwrap();
+        if let Some(debuff) = cdebuffs_map[&self.color].pin(&self.id) {
+            let pin_vector =
+                match debuff {
+                    Debuff::Pin(v) => v,
+                    _ => panic!("Logical error! Expected pin debuff, but got {:?}", debuff),
+                };
             available_directions = available_directions
                 .iter()
-                .filter(|&&vec| pin == vec || pin.inverse() == vec)
+                .filter(|&vec| pin_vector == vec || &pin_vector.inverse() == vec)
                 .map(|&vec| vec)
                 .collect::<Vec<_>>();
         }
@@ -156,10 +155,16 @@ impl Pawn {
                 }
                 match direction {
                     Vector::Diagonal(_) => {
-                        if let Some((en_passant, enemy_piece_point)) = self.buffs.en_passant()
-                            && en_passant == point
+                        if let Some(buff) = cbuffs_map[&self.color].en_passant(&self.id)
                         {
-                            consumer(PieceMove::EnPassant(en_passant, enemy_piece_point));
+                            let (en_passant, enemy_piece_point) =
+                                match buff {
+                                    Buff::EnPassant(p1, p2) => (*p1, *p2),
+                                    _ => panic!("Logical error! EnPassant buff is expected, but got: {:?}", buff),
+                                };
+                            if en_passant == point {
+                                consumer(PieceMove::EnPassant(en_passant, enemy_piece_point));
+                            }
                         } else {
                             if square.is_capturable_enemy_square(&self.color, opposite_king_id) {
                                 if pre_promote_position {
@@ -187,7 +192,7 @@ impl Pawn {
                             }
                         }
                         points_calculated += 1;
-                        if self.buffs.has_additional_point() && points_calculated < 2 {
+                        if cbuffs_map[&self.color].has_additional_point(&self.id) && points_calculated < 2 {
                             continue;
                         }
                     }
@@ -232,15 +237,11 @@ impl Pawn {
 impl PieceInit for Pawn {
     fn from_parts(
         color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
         current_position: Point,
         id: PieceId,
     ) -> Self {
         Self {
             color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
             current_position,
             id,
         }

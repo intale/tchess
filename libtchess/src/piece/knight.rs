@@ -1,8 +1,8 @@
 use crate::board::{INVERT_COLORS};
 use crate::board_map::BoardMap;
-use crate::buff::{Buff, BuffsCollection};
 use crate::color::Color;
-use crate::debuff::{Debuff, DebuffsCollection};
+use crate::colored_property::ColoredProperty;
+use crate::debuffs_map::DebuffsMap;
 use crate::dimension::Dimension;
 use crate::piece::{PieceId, PieceInit};
 use crate::piece_move::PieceMove;
@@ -16,8 +16,6 @@ use crate::vector_points::VectorPoints;
 #[derive(Debug, Clone)]
 pub struct Knight {
     color: Color,
-    buffs: BuffsCollection,
-    debuffs: DebuffsCollection,
     current_position: Point,
     id: PieceId,
 }
@@ -25,14 +23,6 @@ pub struct Knight {
 impl Knight {
     pub fn id(&self) -> &PieceId {
         &self.id
-    }
-
-    pub fn buffs(&self) -> &BuffsCollection {
-        &self.buffs
-    }
-
-    pub fn debuffs(&self) -> &DebuffsCollection {
-        &self.debuffs
     }
 
     pub fn color(&self) -> &Color {
@@ -78,10 +68,11 @@ impl Knight {
     pub fn calculate_moves<F: FnMut(PieceMove)>(
         &self,
         board_map: &BoardMap,
+        cdebuffs_map: &ColoredProperty<DebuffsMap>,
         dimension: &Dimension,
         mut consumer: F,
     ) {
-        if self.debuffs.pin().is_some() {
+        if cdebuffs_map[&self.color].has_pin(&self.id) {
             // Pinned knight has no legal moves as there is no other mechanics that pins using jump
             // vectors. Thus, there can't be any other non-pinned jump vector that would allow some
             // moves.
@@ -127,15 +118,11 @@ impl Knight {
 impl PieceInit for Knight {
     fn from_parts(
         color: Color,
-        buffs: Vec<Buff>,
-        debuffs: Vec<Debuff>,
         current_position: Point,
         id: PieceId,
     ) -> Self {
         Self {
             color,
-            buffs: BuffsCollection::new(buffs),
-            debuffs: DebuffsCollection::new(debuffs),
             current_position,
             id,
         }
