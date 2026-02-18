@@ -13,7 +13,7 @@ use crate::vector::Vector;
 use crate::vector::jump_vector::JumpVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Knight {
     color: Color,
     current_position: Point,

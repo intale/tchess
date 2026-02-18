@@ -5,7 +5,7 @@ use crate::heat_map::HeatMap;
 use crate::player::Player;
 use crate::squares_map::SquaresMap;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct BoardConfig<HT: HeatMap, SM: SquaresMap> {
     king_side_castle_x_points: CastleXPoints,
     queen_side_castle_x_points: CastleXPoints,

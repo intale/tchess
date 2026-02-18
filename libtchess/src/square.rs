@@ -3,7 +3,7 @@ use crate::color::Color;
 use crate::piece_id::PieceId;
 use crate::utils::pretty_print::PrettyPrint;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Square {
     piece_id: Option<PieceId>,
     color: Color,

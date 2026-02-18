@@ -6,7 +6,7 @@ use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::line_vector::LineVector;
 use crate::vector::Vector;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 struct XRayData {
     direction: Vector,
     pin: Option<PieceId>,

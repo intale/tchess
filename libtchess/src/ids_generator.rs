@@ -1,7 +1,7 @@
 use crate::color::Color;
 use crate::piece_id::PieceId;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct IdsGenerator {
     current_val: isize,
 }

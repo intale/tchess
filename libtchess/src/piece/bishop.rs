@@ -16,7 +16,7 @@ use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Bishop {
     color: Color,
     current_position: Point,

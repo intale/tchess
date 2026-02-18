@@ -14,7 +14,7 @@ use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Rook {
     color: Color,
     current_position: Point,

@@ -2,7 +2,7 @@ use crate::dimension::Dimension;
 use crate::point::Point;
 use crate::vector::Vector;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct VectorPoints {
     current_point: Point,
     dimension: Dimension,
