@@ -1,8 +1,7 @@
 use crate::move_score::MoveScore;
 use crate::piece_id::PieceId;
 use crate::piece_move::PieceMove;
-use crate::point::Point;
-use im_rc::{HashMap, HashSet, OrdMap, Vector};
+use im_rc::{HashMap, OrdMap, Vector};
 use rustc_hash::FxBuildHasher;
 
 #[derive(Clone)]
