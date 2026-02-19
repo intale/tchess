@@ -462,6 +462,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 board_map,
                 config,
                 cmoves_map,
+                cstrategy_points,
                 cgeneral_constraints,
             );
         }
@@ -518,19 +519,52 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
         cmoves_map: &ColoredProperty<MovesMap>,
+        cstrategy_points: &ColoredProperty<StrategyPoints>,
         cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
+        let destination_to_cover = piece_move.destination();
         let constraints = cgeneral_constraints[color]
             .as_mut()
             .expect("Logical error: constraints MovesMap must be initialized at this point!");
-        if let Some(pieces) = cmoves_map[color].pieces_to_move_onto(piece_move.destination()) {
-            for (piece_id, piece_moves) in pieces {
+        let mut calc_pieces = |piece_ids: &HashSet<PieceId, FxBuildHasher>| {
+            for piece_id in piece_ids {
                 let piece = board_map.find_piece_by_id(piece_id);
-                for piece_move in piece_moves.into_iter() {
-                    let move_score = Self::evaluate_move(&config, board_map, piece_move, piece);
-                    constraints.add(piece_id, *piece_move, move_score);
+                if let Some(moves) = cmoves_map[color].moves_of(piece_id) {
+                    match piece {
+                        Piece::Pawn(_) => {
+                            for (piece_move, _) in moves {
+                                if piece_move.destination() != destination_to_cover {
+                                    continue;
+                                }
+                                let move_score =
+                                    Self::evaluate_move(&config, board_map, piece_move, piece);
+                                constraints.add(piece_id, *piece_move, move_score);
+                            }
+                        }
+                        _ => {
+                            // Not taking into account other move variants as it is not possible to
+                            // cover from check with castle move for example
+                            if let Some((defensive_move, _)) =
+                                moves.get_key_value(&PieceMove::Point(*destination_to_cover))
+                            {
+                                let move_score =
+                                    Self::evaluate_move(&config, board_map, defensive_move, piece);
+                                constraints.add(piece_id, *defensive_move, move_score);
+                            };
+                        }
+                    }
                 }
             }
+        };
+        if let Some(piece_ids) =
+            cstrategy_points[color].get_pieces(&StrategyPoint::Attack(*destination_to_cover))
+        {
+            calc_pieces(piece_ids)
+        }
+        if let Some(piece_ids) =
+            cstrategy_points[color].get_pieces(&StrategyPoint::Move(*destination_to_cover))
+        {
+            calc_pieces(piece_ids)
         }
     }
 
