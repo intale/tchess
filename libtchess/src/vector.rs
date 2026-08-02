@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use crate::vector::diagonal_vector::DiagonalVector;
 use crate::vector::jump_vector::JumpVector;
 use crate::vector::line_vector::LineVector;
@@ -7,7 +8,7 @@ pub mod diagonal_vector;
 pub mod line_vector;
 pub mod jump_vector;
 
-#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Ord, PartialOrd)]
 pub enum Vector {
     Diagonal(DiagonalVector),
     Jump(JumpVector),
@@ -54,11 +55,44 @@ impl Vector {
         LineVector::all_variants().into_iter().map(|d| Self::Line(d)).collect::<Vec<_>>()
     }
 
+    pub fn all_vectors() -> Vec<Self> {
+        let mut vectors = Self::diagonal_vectors();
+        vectors.append(&mut Self::line_vectors());
+        vectors.append(&mut Self::jump_vectors());
+        vectors
+    }
+
     pub fn inverse(&self) -> Self {
         match self {
             Self::Diagonal(v) => Self::Diagonal(v.inverse()),
             Self::Jump(v) => Self::Jump(v.inverse()),
             Self::Line(v) => Self::Line(v.inverse()),
+        }
+    }
+
+    pub fn is_ascending(&self) -> bool {
+        match self {
+            Self::Diagonal(d) => d.is_ascending(),
+            Self::Jump(d) => d.is_ascending(),
+            Self::Line(d) => d.is_ascending(),
+        }
+    }
+
+    pub fn distance(&self, point1: &Point, point2: &Point) -> Option<i32> {
+        match self {
+            Self::Diagonal(_) => DiagonalVector::distance(point1, point2),
+            Self::Line(_) => LineVector::distance(point1, point2),
+            Self::Jump(_) => panic!("Distance calculation for jump vectors is not implemented"),
+        }
+    }
+}
+
+impl Display for Vector {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Diagonal(vec) => vec.fmt(f),
+            Self::Line(vec) => vec.fmt(f),
+            Self::Jump(vec) => vec.fmt(f),
         }
     }
 }

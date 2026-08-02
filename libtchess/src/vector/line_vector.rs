@@ -1,18 +1,19 @@
+use std::fmt::{Display, Formatter};
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Ord, PartialOrd)]
 pub enum LineVector {
-    Top,
     Bottom,
+    Top,
     Left,
     Right,
 }
 
 impl LineVector {
-    pub fn all_variants() -> Vec<Self> {
-        vec![
-            Self::Top,
+    pub const fn all_variants() -> [Self; 4] {
+        [
             Self::Bottom,
+            Self::Top,
             Self::Left,
             Self::Right,
         ]
@@ -23,13 +24,33 @@ impl LineVector {
         let (x1, y1) = point1.to_tuple();
         let (x2, y2) = point2.to_tuple();
 
-        match (x1 - x2, y1 - y2) {
+        let delta_x = x1.wrapping_sub(*x2);
+        let delta_y = y1.wrapping_sub(*y2);
+        match (delta_x, delta_y) {
             (0, i16::MIN..0) => Some(Self::Top),
             (0, 1..=i16::MAX) => Some(Self::Bottom),
             (1..=i16::MAX, 0) => Some(Self::Left),
             (i16::MIN..0, 0) => Some(Self::Right),
             _ => None,
         }
+    }
+
+    pub fn distance(point1: &Point, point2: &Point) -> Option<i32> {
+        if let Some(direction) = Self::calc_direction(point1, point2) {
+            return match direction {
+                Self::Top | Self::Bottom => {
+                    let y1 = **point1.y() as i32;
+                    let y2 = **point2.y() as i32;
+                    Some((y1 - y2).abs())
+                }
+                Self::Left | Self::Right => {
+                    let x1 = **point1.x() as i32;
+                    let x2 = **point2.x() as i32;
+                    Some((x1 - x2).abs())
+                }
+            }
+        }
+        None
     }
 
     pub fn inverse(&self) -> Self {
@@ -41,27 +62,43 @@ impl LineVector {
         }
     }
 
+    pub fn is_ascending(&self) -> bool {
+        match self {
+            Self::Top | Self::Right => true,
+            Self::Bottom | Self::Left => false,
+        }
+    }
+
     pub fn calc_next_point(&self, current_point: &Point) -> Point {
         let (&x, &y) = current_point.to_tuple();
         let (mut x, mut y) = (x, y);
         match self {
             Self::Top => {
                 y += 1;
-                
             }
             Self::Bottom => {
                 y -= 1;
-                
             }
             Self::Left => {
                 x -= 1;
-                
             }
             Self::Right => {
                 x += 1;
             }
         }
         Point::new(x, y)
+    }
+}
+
+impl Display for LineVector {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let arrow = match self {
+            Self::Top => '↑',
+            Self::Bottom => '↓',
+            Self::Left => '←',
+            Self::Right => '→',
+        };
+        write!(f, "{}", arrow)
     }
 }
 

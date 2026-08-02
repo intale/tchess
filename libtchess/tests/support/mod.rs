@@ -423,15 +423,9 @@ pub fn add_piece(
     buffs: Vec<Buff>,
     debuffs: Vec<Debuff>,
     position: Point,
-) -> PieceRepr {
+) -> Piece {
     let piece_id = board.add_piece(piece_name, color, buffs, debuffs, position);
-    let piece = board.find_piece_by_id(&piece_id).unwrap();
-
-    PieceRepr {
-        id: piece_id,
-        color: *piece.color(),
-        current_position: *piece.current_position(),
-    }
+    board.find_piece_by_id(&piece_id).unwrap().clone()
 }
 
 #[allow(unused)]

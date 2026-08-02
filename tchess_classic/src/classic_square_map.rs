@@ -14,12 +14,12 @@ impl ClassicSquaresMap {
 }
 
 impl SquaresMap for ClassicSquaresMap {
-    fn square(&self, point: &Point) -> Option<BoardSquare> {
+    fn square(&self, point: &Point) -> BoardSquare {
         let color = if point.x().value().wrapping_add(*point.y().value()) % 2 == 0 {
             Color::Black
         } else {
             Color::White
         };
-        Some(BoardSquare::Square(Square::new(color, None)))
+        BoardSquare::Square(Square::new(color, None))
     }
 }

@@ -7,8 +7,16 @@ pub struct Dimension {
     max_point: Point,
 }
 
+const MIN_X: i16 = i16::MIN + 1;
+const MIN_Y: i16 = i16::MIN + 1;
+const MAX_X: i16 = i16::MAX - 1;
+const MAX_Y: i16 = i16::MAX - 1;
+
 impl Dimension {
     pub fn new(min_point: Point, max_point: Point) -> Self {
+        let (min_x, min_y) = min_point.to_tuple();
+        let (max_x, max_y) = max_point.to_tuple();
+        assert!(min_x >= &MIN_X && min_y >= &MIN_Y && max_x <= &MAX_X && max_y <= &MAX_Y);
         Self { min_point, max_point }
     }
 
@@ -17,14 +25,6 @@ impl Dimension {
         let (max_x, max_y) = self.max_point.to_tuple();
         let (point_x, point_y) = point.to_tuple();
         (min_x..=max_x).contains(&point_x) && (min_y..=max_y).contains(&point_y)
-    }
-
-    pub fn get_columns_num(&self) -> i16 {
-        self.max_point.x() - self.min_point.x()
-    }
-
-    pub fn get_rows_num(&self) -> i16 {
-        self.max_point.y() - self.min_point.y()
     }
 
     pub fn min_point(&self) -> &Point {

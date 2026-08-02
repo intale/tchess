@@ -32,16 +32,13 @@ impl BoardMap {
     }
 
     pub fn piece_id_at(&self, point: &Point) -> Option<&PieceId> {
-        match self.point_to_board_square.get(point) {
-            Some(square) => square.get_piece_id(),
-            None => None,
-        }
+        self.board_square(point).get_piece_id()
     }
 
     pub fn board_square(&self, point: &Point) -> &BoardSquare {
         self.point_to_board_square
             .get(point)
-            .unwrap_or(&BoardSquare::VoidSquare)
+            .expect(format!("Point {:?} is out of bounds", point).as_str())
     }
 
     pub fn add_square(&mut self, point: Point, square: BoardSquare) {

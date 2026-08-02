@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use im_rc::{HashMap, HashSet, OrdSet};
+use rustc_hash::FxHashSet;
 use libtchess::piece_move::PieceMove;
 
 #[allow(unused)]
@@ -50,7 +51,26 @@ impl<T, B> ToVecRef for HashSet<T, B> {
     }
 }
 
+impl<T> ToVecRef for FxHashSet<T> {
+    type Item = T;
+
+    fn to_vec(&self) -> Vec<&Self::Item> {
+        self.iter().collect()
+    }
+}
+
 impl<T, B> ToVecRef for Option<&HashSet<T, B>> {
+    type Item = T;
+
+    fn to_vec(&self) -> Vec<&Self::Item> {
+        match self {
+            Some(hash) => hash.to_vec(),
+            None => vec![],
+        }
+    }
+}
+
+impl<T> ToVecRef for Option<&FxHashSet<T>> {
     type Item = T;
 
     fn to_vec(&self) -> Vec<&Self::Item> {

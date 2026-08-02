@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use crate::board::{INVERT_COLORS};
 use crate::board_map::BoardMap;
 use crate::color::Color;
@@ -8,7 +9,9 @@ use crate::dimension::Dimension;
 use crate::piece::{PieceId, PieceInit};
 use crate::piece_move::PieceMove;
 use crate::point::Point;
+use crate::segment::Segment;
 use crate::strategy_point::StrategyPoint;
+use crate::strategy_segments::StrategySegments;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
@@ -39,34 +42,56 @@ impl Queen {
         self.current_position = point;
     }
 
-    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(
+    pub fn calculate_strategy_points(
         &self,
-        board_map: &BoardMap,
         dimension: &Dimension,
-        mut consumer: F,
-    ) {
-        let opposite_king_id = board_map.king_id(&self.color.inverse());
+        strategy_segments: &StrategySegments,
+    ) -> Vec<Segment> {
+        let mut segments: Vec<Segment> = vec![];
         for direction in self.attack_vectors() {
-            let vector_points =
-                VectorPoints::without_initial(self.current_position, *dimension, direction);
-            for point in vector_points {
-                let square = board_map.board_square(&point);
-
-                if square.is_void_square() {
-                    consumer(StrategyPoint::DeadEnd(point));
-                    break;
-                }
-                if square.is_empty_square() || square.is_enemy_square(&self.color) {
-                    consumer(StrategyPoint::Attack(point));
-                }
-                if square.is_ally_square(&self.color) {
-                    consumer(StrategyPoint::Defense(point));
-                }
-                if !square.can_look_through(&self.color, opposite_king_id) {
-                    break;
+            if let Some(nearest_seg) =
+                strategy_segments.nearest_segment(&self.current_position, &direction) {
+                let segment = match nearest_seg {
+                    Segment::DeadEnd(seg_point, _) => Segment::DeadEndAttack(
+                        self.current_position,
+                        *seg_point,
+                        direction,
+                        self.id,
+                    ),
+                    _ => {
+                        if nearest_seg.piece_id().color() == self.color {
+                            Segment::Defense(
+                                self.current_position,
+                                *nearest_seg.point1(),
+                                direction,
+                                self.id,
+                            )
+                        } else {
+                            Segment::Attack(
+                                self.current_position,
+                                *nearest_seg.point1(),
+                                direction,
+                                self.id,
+                            )
+                        }
+                    },
+                };
+                segments.push(segment);
+            } else {
+                let vector_points =
+                    VectorPoints::without_initial(self.current_position, *dimension, direction);
+                let last_point = vector_points.last_point();
+                if last_point != self.current_position {
+                    segments.push(Segment::Attack(
+                        self.current_position,
+                        last_point,
+                        direction,
+                        self.id,
+                    ));
                 }
             }
         }
+        segments
     }
 
     pub fn calculate_moves<F: FnMut(PieceMove)>(

@@ -1,28 +1,29 @@
+use std::fmt::{Display, Formatter};
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Ord, PartialOrd)]
 pub enum JumpVector {
-    TopLeftLeft,
-    TopLeftRight,
-    TopRightLeft,
-    TopRightRight,
-    BottomLeftLeft,
     BottomLeftRight,
     BottomRightLeft,
+    BottomLeftLeft,
     BottomRightRight,
+    TopLeftLeft,
+    TopRightRight,
+    TopLeftRight,
+    TopRightLeft,
 }
 
 impl JumpVector {
-    pub fn all_variants() -> Vec<Self> {
-        vec![
-            Self::TopLeftLeft,
-            Self::TopLeftRight,
-            Self::TopRightLeft,
-            Self::TopRightRight,
-            Self::BottomLeftLeft,
+    pub const fn all_variants() -> [Self; 8] {
+        [
             Self::BottomLeftRight,
             Self::BottomRightLeft,
+            Self::BottomLeftLeft,
             Self::BottomRightRight,
+            Self::TopLeftLeft,
+            Self::TopRightRight,
+            Self::TopLeftRight,
+            Self::TopRightLeft,
         ]
     }
 
@@ -30,12 +31,15 @@ impl JumpVector {
         let (x1, y1) = point1.to_tuple();
         let (x2, y2) = point2.to_tuple();
 
-        if !((x1 - x2).abs() == 1 && (y1 - y2).abs() == 2 ||
-            (x1 - x2).abs() == 2 && (y1 - y2).abs() == 1) {
+        let delta_x = x1.wrapping_sub(*x2);
+        let delta_y = y1.wrapping_sub(*y2);
+
+        if !(delta_x.abs() == 1 && delta_y.abs() == 2 ||
+            delta_x.abs() == 2 && delta_y.abs() == 1) {
             return None;
         }
 
-        match (x1 - x2, y1 - y2) {
+        match (delta_x, delta_y) {
             (1, 2) => Some(Self::BottomLeftRight),
             (2, 1) => Some(Self::BottomLeftLeft),
             (2, -1) => Some(Self::TopLeftLeft),
@@ -58,6 +62,13 @@ impl JumpVector {
             Self::BottomRightLeft => Self::TopLeftRight,
             Self::BottomLeftRight => Self::TopRightLeft,
             Self::BottomLeftLeft => Self::TopRightRight,
+        }
+    }
+
+    pub fn is_ascending(&self) -> bool {
+        match self {
+            Self::TopLeftLeft | Self::TopLeftRight | Self::TopRightLeft | Self::TopRightRight => true,
+            Self::BottomRightRight | Self::BottomRightLeft | Self::BottomLeftRight | Self::BottomLeftLeft => false,
         }
     }
 
@@ -112,6 +123,22 @@ impl JumpVector {
             Self::BottomRightLeft => 6,
             Self::BottomRightRight => 7,
         }
+    }
+}
+
+impl Display for JumpVector {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let arrow = match self {
+            Self::BottomLeftRight => '↲',
+            Self::BottomRightLeft => '↳',
+            Self::BottomLeftLeft => '⬐',
+            Self::BottomRightRight => '⬎',
+            Self::TopLeftLeft => '⬑',
+            Self::TopRightRight => '⬏',
+            Self::TopLeftRight => '↰',
+            Self::TopRightLeft => '↱',
+        };
+        write!(f, "{}", arrow)
     }
 }
 
@@ -260,46 +287,72 @@ mod tests {
     }
 
     mod inverting_direction {
+        use crate::dimension::Dimension;
+        use crate::vector::Vector;
+        use crate::vector_points::VectorPoints;
         use super::*;
+
+        fn dimension() -> Dimension {
+            Dimension::new(Point::new(1, 1), Point::new(8, 8))
+        }
+
+        fn inverted_point(forward_vec: JumpVector, initial_point: Point) -> Point {
+            let backward = forward_vec.inverse();
+            let mut vector_points_forward = VectorPoints::without_initial(
+                initial_point, dimension(), Vector::Jump(forward_vec)
+            );
+            let mut vector_points_backward = VectorPoints::without_initial(
+                vector_points_forward.next().unwrap(), dimension(), Vector::Jump(backward)
+            );
+            vector_points_backward.next().unwrap()
+        }
 
         #[test]
         fn inverting_top_left_left() {
-            assert_eq!(JumpVector::TopLeftLeft.inverse(), JumpVector::BottomRightRight);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::TopLeftLeft, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_top_left_right() {
-            assert_eq!(JumpVector::TopLeftRight.inverse(), JumpVector::BottomRightLeft);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::TopLeftRight, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_top_right_left() {
-            assert_eq!(JumpVector::TopRightLeft.inverse(), JumpVector::BottomLeftRight);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::TopRightLeft, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_top_right_right() {
-            assert_eq!(JumpVector::TopRightRight.inverse(), JumpVector::BottomLeftLeft);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::TopRightRight, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_bottom_right_right() {
-            assert_eq!(JumpVector::BottomRightRight.inverse(), JumpVector::TopLeftLeft);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::BottomRightRight, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_bottom_right_left() {
-            assert_eq!(JumpVector::BottomRightLeft.inverse(), JumpVector::TopLeftRight);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::BottomRightLeft, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_bottom_left_right() {
-            assert_eq!(JumpVector::BottomLeftRight.inverse(), JumpVector::TopRightLeft);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::BottomLeftRight, initial_point), initial_point);
         }
 
         #[test]
         fn inverting_bottom_left_left() {
-            assert_eq!(JumpVector::BottomLeftLeft.inverse(), JumpVector::TopRightRight);
+            let initial_point = Point::new(4, 4);
+            assert_eq!(inverted_point(JumpVector::BottomLeftLeft, initial_point), initial_point);
         }
     }
 }

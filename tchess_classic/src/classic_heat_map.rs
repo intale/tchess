@@ -151,6 +151,7 @@ impl ClassicHeatMap {
 impl HeatMap for ClassicHeatMap {
     // The actual implementation will be presented later. For now just put stub values here.
     fn positional_value(&self, piece: &Piece, position: &Point) -> i16 {
+        return 0;
         let (x, y) = match piece.color() {
             Color::White => (
                 *position.x().value() as usize - 1,

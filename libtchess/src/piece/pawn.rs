@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use crate::board::{INVERT_COLORS};
 use crate::board_map::BoardMap;
 use crate::buff::Buff;
@@ -11,7 +12,9 @@ use crate::piece::{PieceId, PieceInit};
 use crate::piece_move::PieceMove;
 use crate::point::Point;
 use crate::promote_piece::PromotePiece;
+use crate::segment::Segment;
 use crate::strategy_point::StrategyPoint;
+use crate::strategy_segments::StrategySegments;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector::diagonal_vector::DiagonalVector;
@@ -42,57 +45,148 @@ impl Pawn {
         self.current_position = point;
     }
 
-    pub fn calculate_strategy_points<F: FnMut(StrategyPoint)>(
+    pub fn calculate_strategy_points(
         &self,
-        board_map: &BoardMap,
-        cbuffs_map: &ColoredProperty<BuffsMap>,
         dimension: &Dimension,
-        mut consumer: F,
-    ) {
+        cbuffs_map: &ColoredProperty<BuffsMap>,
+        strategy_segments: &StrategySegments,
+    ) -> Vec<Segment> {
+        let mut segments: Vec<Segment> = vec![];
+        let distance = |direction: &Vector, point: &Point| -> i32 {
+            if &self.current_position == point {
+                return 0;
+            }
+            let error_message = format!(
+                "Logical error: distance between {} and {} using {:?} direction must be determined",
+                self.current_position, point, direction
+            );
+            direction.distance(&self.current_position, point).expect(error_message.as_str())
+        };
         // Attack/defense directions
         for direction in self.attack_vectors() {
-            let vector_points =
-                VectorPoints::without_initial(self.current_position, *dimension, direction);
-            for point in vector_points {
-                let square = board_map.board_square(&point);
-
-                if square.is_empty_square() || square.is_enemy_square(&self.color) {
-                    consumer(StrategyPoint::Attack(point));
-                    break;
+            if let Some(nearest_seg) =
+                strategy_segments.nearest_segment(&self.current_position, &direction) {
+                if distance(&direction, nearest_seg.point1()) != 1 {
+                    let mut vector_points =
+                        VectorPoints::with_initial(self.current_position, *dimension, direction);
+                    if let Some(point) = vector_points.next() {
+                        segments.push(Segment::Attack(
+                            self.current_position,
+                            point,
+                            direction,
+                            self.id,
+                        ));
+                    }
+                    continue
                 }
-                if square.is_ally_square(&self.color) {
-                    consumer(StrategyPoint::Defense(point));
-                }
-                break;
-            }
-        }
-        // Move direction
-        let direction = match self.color {
-            Color::White => Vector::Line(LineVector::Top),
-            Color::Black => Vector::Line(LineVector::Bottom),
-        };
-        let vector_points =
-            VectorPoints::without_initial(self.current_position, *dimension, direction);
-        let mut points_calculated: u8 = 0;
-        for point in vector_points {
-            let square = board_map.board_square(&point);
-
-            if square.is_void_square() {
-                consumer(StrategyPoint::DeadEnd(point));
-                break;
-            }
-            if square.is_empty_square() {
-                consumer(StrategyPoint::Move(point));
+                let segment = match nearest_seg {
+                    Segment::DeadEnd(seg_point, _) => Segment::DeadEndAttack(
+                        self.current_position,
+                        *seg_point,
+                        direction,
+                        self.id,
+                    ),
+                    _ => {
+                        if nearest_seg.piece_id().color() == self.color {
+                            Segment::Defense(
+                                self.current_position,
+                                *nearest_seg.point1(),
+                                direction,
+                                self.id,
+                            )
+                        } else {
+                            Segment::Attack(
+                                self.current_position,
+                                *nearest_seg.point1(),
+                                direction,
+                                self.id,
+                            )
+                        }
+                    },
+                };
+                segments.push(segment);
             } else {
-                consumer(StrategyPoint::BlockedMove(point));
-                break;
+                let mut vector_points =
+                    VectorPoints::with_initial(self.current_position, *dimension, direction);
+                if let Some(point) = vector_points.next() {
+                    segments.push(Segment::Attack(
+                        self.current_position,
+                        point,
+                        direction,
+                        self.id,
+                    ));
+                }
             }
-            points_calculated += 1;
-            if cbuffs_map[&self.color].has_additional_point(&self.id) && points_calculated == 1 {
-                continue;
-            }
-            break;
         }
+
+        // Move directions
+        for direction in self.move_vectors() {
+            let nearest_seg =
+                strategy_segments.nearest_segment(&self.current_position, &direction);
+            let vector_points = VectorPoints::with_initial(self.current_position, *dimension, direction);
+            if cbuffs_map[&self.color].has_additional_point(&self.id) {
+                if let Some(nearest_seg) = nearest_seg {
+                    match distance(&direction, nearest_seg.point1()) {
+                        ..=2 => {
+                            let segment =
+                                match nearest_seg {
+                                    Segment::DeadEnd(_, _) =>  {
+                                        Segment::DeadEndMove(
+                                            self.current_position,
+                                            *nearest_seg.point1(),
+                                            direction,
+                                            self.id,
+                                        )
+                                    }
+                                    _ => {
+                                        Segment::BlockedMove(
+                                            self.current_position,
+                                            *nearest_seg.point1(),
+                                            direction,
+                                            self.id,
+                                        )
+                                    }
+                                };
+                            segments.push(segment);
+                        }
+                        _ => {
+                            let segment = Segment::Move(
+                                self.current_position,
+                                vector_points.point_at_distance(2).unwrap(),
+                                direction,
+                                self.id,
+                            );
+                            segments.push(segment);
+                        }
+                    }
+                } else {
+                    let &distance = [distance(&direction, &vector_points.last_point()), 2].iter().min().unwrap();
+                    if distance == 0 {
+                        continue
+                    }
+                    let segment = Segment::Move(
+                        self.current_position,
+                        vector_points.point_at_distance(distance as u16).unwrap(),
+                        direction,
+                        self.id,
+                    );
+                    segments.push(segment);
+                }
+            } else {
+                let &distance = [distance(&direction, &vector_points.last_point()), 1].iter().min().unwrap();
+                if distance == 0 {
+                    continue
+                }
+                let segment = Segment::Move(
+                    self.current_position,
+                    vector_points.point_at_distance(distance as u16).unwrap(),
+                    direction,
+                    self.id,
+                );
+                segments.push(segment);
+            }
+        }
+        segments
     }
 
     pub fn calculate_moves<F: FnMut(PieceMove)>(
@@ -217,6 +311,13 @@ impl Pawn {
                     Vector::Diagonal(DiagonalVector::BottomRight),
                 ]
             }
+        }
+    }
+
+    pub fn move_vectors(&self) -> Vec<Vector> {
+        match self.color {
+            Color::White => vec![Vector::Line(LineVector::Top)],
+            Color::Black => vec![Vector::Line(LineVector::Bottom)],
         }
     }
 

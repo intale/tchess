@@ -64,11 +64,11 @@ impl TestSquaresMap {
 }
 
 impl SquaresMap for TestSquaresMap {
-    fn square(&self, point: &Point) -> Option<BoardSquare> {
+    fn square(&self, point: &Point) -> BoardSquare {
         let color = self.map[(*point.y().value() - 1) as usize][(*point.x().value() - 1) as usize];
         match color {
-            Some(c) => Some(BoardSquare::Square(Square::new(c, None))),
-            None => None,
+            Some(c) => BoardSquare::Square(Square::new(c, None)),
+            None => BoardSquare::VoidSquare,
         }
     }
 }

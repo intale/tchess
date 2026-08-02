@@ -1,3 +1,5 @@
+#![feature(btree_cursors)]
+
 pub mod board;
 pub mod board_config;
 mod board_map;
@@ -22,7 +24,7 @@ pub mod promote_piece;
 pub mod square;
 pub mod squares_map;
 pub mod strategy_point;
-pub mod strategy_points;
+pub mod strategy_segments;
 pub mod utils;
 pub mod vector;
 pub mod vector_points;
@@ -31,3 +33,4 @@ mod board_summary;
 pub mod board_stats;
 pub mod debuffs_map;
 pub mod buffs_map;
+pub mod segment;

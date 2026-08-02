@@ -20,14 +20,16 @@ use crate::piece_move::PieceMove;
 use crate::point::Point;
 use crate::squares_map::SquaresMap;
 use crate::strategy_point::StrategyPoint;
-use crate::strategy_points::StrategyPoints;
+use crate::strategy_segments::StrategySegments;
 use crate::utils::pretty_print::PrettyPrint;
 use crate::vector::Vector;
 use crate::vector::line_vector::LineVector;
 use crate::vector_points::VectorPoints;
 use crate::x_ray_pieces::XRayPieces;
 use im_rc::{HashMap, HashSet, OrdMap};
-use rustc_hash::FxBuildHasher;
+use rustc_hash::{FxBuildHasher, FxHashSet};
+use crate::segment::Segment;
+use crate::vector::jump_vector::JumpVector;
 
 // Invert colors of chess symbols so they look more meaningful in the terminal window with black
 // background. Debugging purpose only.
@@ -36,7 +38,7 @@ pub const INVERT_COLORS: bool = true;
 #[derive(Clone)]
 pub struct Board<HT: HeatMap, SQ: SquaresMap> {
     board_map: BoardMap,
-    strategy_points: ColoredProperty<StrategyPoints>,
+    strategy_segments: StrategySegments,
     x_ray_pieces: ColoredProperty<XRayPieces>,
     pawns_with_en_passant: ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
     moves_map: ColoredProperty<MovesMap>,
@@ -49,6 +51,7 @@ pub struct Board<HT: HeatMap, SQ: SquaresMap> {
     pov: Color,
     config: BoardConfig<HT, SQ>,
     board_summary: BoardSummary,
+    game_started: bool,
 }
 
 impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
@@ -64,8 +67,8 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         self.config.dimension()
     }
 
-    pub fn strategy_points(&self, color: &Color) -> &StrategyPoints {
-        &self.strategy_points[color]
+    pub fn strategy_segments(&self) -> &StrategySegments {
+        &self.strategy_segments
     }
 
     pub fn find_piece_by_id(&self, piece_id: &PieceId) -> Option<&Piece> {
@@ -145,7 +148,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     pub fn empty(config: BoardConfig<HT, SQ>) -> Self {
         let mut board = Self {
             board_map: BoardMap::empty(),
-            strategy_points: ColoredProperty([StrategyPoints::empty(), StrategyPoints::empty()]),
+            strategy_segments: StrategySegments::empty(config.dimension()),
             x_ray_pieces: ColoredProperty([XRayPieces::empty(), XRayPieces::empty()]),
             pawns_with_en_passant: ColoredProperty([HashSet::default(), HashSet::default()]),
             moves_map: ColoredProperty([MovesMap::empty(), MovesMap::empty()]),
@@ -157,6 +160,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             pov: Color::White,
             config,
             board_summary: BoardSummary::new(),
+            game_started: false,
         };
         for y in board.dimension().get_rows_range() {
             for x in board.dimension().get_columns_range() {
@@ -167,9 +171,21 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     }
 
     fn init_square(&mut self, point: Point) {
-        if let Some(square) = self.config.squares_map().square(&point) {
-            self.board_map.add_square(point, square);
+        let square = self.config.squares_map().square(&point);
+        match square {
+            BoardSquare::VoidSquare => {
+                let mut segments = vec![];
+                for vec in Vector::diagonal_and_line_vectors() {
+                    if vec.is_ascending() {
+                        segments.push(Segment::DeadEnd(point, vec));
+                    }
+                }
+                segments.push(Segment::DeadEnd(point, Vector::Jump(JumpVector::BottomLeftLeft)));
+                self.strategy_segments.add_segments(segments);
+            }
+            _ => ()
         }
+        self.board_map.add_square(point, square);
     }
 
     // Pins points and castle points are not taken into account here. They require more complex
@@ -179,42 +195,37 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         point: &Point,
         caused_by_color: &Color,
     ) -> HashSet<PieceId> {
+        // let mut pieces: HashSet<PieceId> = HashSet::default();
+        // let inverse_color = caused_by_color.inverse();
+        //
+        // for piece_id in self.strategy_points[&inverse_color].get_pieces(&StrategyPoint::Attack(*point)) {
+        //     pieces.insert(piece_id);
+        // }
+        // for piece_id in self.strategy_points[&inverse_color].get_pieces(&StrategyPoint::Move(*point)) {
+        //     pieces.insert(piece_id);
+        // }
+        //
+        // for piece_id in self.strategy_points[caused_by_color].get_pieces(&StrategyPoint::Defense(*point)) {
+        //     pieces.insert(piece_id);
+        // }
+        //
+        // // BlockedMove source cause can originate from both sides. Thus, calculate it for both
+        // // colors
+        // for color in [Color::White, Color::Black].iter() {
+        //     for piece_id in self.strategy_points[color].get_pieces(&StrategyPoint::BlockedMove(*point)) {
+        //         pieces.insert(piece_id);
+        //     }
+        // }
+        //
+        // for piece_id in self.pawns_with_en_passant[&inverse_color].iter() {
+        //     pieces.insert(*piece_id);
+        // }
+        // pieces
         let mut pieces: HashSet<PieceId> = HashSet::default();
         let inverse_color = caused_by_color.inverse();
 
-        if let Some(piece_ids) =
-            self.strategy_points[&inverse_color].get_pieces(&StrategyPoint::Attack(*point))
-        {
-            for piece_id in piece_ids {
-                pieces.insert(*piece_id);
-            }
-        }
-        if let Some(piece_ids) =
-            self.strategy_points[&inverse_color].get_pieces(&StrategyPoint::Move(*point))
-        {
-            for piece_id in piece_ids {
-                pieces.insert(*piece_id);
-            }
-        }
-
-        if let Some(piece_ids) =
-            self.strategy_points[caused_by_color].get_pieces(&StrategyPoint::Defense(*point))
-        {
-            for piece_id in piece_ids {
-                pieces.insert(*piece_id);
-            }
-        }
-
-        // BlockedMove source cause can originate from both sides. Thus, calculate it for both
-        // colors
-        for color in [Color::White, Color::Black].iter() {
-            if let Some(piece_ids) =
-                self.strategy_points[color].get_pieces(&StrategyPoint::BlockedMove(*point))
-            {
-                for piece_id in piece_ids {
-                    pieces.insert(*piece_id);
-                }
-            }
+        for seg in self.strategy_segments.segments_affecting_on(point) {
+            pieces.insert(*seg.piece_id());
         }
 
         for piece_id in self.pawns_with_en_passant[&inverse_color].iter() {
@@ -223,39 +234,35 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         pieces
     }
 
-    fn calculate_strategy_points(
+    fn calculate_strategy_segments(
         piece: &Piece,
-        board_map: &BoardMap,
         cbuffs_map: &ColoredProperty<BuffsMap>,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &mut ColoredProperty<StrategyPoints>,
+        strategy_segments: &mut StrategySegments,
     ) {
-        let strategy_points = &mut cstrategy_points[piece.color()];
-        strategy_points.remove_piece(piece.id());
+        strategy_segments.remove_segments(piece);
         let dimension = config.dimension();
-        let add_strategy_point = |strategy_point| {
-            strategy_points.add_association(strategy_point, piece.id());
-        };
 
-        match piece {
+        let segments = match piece {
             Piece::Pawn(p) => {
-                p.calculate_strategy_points(board_map, cbuffs_map, dimension, add_strategy_point)
+                p.calculate_strategy_points(dimension, cbuffs_map, strategy_segments)
             }
-            Piece::Rook(p) => p.calculate_strategy_points(board_map, dimension, add_strategy_point),
+            Piece::Rook(p) => p.calculate_strategy_points(dimension, strategy_segments),
             Piece::Knight(p) => {
-                p.calculate_strategy_points(board_map, dimension, add_strategy_point)
+                p.calculate_strategy_points(dimension, strategy_segments)
             }
             Piece::Bishop(p) => {
-                p.calculate_strategy_points(board_map, dimension, add_strategy_point)
+                p.calculate_strategy_points(dimension, strategy_segments)
             }
             Piece::Queen(p) => {
-                p.calculate_strategy_points(board_map, dimension, add_strategy_point)
+                p.calculate_strategy_points(dimension, strategy_segments)
             }
-            Piece::King(p) => p.calculate_strategy_points(board_map, dimension, add_strategy_point),
+            Piece::King(p) => p.calculate_strategy_points(dimension, strategy_segments),
             Piece::UnknownPiece(_) => {
                 panic!("Can't calculate strategy points for an unknown piece!")
             }
-        }
+        };
+        strategy_segments.add_segments(segments);
     }
 
     // Calculate whether the given piece is facing the opposite king
@@ -263,7 +270,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         piece: &Piece,
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cbuffs_map: &mut ColoredProperty<BuffsMap>,
         cdebuffs_map: &mut ColoredProperty<DebuffsMap>,
@@ -295,7 +302,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     current_piece.id(),
                     board_map,
                     config,
-                    cstrategy_points,
+                    strategy_segments,
                     cmoves_map,
                     cbuffs_map,
                     cdebuffs_map,
@@ -311,7 +318,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     piece.id(),
                     board_map,
                     config,
-                    cstrategy_points,
+                    strategy_segments,
                     cmoves_map,
                     cbuffs_map,
                     cdebuffs_map,
@@ -322,7 +329,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     piece,
                     board_map,
                     config,
-                    cstrategy_points,
+                    strategy_segments,
                     cmoves_map,
                     cbuffs_map,
                     cdebuffs_map,
@@ -336,7 +343,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     piece.id(),
                     board_map,
                     config,
-                    cstrategy_points,
+                    strategy_segments,
                     cmoves_map,
                     cbuffs_map,
                     cdebuffs_map,
@@ -350,7 +357,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 piece.id(),
                 board_map,
                 config,
-                cstrategy_points,
+                strategy_segments,
                 cmoves_map,
                 cbuffs_map,
                 cdebuffs_map,
@@ -365,7 +372,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         cbuffs_map: &ColoredProperty<BuffsMap>,
         cdebuffs_map: &ColoredProperty<DebuffsMap>,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &mut ColoredProperty<MovesMap>,
     ) {
         cmoves_map[piece.color()].remove_piece(piece.id());
@@ -382,7 +389,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     cdebuffs_map,
                     config.dimension(),
                     config,
-                    &cstrategy_points[&piece.color().inverse()],
+                    strategy_segments,
                     add_move,
                 );
             }
@@ -413,14 +420,13 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         king: &Piece,
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &ColoredProperty<MovesMap>,
         cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
         let mut constraints: Vec<PieceMove> = vec![];
-        let pieces_caused_check = cstrategy_points[&king.color().inverse()]
-            .get_pieces(&StrategyPoint::Attack(*king.current_position()))
-            .unwrap();
+        let pieces_caused_check = strategy_segments
+            .get_pieces(&StrategyPoint::Attack(*king.current_position()));
         // When the king is in check by more than one piece, no legal moves can be made by
         // any piece except the king itself.
         if pieces_caused_check.len() == 1 {
@@ -462,7 +468,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 board_map,
                 config,
                 cmoves_map,
-                cstrategy_points,
+                strategy_segments,
                 cgeneral_constraints,
             );
         }
@@ -519,17 +525,17 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
         cmoves_map: &ColoredProperty<MovesMap>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cgeneral_constraints: &mut ColoredProperty<Option<MovesMap>>,
     ) {
         let destination_to_cover = piece_move.destination();
         let constraints = cgeneral_constraints[color]
             .as_mut()
             .expect("Logical error: constraints MovesMap must be initialized at this point!");
-        let mut calc_pieces = |piece_ids: &HashSet<PieceId, FxBuildHasher>| {
+        let mut calc_pieces = |piece_ids: Vec<PieceId>| {
             for piece_id in piece_ids {
-                let piece = board_map.find_piece_by_id(piece_id);
-                if let Some(moves) = cmoves_map[color].moves_of(piece_id) {
+                let piece = board_map.find_piece_by_id(&piece_id);
+                if let Some(moves) = cmoves_map[color].moves_of(&piece_id) {
                     match piece {
                         Piece::Pawn(_) => {
                             for (piece_move, _) in moves {
@@ -538,7 +544,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                                 }
                                 let move_score =
                                     Self::evaluate_move(&config, board_map, piece_move, piece);
-                                constraints.add(piece_id, *piece_move, move_score);
+                                constraints.add(&piece_id, *piece_move, move_score);
                             }
                         }
                         _ => {
@@ -549,30 +555,22 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                             {
                                 let move_score =
                                     Self::evaluate_move(&config, board_map, defensive_move, piece);
-                                constraints.add(piece_id, *defensive_move, move_score);
+                                constraints.add(&piece_id, *defensive_move, move_score);
                             };
                         }
                     }
                 }
             }
         };
-        if let Some(piece_ids) =
-            cstrategy_points[color].get_pieces(&StrategyPoint::Attack(*destination_to_cover))
-        {
-            calc_pieces(piece_ids)
-        }
-        if let Some(piece_ids) =
-            cstrategy_points[color].get_pieces(&StrategyPoint::Move(*destination_to_cover))
-        {
-            calc_pieces(piece_ids)
-        }
+        calc_pieces(strategy_segments.get_pieces(&StrategyPoint::Attack(*destination_to_cover)));
+        calc_pieces(strategy_segments.get_pieces(&StrategyPoint::Move(*destination_to_cover)));
     }
 
     fn calc_en_passant(
         position: &Point,
         caused_by_color: &Color,
         board_map: &BoardMap,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cbuffs_map: &mut ColoredProperty<BuffsMap>,
         board_summary: &mut BoardSummary,
         cpawns_with_en_passant: &mut ColoredProperty<HashSet<PieceId, FxBuildHasher>>,
@@ -583,20 +581,16 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         };
 
         let mut pawns: Vec<&PieceId> = vec![];
-        if let Some(piece_ids) = cstrategy_points[&caused_by_color.inverse()]
-            .get_pieces(&StrategyPoint::Attack(en_passant_position))
-        {
-            for piece_id in piece_ids {
-                let piece = board_map.find_piece_by_id(piece_id);
-                match piece {
-                    Piece::Pawn(_) => {
-                        cbuffs_map[&piece_id.color()]
-                            .add(piece_id, Buff::EnPassant(en_passant_position, *position));
-                        pawns.push(piece.id());
-                        board_summary.update_piece_en_passant(piece.id(), true);
-                    }
-                    _ => (),
+        for piece_id in strategy_segments.get_pieces(&StrategyPoint::Attack(en_passant_position)) {
+            let piece = board_map.find_piece_by_id(&piece_id);
+            match piece {
+                Piece::Pawn(_) => {
+                    cbuffs_map[&piece_id.color()]
+                        .add(&piece_id, Buff::EnPassant(en_passant_position, *position));
+                    pawns.push(piece.id());
+                    board_summary.update_piece_en_passant(piece.id(), true);
                 }
+                _ => (),
             }
         }
         for pawn_id in pawns {
@@ -638,18 +632,18 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         pinned_by: &Piece,
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cbuffs_map: &mut ColoredProperty<BuffsMap>,
         cdebuffs_map: &mut ColoredProperty<DebuffsMap>,
         cx_ray_pieces: &mut ColoredProperty<XRayPieces>,
     ) -> bool {
-        let points = cstrategy_points[pinned_by.color()].get_points(pinned_by.id());
-        if let Some(points) = points {
-            if points.contains(&StrategyPoint::Attack(*pin_to.current_position())) {
+        if let Some(seg) = strategy_segments.find_segment(pinned_by, pin_to.current_position()) {
+            match seg {
                 // No need to calculate pinned pieces, because pin_to piece is directly attacked by
                 // the given pinned_by piece
-                return false;
+                Segment::Attack(_, _, _, _) => return false,
+                _ => (),
             }
         }
 
@@ -684,7 +678,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                                 cbuffs_map,
                                 cdebuffs_map,
                                 config,
-                                cstrategy_points,
+                                strategy_segments,
                                 cmoves_map,
                             );
                             cx_ray_pieces[pinned_by.color()].add_pin(&p, pinned_by);
@@ -745,7 +739,22 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         id
     }
 
+    pub fn start_game(&mut self) {
+        if self.game_started {
+            return;
+        }
+        // for strategy_point in self.strategy_points.collection_mut() {
+        //     strategy_point.start_tracking_changes()
+        // }
+        self.game_started = true;
+    }
+
     pub fn move_piece(&mut self, piece_id: &PieceId, piece_move: &PieceMove) -> Option<MoveScore> {
+        // TODO: implement more meaningful result that would help to differentiate between various
+        //       reasons why a piece was unable to move
+        if !self.game_started {
+            return None;
+        }
         if self.current_turn != piece_id.color() {
             return None;
         }
@@ -756,6 +765,10 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             self.move_piece_unchecked(piece_id, piece_move, true);
             self.pass_turn(&piece_id.color().inverse());
             self.board_summary.next_turn();
+            // for strategy_point in self.strategy_points.collection_mut() {
+            //     strategy_point.flush_changes();
+            // }
+            // println!("{:?}", self.strategy_points);
             Some(move_score)
         } else {
             None
@@ -788,7 +801,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                                 new_position,
                                 &piece.color(),
                                 &self.board_map,
-                                &self.strategy_points,
+                                &self.strategy_segments,
                                 &mut self.buffs_map,
                                 &mut self.board_summary,
                                 &mut self.pawns_with_en_passant,
@@ -894,7 +907,6 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
     // Not every piece removal from the board is capturing. For example, when promoting a pawn - we
     // need to remove it from the board without any other potential actions
     fn remove_piece(&mut self, piece_id: &PieceId) -> Piece {
-        self.strategy_points[&piece_id.color()].remove_piece(piece_id);
         self.moves_map[&piece_id.color()].remove_piece(piece_id);
         if let Some(debuff) = self.debuffs_map[&piece_id.color()].pin(piece_id) {
             let vector = match debuff {
@@ -904,11 +916,12 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             self.x_ray_pieces[&piece_id.color().inverse()].remove_pinned_piece(vector);
         }
         let piece = self.board_map.remove_piece(piece_id);
+        self.strategy_segments.remove_segments(&piece);
         Self::remove_x_ray_piece(
             piece_id,
             &self.board_map,
             &self.config,
-            &self.strategy_points,
+            &self.strategy_segments,
             &mut self.moves_map,
             &mut self.buffs_map,
             &mut self.debuffs_map,
@@ -935,13 +948,14 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             .map(|piece_id| self.board_map.find_piece_by_id(piece_id))
             .collect::<Vec<_>>();
 
+        println!("\n{include_piece_at_position} / {:?}", pieces_to_recalculate);
         for piece in pieces_to_recalculate.iter() {
-            Self::calculate_strategy_points(
+            println!("id: {}", piece.id());
+            Self::calculate_strategy_segments(
                 piece,
-                &self.board_map,
                 &self.buffs_map,
                 &self.config,
-                &mut self.strategy_points,
+                &mut self.strategy_segments,
             );
         }
 
@@ -957,7 +971,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                         &self.buffs_map,
                         &self.debuffs_map,
                         &self.config,
-                        &self.strategy_points,
+                        &self.strategy_segments,
                         &mut self.moves_map,
                     );
                 }
@@ -988,7 +1002,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                             &piece,
                             &self.board_map,
                             &self.config,
-                            &self.strategy_points,
+                            &self.strategy_segments,
                             &mut self.moves_map,
                             &mut self.buffs_map,
                             &mut self.debuffs_map,
@@ -1007,7 +1021,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                         &piece,
                         &self.board_map,
                         &self.config,
-                        &self.strategy_points,
+                        &self.strategy_segments,
                         &mut self.moves_map,
                         &mut self.buffs_map,
                         &mut self.debuffs_map,
@@ -1023,7 +1037,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         if let Some(king) = self.board_map.king(color) {
             self.debuffs_map[king.color()].remove_check(king.id());
             self.general_constraints[king.color()] = None;
-            if self.strategy_points[&king.color().inverse()]
+            if self.strategy_segments
                 .is_under_attack(&king.current_position())
             {
                 self.debuffs_map[king.color()].add(king.id(), Debuff::Check);
@@ -1035,7 +1049,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 &self.buffs_map,
                 &self.debuffs_map,
                 &self.config,
-                &self.strategy_points,
+                &self.strategy_segments,
                 &mut self.moves_map,
             );
             if self.debuffs_map[king.color()].has_check(king.id()) {
@@ -1043,7 +1057,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                     king,
                     &self.board_map,
                     &self.config,
-                    &self.strategy_points,
+                    &self.strategy_segments,
                     &self.moves_map,
                     &mut self.general_constraints,
                 );
@@ -1090,7 +1104,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         piece_id: &PieceId,
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cbuffs_map: &mut ColoredProperty<BuffsMap>,
         cdebuffs_map: &mut ColoredProperty<DebuffsMap>,
@@ -1100,7 +1114,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
             piece_id,
             board_map,
             config,
-            cstrategy_points,
+            strategy_segments,
             cmoves_map,
             cbuffs_map,
             cdebuffs_map,
@@ -1113,7 +1127,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
         piece_id: &PieceId,
         board_map: &BoardMap,
         config: &BoardConfig<HT, SQ>,
-        cstrategy_points: &ColoredProperty<StrategyPoints>,
+        strategy_segments: &StrategySegments,
         cmoves_map: &mut ColoredProperty<MovesMap>,
         cbuffs_map: &mut ColoredProperty<BuffsMap>,
         cdebuffs_map: &mut ColoredProperty<DebuffsMap>,
@@ -1128,7 +1142,7 @@ impl<HT: HeatMap, SQ: SquaresMap> Board<HT, SQ> {
                 cbuffs_map,
                 cdebuffs_map,
                 config,
-                cstrategy_points,
+                strategy_segments,
                 cmoves_map,
             );
         }

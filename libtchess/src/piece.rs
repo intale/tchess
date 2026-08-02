@@ -139,6 +139,26 @@ impl Piece {
             Self::UnknownPiece(_) => panic!("Can't calculate attack vector for an unknown piece!"),
         }
     }
+
+    pub fn attack_vectors(&self) -> Vec<Vector> {
+        match self {
+            Self::Pawn(p) => p.attack_vectors(),
+            Self::Rook(p) => p.attack_vectors(),
+            Self::Knight(p) => p.attack_vectors(),
+            Self::Bishop(p) => p.attack_vectors(),
+            Self::Queen(p) => p.attack_vectors(),
+            Self::King(p) => p.attack_vectors(),
+            Self::UnknownPiece(_) => panic!("Can't get attack vectors for an unknown piece!"),
+        }
+    }
+
+    pub fn move_vectors(&self) -> Vec<Vector> {
+        match self {
+            Self::Pawn(p) => p.move_vectors(),
+            Self::Rook(_) | Self::Knight(_) | Self::Bishop(_) | Self::Queen(_) | Self::King(_) => vec![],
+            Self::UnknownPiece(_) => panic!("Can't get attack vectors for an unknown piece!"),
+        }
+    }
 }
 
 impl PrettyPrint for Piece {

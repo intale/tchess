@@ -1,1 +1,8 @@
 /target
+/minicluster
+.dockerignore
+Dockerfile
+flamegraph.svg
+perf.data
+skaffold.yaml
+/k8s

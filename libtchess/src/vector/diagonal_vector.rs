@@ -1,20 +1,21 @@
+use std::fmt::{Display, Formatter};
 use crate::point::Point;
 
-#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Ord, PartialOrd)]
 pub enum DiagonalVector {
-    TopLeft,
-    TopRight,
     BottomLeft,
+    TopRight,
     BottomRight,
+    TopLeft,
 }
 
 impl DiagonalVector {
-    pub fn all_variants() -> Vec<Self> {
-        vec![
-            Self::TopLeft,
-            Self::TopRight,
+    pub const fn all_variants() -> [Self; 4] {
+        [
             Self::BottomLeft,
+            Self::TopRight,
             Self::BottomRight,
+            Self::TopLeft,
         ]
     }
 }
@@ -24,11 +25,14 @@ impl DiagonalVector {
         let (x1, y1) = point1.to_tuple();
         let (x2, y2) = point2.to_tuple();
 
-        if (x1 - x2).abs() != (y1 - y2).abs() {
+        let delta_x = x1.wrapping_sub(*x2);
+        let delta_y = y1.wrapping_sub(*y2);
+
+        if delta_x.abs() != delta_y.abs() {
             return None;
         }
 
-        match (x1 - x2, y1 - y2) {
+        match (delta_x, delta_y) {
             (i16::MIN..0, 1..=i16::MAX) => Some(Self::BottomRight),
             (1..=i16::MAX, 1..=i16::MAX) => Some(Self::BottomLeft),
             (i16::MIN..0, i16::MIN..0) => Some(Self::TopRight),
@@ -37,12 +41,28 @@ impl DiagonalVector {
         }
     }
 
+    pub fn distance(point1: &Point, point2: &Point) -> Option<i32> {
+        if Self::calc_direction(point1, point2).is_some() {
+            let x1 = **point1.x() as i32;
+            let x2 = **point2.x() as i32;
+            return Some((x1 - x2).abs())
+        }
+        None
+    }
+
     pub fn inverse(&self) -> Self {
         match self {
             Self::TopLeft => Self::BottomRight,
             Self::TopRight => Self::BottomLeft,
             Self::BottomLeft => Self::TopRight,
             Self::BottomRight => Self::TopLeft,
+        }
+    }
+    
+    pub fn is_ascending(&self) -> bool {
+        match self {
+            Self::TopLeft | Self::TopRight => true,
+            Self::BottomLeft | Self::BottomRight => false,
         }
     }
 
@@ -68,6 +88,18 @@ impl DiagonalVector {
             }
         }
         Point::new(x, y)
+    }
+}
+
+impl Display for DiagonalVector {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let arrow = match self {
+            Self::TopRight => '↗',
+            Self::BottomLeft => '↙',
+            Self::TopLeft => '↖',
+            Self::BottomRight => '↘',
+        };
+        write!(f, "{}", arrow)
     }
 }
 

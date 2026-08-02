@@ -49,6 +49,7 @@ mod rook_gets_pinned {
             vec![],
             Point::new(1, 2),
         );
+        board.start_game();
 
         println!("{}", board.pp());
         board

@@ -4,6 +4,16 @@ use crate::color::Color;
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct ColoredProperty<T: Clone>(pub [T; 2]);
 
+impl<T: Clone> ColoredProperty<T> {
+    pub fn collection(&self) -> &[T; 2] {
+        &self.0
+    }
+
+    pub fn collection_mut(&mut self) -> &mut [T; 2] {
+        &mut self.0
+    }
+}
+
 impl<T: Clone> Index<&Color> for ColoredProperty<T> {
     type Output = T;
 

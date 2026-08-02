@@ -9,6 +9,7 @@ use libtchess::piece_move::PieceMove;
 use libtchess::point::Point;
 use libtchess::utils::pretty_print::PrettyPrint;
 use std::fmt::Debug;
+use rustc_hash::FxHashSet;
 use support::test_heat_map::TestHeatMap;
 use support::test_squares_map::TestSquaresMap;
 use support::traits::{CloneMoves, ToVecRef};
@@ -98,7 +99,7 @@ fn it_removes_captured_piece_strategy_points_list() {
             board
                 .strategy_points(&Color::Black)
                 .get_points(&PieceId::new(1, &Color::Black))
-                .unwrap_or(&HashSet::default())
+                .unwrap_or(&FxHashSet::default())
                 .iter()
                 .copied()
                 .collect::<Vec<_>>()

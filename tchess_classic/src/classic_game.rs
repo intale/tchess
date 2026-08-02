@@ -33,7 +33,7 @@ pub struct ClassicGame<HT: HeatMap, SQ: SquaresMap> {
 
 impl ClassicGame<ClassicHeatMap, ClassicSquaresMap> {
     pub fn classic_board() -> Self {
-        let dimension = Dimension::new(Point::new(1, 1), Point::new(8, 8));
+        let dimension = Dimension::new(Point::new(1, 1), Point::new(28, 28));
         let config = BoardConfig::new(
             CastleXPoints(KingCastleXPoint(7), RookCastleXPoint(6)),
             CastleXPoints(KingCastleXPoint(3), RookCastleXPoint(4)),
